@@ -39,12 +39,13 @@
       eventSource.onerror = function(e) {
         eventSource.close();
 
-        // Only attempt reconnect if we had a successful connection before
-        if (isConnected && reconnectAttempts < maxReconnectAttempts) {
+        // Attempt reconnect if we haven't exceeded max attempts
+        if (reconnectAttempts < maxReconnectAttempts) {
           reconnectAttempts++;
           const delay = getReconnectDelay();
+          console.log('[dorcs] Live reload: connection failed, retrying in ' + (delay / 1000) + 's... (attempt ' + reconnectAttempts + '/' + maxReconnectAttempts + ')');
           setTimeout(connect, delay);
-        } else if (reconnectAttempts >= maxReconnectAttempts) {
+        } else {
           console.log('[dorcs] Live reload: max reconnection attempts reached');
         }
       };
