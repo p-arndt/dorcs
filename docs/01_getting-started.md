@@ -4,6 +4,7 @@ description: "Get your documentation site running in minutes."
 tags: [getting-started, quickstart]
 date: 2025-12-13
 draft: false
+after: "index"
 ---
 
 # Getting Started
@@ -111,6 +112,11 @@ Your content here...
 - `date` - Publication date (YYYY-MM-DD)
 - `tags` - List of tags for categorization
 - `draft` - Set to `true` to hide from navigation (when using `--no-drafts`)
+- `order` - Numeric value for sorting pages in navigation (lower numbers appear first)
+- `author` - Author name (displayed with [[AUTHOR]] placeholder)
+- `after` - Key of item this should appear after in navigation (use `"index"` to place after index.md)
+
+See [YAML Front Matter](../usage/yaml-frontmatter.md) for detailed documentation on all front matter fields, including navigation ordering with `after` and `order`.
 
 ## Watch Mode
 

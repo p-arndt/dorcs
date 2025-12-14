@@ -1,11 +1,12 @@
 ---
-title: "YAML Front Matter"
-description: "YAML front matter features"
-tags: [yaml, frontmatter]
+title: "Metadata"
+description: "Metadata features"
+tags: [metadata, frontmatter]
 date: 2025-12-14
 draft: false
 ---
-# YAML Front Matter
+
+# Metadata
 
 Add metadata to your markdown files using YAML front matter at the top of the file:
 
@@ -18,6 +19,9 @@ tags: [tag1, tag2, tag3]
 draft: false
 order: 1
 ---
+# Getting Started
+
+Your content here...
 ```
 
 **Available fields:**
@@ -28,21 +32,5 @@ order: 1
 - `tags` - List of tags for categorization
 - `draft` - Set to `true` to hide from navigation (when using `--no-drafts`)
 - `order` - Numeric value for sorting pages in navigation (lower numbers appear first)
-- `author` - Author name (displayed with [[AUTHOR]] placeholder)
-
-**Example:**
-
-```yaml
----
-title: "Getting Started"
-description: "Learn how to get started with dorcs"
-date: 2025-12-13
-tags: [tutorial, beginner, quickstart]
-draft: false
-order: 1
----
-
-# Getting Started
-
-Your content here...
-```
+- `author` - Author name (displayed with `[[AUTHOR]]` placeholder)
+- `after` - Key of item this should appear after in navigation (use `"index"` to place after index.md) (See [Order of Docs](./order-of-docs.md) for more information.)
