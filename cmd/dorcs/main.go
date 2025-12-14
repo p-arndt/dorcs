@@ -269,6 +269,8 @@ func main() {
 	})
 	// Search API endpoint
 	mux.HandleFunc(prefix+"/api/search", handler.ServeSearch)
+	// Sitemap endpoint
+	mux.HandleFunc(prefix+"/sitemap.xml", handler.ServeSitemap)
 
 	// Edit mode API endpoints (if auth is enabled)
 	var editHandlers *server.EditHandlers

@@ -7,6 +7,7 @@ import (
 	"html/template"
 	"io"
 	"net/http"
+	"net/url"
 	"os"
 	"path"
 	"path/filepath"
@@ -613,4 +614,110 @@ func (h *Handler) handleSearch(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "failed to encode response", http.StatusInternalServerError)
 		return
 	}
+}
+
+// ServeSitemap handles the sitemap.xml endpoint.
+func (h *Handler) ServeSitemap(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet && r.Method != http.MethodHead {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	h.mu.RLock()
+	site := h.cfg.Site
+	hideDraft := h.cfg.HideDraft
+	basePath := h.cfg.BasePath
+	h.mu.RUnlock()
+
+	if site == nil {
+		http.Error(w, "server not configured", http.StatusInternalServerError)
+		return
+	}
+
+	// Get all non-draft documents
+	docs := site.ListDocs(!hideDraft)
+
+	// Build base URL from request
+	scheme := "https"
+	if r.TLS == nil {
+		scheme = "http"
+	}
+	host := r.Host
+	if host == "" {
+		host = "localhost"
+	}
+	baseURL := fmt.Sprintf("%s://%s", scheme, host)
+	if basePath != "" {
+		baseURL += basePath
+	}
+
+	// Generate sitemap XML
+	w.Header().Set("Content-Type", "application/xml; charset=utf-8")
+	w.Header().Set("Cache-Control", "public, max-age=3600") // Cache for 1 hour
+
+	// Write XML header and root element
+	w.Write([]byte(`<?xml version="1.0" encoding="UTF-8"?>` + "\n"))
+	w.Write([]byte(`<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">` + "\n"))
+
+	// Add each document to the sitemap
+	for _, doc := range docs {
+		// Build URL path
+		urlPath := baseURL
+		if doc.Key == "" {
+			// Root index page
+			if !strings.HasSuffix(urlPath, "/") {
+				urlPath += "/"
+			}
+		} else {
+			// Ensure single slash between basePath and key
+			if !strings.HasSuffix(urlPath, "/") {
+				urlPath += "/"
+			}
+			// URL-encode each path segment
+			parts := strings.Split(doc.Key, "/")
+			encodedParts := make([]string, len(parts))
+			for i, part := range parts {
+				encodedParts[i] = url.PathEscape(part)
+			}
+			urlPath += strings.Join(encodedParts, "/")
+		}
+
+		// Format last modified date (W3C datetime format)
+		lastmod := doc.UpdatedAt.UTC().Format("2006-01-02T15:04:05Z")
+
+		// Determine priority based on document type
+		priority := "0.7" // Default priority
+		if doc.Key == "" {
+			priority = "1.0" // Homepage gets highest priority
+		} else if !strings.Contains(doc.Key, "/") {
+			priority = "0.9" // Top-level pages
+		}
+
+		// Determine changefreq (how often the page is likely to change)
+		changefreq := "monthly" // Default
+		if doc.Key == "" {
+			changefreq = "weekly" // Homepage changes more frequently
+		}
+
+		// Write URL entry
+		w.Write([]byte("  <url>\n"))
+		fmt.Fprintf(w, "    <loc>%s</loc>\n", escapeXML(urlPath))
+		fmt.Fprintf(w, "    <lastmod>%s</lastmod>\n", lastmod)
+		fmt.Fprintf(w, "    <changefreq>%s</changefreq>\n", changefreq)
+		fmt.Fprintf(w, "    <priority>%s</priority>\n", priority)
+		w.Write([]byte("  </url>\n"))
+	}
+
+	// Close root element
+	w.Write([]byte("</urlset>\n"))
+}
+
+// escapeXML escapes special XML characters in a string.
+func escapeXML(s string) string {
+	s = strings.ReplaceAll(s, "&", "&amp;")
+	s = strings.ReplaceAll(s, "<", "&lt;")
+	s = strings.ReplaceAll(s, ">", "&gt;")
+	s = strings.ReplaceAll(s, "\"", "&quot;")
+	s = strings.ReplaceAll(s, "'", "&apos;")
+	return s
 }
