@@ -160,3 +160,15 @@ func ExtractNodeText(n gmast.Node, source []byte) string {
 	walk(n)
 	return b.String()
 }
+
+// ProcessTOCPlaceholder replaces [[TOC]] placeholders in markdown with the provided TOC HTML.
+// The TOC HTML should already be properly escaped HTML.
+func ProcessTOCPlaceholder(markdownSource string, tocHTML template.HTML) string {
+	if tocHTML == "" {
+		// If no TOC, just remove the placeholder
+		return strings.ReplaceAll(markdownSource, "[[TOC]]", "")
+	}
+	// Replace [[TOC]] with the HTML TOC
+	// We'll insert it as raw HTML which goldmark will render (since we have WithUnsafe enabled)
+	return strings.ReplaceAll(markdownSource, "[[TOC]]", string(tocHTML))
+}
