@@ -98,6 +98,8 @@ func generateSyntaxCSS(lightStyle *chroma.Style, lightThemeName string) string {
 	// Fix github-dark theme: nx (identifiers) and p (punctuation) often have poor contrast
 	buf.WriteString("  .chroma .nx { color: var(--fg, #e6edf3); }\n")
 	buf.WriteString("  .chroma .p { color: var(--fg, #e6edf3); }\n")
+	buf.WriteString("  .chroma .ge { color: var(--fg, #e6edf3); }\n")
+	buf.WriteString("  .chroma .na { color: var(--fg, #e6edf3); }\n")
 	buf.WriteString("}\n")
 
 	return buf.String()
