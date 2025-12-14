@@ -1,0 +1,9 @@
+{{/* Scripts partial */}}
+{{ define "scripts" }}
+<script src="{{ .BasePath }}/static/app.js"></script>
+{{- if .LiveReload }}
+<script src="{{ .BasePath }}/static/live-reload.js"></script>
+{{- end }}
+
+{{ block "body_scripts" . }}{{ end }}
+{{ end }}

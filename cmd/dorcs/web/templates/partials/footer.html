@@ -1,0 +1,29 @@
+{{/* Footer partial */}}
+{{ define "footer" }}
+<footer class="site-footer">
+  <div class="container">
+    <div class="footer-content">
+      {{- if and .Config .Config.Footer.Copyright }}
+      <div>{{ .Config.Footer.Copyright }}</div>
+      {{- end }}
+      {{- if and .Config .Config.Footer.Text }}
+      <div>{{ .Config.Footer.Text }}</div>
+      {{- end }}
+      {{- if and .Config .Config.Footer.Links }}
+      <div>
+        {{- range $i, $link := .Config.Footer.Links }}
+          {{- if $i }} · {{ end }}
+          <a href="{{ $link.URL }}"{{ if $link.External }} target="_blank" rel="noopener noreferrer"{{ end }}>{{ $link.Title }}</a>
+        {{- end }}
+      </div>
+      {{- end }}
+      {{- if or (not .Config) (not .Config.Footer.ShowPoweredBy) (deref .Config.Footer.ShowPoweredBy) }}
+      <div class="muted">Served by <code>dorcs</code></div>
+      {{- end }}
+    </div>
+    {{- if .Version }}
+    <div class="footer-version">v{{ .Version }}</div>
+    {{- end }}
+  </div>
+</footer>
+{{ end }}

@@ -1,0 +1,101 @@
+package site
+
+import (
+	"html/template"
+	"sync"
+	"time"
+
+	"github.com/yuin/goldmark"
+)
+
+// Site indexes a directory of markdown documents and renders them to HTML.
+// It is safe for concurrent use.
+type Site struct {
+	RootDir string
+
+	// BasePath is the URL path prefix (e.g., "/docs"). Empty string means no prefix.
+	BasePath string
+
+	md goldmark.Markdown
+
+	mu    sync.RWMutex
+	index map[string]*Doc // key: normalized doc key ("" for root index), posix-style
+
+	// nav is a cached navigation tree derived from index.
+	nav *NavNode
+
+	// syntaxCSS holds the generated Chroma CSS for syntax highlighting.
+	syntaxCSS string
+}
+
+// Doc represents a single markdown document on disk.
+type Doc struct {
+	// Key is the normalized URL key.
+	//
+	// Routing rules (index.md):
+	// - "<root>/index.md"           -> Key = ""        (served at "/")
+	// - "<root>/guide/index.md"     -> Key = "guide"   (served at "/guide")
+	// - "<root>/guide/intro.md"     -> Key = "guide/intro" (served at "/guide/intro")
+	Key string
+
+	// FilePath is the absolute path to the backing .md file.
+	FilePath string
+
+	// RelPath is the path relative to Site.RootDir using "/" separators, including ".md".
+	RelPath string
+
+	// DirKey is the Key of the directory (without trailing slash) for grouping, e.g. "getting-started".
+	DirKey string
+
+	Title       string
+	Description string
+	Date        time.Time
+	Tags        []string
+	Draft       bool
+	Order       int // Order for sorting (lower numbers appear first)
+
+	// UpdatedAt is the file modtime.
+	UpdatedAt time.Time
+
+	// ContentHash is a hash of the file contents for caching/invalidation.
+	ContentHash string
+}
+
+// NavNode is a directory tree node for sidebar navigation.
+type NavNode struct {
+	// Name is the display name (e.g. "guide", "API").
+	Name string
+
+	// Key is the URL key for this folder/page.
+	// For folders, this is the folder key ("guide"); for pages, it is the doc key ("guide/getting-started").
+	Key string
+
+	// IsDir indicates whether this node is a directory.
+	IsDir bool
+
+	// Page points to the folder landing page (index.md) when IsDir is true and such a doc exists.
+	Page *Doc
+
+	// Children contains subdirectories (as NavNode with IsDir=true) and pages (IsDir=false).
+	Children []*NavNode
+}
+
+// RenderedDoc is the result of rendering a markdown file to HTML.
+type RenderedDoc struct {
+	Doc         *Doc
+	HTML        template.HTML
+	TocHTML     template.HTML // reserved for future TOC support
+	RawMarkdown string        // markdown prior to conversion (may include front matter)
+}
+
+// SearchResult represents a single search result.
+type SearchResult struct {
+	Doc         *Doc
+	Key         string
+	Title       string
+	Path        string
+	Snippet     string // Excerpt from content showing the match
+	Score       int    // Relevance score (higher is better)
+	HeadingID   string // ID of the heading where the match was found (for anchor links)
+	HeadingText string // Text of the heading where the match was found
+}

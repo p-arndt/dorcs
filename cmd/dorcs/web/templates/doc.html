@@ -1,0 +1,11 @@
+{{/* doc.html: renders a single document using the shared layout */}}
+
+{{define "doc"}}
+  {{template "layout" .}}
+{{end}}
+
+{{define "content"}}
+<article class="markdown">
+  {{.HTML}}
+</article>
+{{end}}

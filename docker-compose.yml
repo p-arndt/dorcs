@@ -1,0 +1,10 @@
+services:
+  dorcs:
+    build: .
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./docs:/app/docs
+    restart: unless-stopped
+    # Uncomment the command below to enable watch mode
+    command: ["/app/dorcs", "--watch"]
