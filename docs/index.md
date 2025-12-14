@@ -40,6 +40,7 @@ Ready to get started? Check out the [Getting Started guide](./01_getting-started
 - **Live reload** – watch mode for development with smart content updates
 - **Multiple themes** – choose from 20+ built-in themes
 - **Search** – built-in search functionality
+- **Edit Mode** – online editing with authentication (create, edit, delete files directly in the browser)
 
 ## How It Works
 

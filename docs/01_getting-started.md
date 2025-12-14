@@ -144,6 +144,24 @@ command: ["/app/dorcs", "--dir", "/docs", "--addr", "0.0.0.0:8080", "--watch"]
 ./dorcs --dir ./docs --theme midnight   # Custom theme
 ```
 
+## Edit Mode (Optional)
+
+Enable online editing to manage your documentation directly from the browser:
+
+1. **Enable in configuration** (`dorcs.yaml`):
+```yaml
+auth:
+  enabled: true
+  username: "admin"
+  password: "your-secure-password"
+```
+
+2. **Restart the server** and click **Login** in the footer
+3. **Click Edit** in the header to open the edit mode panel
+4. **Browse, edit, create, and delete files** directly in your browser
+
+See [Configuration](./03_configuration.md#authentication--edit-mode) for more details.
+
 ## Next Steps
 
 - ⚙️ [Configuration](./03_configuration.md) - Customize your site with `dorcs.yaml`

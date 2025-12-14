@@ -93,6 +93,38 @@ footer:
       url: "/privacy"
 ```
 
+### Authentication & Edit Mode
+
+Enable online editing with username/password authentication:
+
+```yaml
+auth:
+  enabled: true                  # Enable authentication and edit mode
+  username: "admin"              # Username for login
+  password: "your-secure-password"  # Password (will be hashed automatically)
+  sessions_path: ".dorcs_sessions.json"  # Optional: custom sessions file path
+```
+
+**How it works:**
+
+- When enabled, a **Login** button appears in the footer
+- After logging in, **Edit** and **Logout** buttons appear in the header
+- Click **Edit** to open the edit mode panel where you can:
+  - Browse and edit files
+  - Create new files and folders
+  - Delete files
+  - Save changes directly to the filesystem
+
+**Security Notes:**
+
+- Passwords are automatically hashed using Argon2id on first use
+- Sessions expire after 24 hours
+- All edit operations require authentication
+- The password hash is saved to the config file after first login
+
+> [!WARNING]
+> Only enable edit mode on trusted networks or behind proper authentication. The edit mode allows full file system access to your docs directory.
+
 ## Command-Line Flags
 
 All configuration options can be overridden via command-line flags:
@@ -159,6 +191,11 @@ footer:
       url: "/privacy"
     - title: "Terms"
       url: "/terms"
+
+auth:
+  enabled: true
+  username: "admin"
+  password: "secure-password-here"
 ```
 
 ## Next Steps
