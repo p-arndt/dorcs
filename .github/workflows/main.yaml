@@ -59,14 +59,14 @@ jobs:
           go build \
             -trimpath \
             -ldflags="-s -w -X dorcs-v2/cmd/dorcs.Version=${{ steps.get_tag.outputs.VERSION }}" \
-            -o ${{ matrix.binary_name }} \
+            -o binaries/${{ matrix.binary_name }} \
             ./cmd/dorcs
 
       - name: Upload binary artifact
         uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.binary_name }}
-          path: ${{ matrix.binary_name }}
+          path: binaries/${{ matrix.binary_name }}
           retention-days: 7
 
   build-docker:
@@ -135,6 +135,11 @@ jobs:
           cur=$(git describe --tags --abbrev=0 $(git rev-list --tags --skip=0 --max-count=1))
           echo "VERSION=$cur" >> $GITHUB_OUTPUT
 
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.25'
+
       - name: Install git-chglog
         run: |
           curl -sSL https://github.com/git-chglog/git-chglog/releases/download/v0.15.4/git-chglog_0.15.4_linux_amd64.tar.gz \
@@ -144,33 +149,29 @@ jobs:
       - name: Generate changelog
         run: |
           CUR=${{ steps.get_tag.outputs.VERSION }}
-          
           echo "## 🚀 Release $CUR" > RELEASE_NOTES.md
-          echo "" >> RELEASE_NOTES.md           
-          
+          echo "" >> RELEASE_NOTES.md
           git-chglog $CUR >> RELEASE_NOTES.md
 
-          echo "🔖 Generated notes:"
-          cat RELEASE_NOTES.md
-
-      - name: Download all artifacts
-        uses: actions/download-artifact@v4
-        with:
-          path: ./binaries
-
-      - name: Create checksums
+      - name: Build all binaries
         run: |
-          cd binaries
-          find . -type f -name "dorcs-*" -exec sha256sum {} \; > checksums.txt
+          mkdir -p binaries
+          for target in "linux/amd64:dorcs-linux-amd64" "linux/arm64:dorcs-linux-arm64" "windows/amd64:dorcs-windows-amd64.exe" "windows/arm64:dorcs-windows-arm64.exe" "darwin/amd64:dorcs-darwin-amd64" "darwin/arm64:dorcs-darwin-arm64"; do
+            IFS=':' read -r osarch binary <<< "$target"
+            IFS='/' read -r goos goarch <<< "$osarch"
+            echo "Building $binary for $goos/$goarch"
+            GOOS=$goos GOARCH=$goarch CGO_ENABLED=0 go build \
+              -trimpath \
+              -ldflags="-s -w -X dorcs-v2/cmd/dorcs.Version=${{ steps.get_tag.outputs.VERSION }}" \
+              -o binaries/$binary ./cmd/dorcs
+          done
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ steps.get_tag.outputs.VERSION }}
           body_path: RELEASE_NOTES.md
-          files: |
-            binaries/*
-            binaries/checksums.txt
+          files: binaries/*
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 

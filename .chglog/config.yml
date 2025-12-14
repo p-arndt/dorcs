@@ -1,0 +1,39 @@
+style: github
+template: CHANGELOG.tpl.md
+info:
+  title: CHANGELOG
+  repository_url: https://github.com/p-arndt/sentio
+options:
+  commits:
+    filters:
+      Type:
+        - feat
+        - fix
+        - refactor
+        - test
+        - docs
+        - chore
+  commit_groups:
+    sort_by: Custom
+    title_order:
+      - feat
+      - fix
+      - refactor
+      - test
+      - docs
+      - chore
+    title_maps:
+      feat: 💫 Features
+      fix: 🐛 Fixes
+      refactor: 🔧 Refactors
+      test: 🧪 Tests
+      docs: 📝 Docs
+      chore: Other
+  header:
+    pattern: "^(\\w*)\\:\\s(.*)$"
+    pattern_maps:
+      - Type
+      - Subject
+  notes:
+    keywords:
+      - BREAKING CHANGE
