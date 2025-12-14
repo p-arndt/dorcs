@@ -158,8 +158,13 @@ jobs:
         with:
           path: ./binaries
           pattern: 'dorcs-*'
-          if-no-artifact-found: warn
-          continue-on-error: true
+        continue-on-error: true
+
+      - name: Flatten artifact structure
+        run: |
+          cd binaries
+          find . -mindepth 2 -type f -exec mv {} . \; 2>/dev/null || true
+          find . -mindepth 1 -type d -empty -delete 2>/dev/null || true
 
       - name: Create checksums
         run: |
