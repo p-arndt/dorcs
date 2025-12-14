@@ -26,7 +26,7 @@ func (s *Site) RenderDoc(key string) (*RenderedDoc, error) {
 	raw = s.preprocessMarkdown(raw, doc)
 
 	// Generate and process TOC
-	toc, raw := s.generateAndProcessTOC(raw, doc, key)
+	toc, _, raw := s.generateAndProcessTOC(raw, doc, key)
 
 	// Reconcile metadata with fresh read
 	merged := s.reconcileMetadata(doc, meta, hash, modTime)
