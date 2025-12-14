@@ -67,6 +67,7 @@ func (s *Site) BuildIndex() error {
 			Draft:       meta.Draft,
 			Order:       meta.Order,
 			Author:      strings.TrimSpace(meta.Author),
+			After:       strings.TrimSpace(meta.After),
 			UpdatedAt:   stat.ModTime(),
 			ContentHash: contentHash,
 		}

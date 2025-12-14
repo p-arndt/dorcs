@@ -54,6 +54,7 @@ type Doc struct {
 	Draft       bool
 	Order       int    // Order for sorting (lower numbers appear first)
 	Author      string // Author name
+	After       string // Key of item this should appear after (use "index" for index.md)
 
 	// UpdatedAt is the file modtime.
 	UpdatedAt time.Time

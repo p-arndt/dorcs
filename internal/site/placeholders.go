@@ -139,7 +139,7 @@ func BuildChildren(ctx PlaceholderContext) template.HTML {
 	b.WriteString(`<h3 class="children-title">Pages in this section</h3>`)
 	b.WriteString(`<ul class="children-list">`)
 
-	// Sort children: directories first, then pages
+	// Sort children using the same logic as sortNav: directories first, then by order, numeric prefix, or title
 	sortedChildren := make([]*NavNode, len(children))
 	copy(sortedChildren, children)
 	sort.Slice(sortedChildren, func(i, j int) bool {
@@ -147,16 +147,79 @@ func BuildChildren(ctx PlaceholderContext) template.HTML {
 		if a.IsDir != b.IsDir {
 			return a.IsDir // directories first
 		}
-		// Both same type, sort by name/title
+
+		// Get order values (0 means no order specified)
+		aOrder := 0
+		bOrder := 0
+		if a.Page != nil {
+			aOrder = a.Page.Order
+		}
+		if b.Page != nil {
+			bOrder = b.Page.Order
+		}
+
+		// If both have order set (non-zero), sort by order
+		if aOrder != 0 && bOrder != 0 {
+			if aOrder != bOrder {
+				return aOrder < bOrder
+			}
+		} else if aOrder != 0 {
+			// a has order, b doesn't - a comes first
+			return true
+		} else if bOrder != 0 {
+			// b has order, a doesn't - b comes first
+			return false
+		}
+		// Both have no order (or both are 0), check filename prefixes
+
+		// Extract numeric prefixes from filenames
+		aPrefix := 0
+		bPrefix := 0
+		if a.Page != nil {
+			aPrefix = extractNumericPrefix(a.Page.RelPath)
+		}
+		if b.Page != nil {
+			bPrefix = extractNumericPrefix(b.Page.RelPath)
+		}
+
+		// If both have numeric prefixes, sort by prefix
+		if aPrefix != 0 && bPrefix != 0 {
+			if aPrefix != bPrefix {
+				return aPrefix < bPrefix
+			}
+		} else if aPrefix != 0 {
+			// a has prefix, b doesn't - a comes first
+			return true
+		} else if bPrefix != 0 {
+			// b has prefix, a doesn't - b comes first
+			return false
+		}
+		// Both have no prefix, fall back to title/key sorting
+
+		// Prefer page titles for dirs if present.
 		aName := a.Name
-		bName := b.Name
-		if a.Page != nil && a.Page.Title != "" {
+		if a.IsDir && a.Page != nil && strings.TrimSpace(a.Page.Title) != "" {
 			aName = a.Page.Title
 		}
-		if b.Page != nil && b.Page.Title != "" {
+		bName := b.Name
+		if b.IsDir && b.Page != nil && strings.TrimSpace(b.Page.Title) != "" {
 			bName = b.Page.Title
 		}
-		return strings.ToLower(aName) < strings.ToLower(bName)
+
+		// For leaf pages prefer doc title.
+		if !a.IsDir && a.Page != nil && strings.TrimSpace(a.Page.Title) != "" {
+			aName = a.Page.Title
+		}
+		if !b.IsDir && b.Page != nil && strings.TrimSpace(b.Page.Title) != "" {
+			bName = b.Page.Title
+		}
+
+		aName = strings.ToLower(strings.TrimSpace(aName))
+		bName = strings.ToLower(strings.TrimSpace(bName))
+		if aName != bName {
+			return aName < bName
+		}
+		return a.Key < b.Key
 	})
 
 	for _, child := range sortedChildren {
@@ -660,8 +723,6 @@ func BuildAuthor(ctx PlaceholderContext) template.HTML {
 	b.WriteString(`</div>`)
 	return template.HTML(b.String())
 }
-
-
 
 // BuildSummary generates page summary from description or first paragraph
 func BuildSummary(ctx PlaceholderContext) template.HTML {

@@ -104,6 +104,9 @@ func ReadFrontMatterAndHash(path string) (FrontMatter, string, error) {
 	if v, ok := data["author"].(string); ok {
 		fm.Author = v
 	}
+	if v, ok := data["after"].(string); ok {
+		fm.After = v
+	}
 
 	return fm, hash, nil
 }
@@ -193,6 +196,9 @@ func ReadMarkdownStripFrontMatter(path string) (raw string, metaOut FrontMatter,
 	}
 	if v, ok := data["author"].(string); ok {
 		fm.Author = v
+	}
+	if v, ok := data["after"].(string); ok {
+		fm.After = v
 	}
 
 	// NOTE: raw markdown is returned unchanged for now (may still include front matter).

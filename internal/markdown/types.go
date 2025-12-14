@@ -10,4 +10,5 @@ type FrontMatter struct {
 	Draft       bool     `yaml:"draft" toml:"draft" json:"draft"`
 	Order       int      `yaml:"order" toml:"order" json:"order"`    // Order for sorting (lower numbers appear first)
 	Author      string   `yaml:"author" toml:"author" json:"author"` // Author name
+	After       string   `yaml:"after" toml:"after" json:"after"`    // Key of item this should appear after (use "index" for index.md)
 }
