@@ -166,19 +166,15 @@ jobs:
           find . -mindepth 2 -type f -exec mv {} . \; 2>/dev/null || true
           find . -mindepth 1 -type d -empty -delete 2>/dev/null || true
 
-      - name: Create checksums
-        run: |
-          cd binaries
-          find . -type f -name "dorcs-*" -exec sha256sum {} \; > checksums.txt
-
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ steps.get_tag.outputs.VERSION }}
           body_path: RELEASE_NOTES.md
           files: |
-            binaries/*
-            binaries/checksums.txt
+            binaries/dorcs-*
+          draft: false
+          prerelease: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
