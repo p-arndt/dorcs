@@ -15,10 +15,11 @@ func TestBuildTOC(t *testing.T) {
 	md := NewRenderer("github")
 
 	tests := []struct {
-		name     string
-		input    string
-		contains []string // substrings that should be in TOC
-		notEmpty bool
+		name        string
+		input       string
+		contains    []string // substrings that should be in TOC
+		notContains []string // substrings that should NOT be in TOC
+		notEmpty    bool
 	}{
 		{
 			name: "single h2",
@@ -26,8 +27,9 @@ func TestBuildTOC(t *testing.T) {
 
 ## Section One
 Content here.`,
-			contains: []string{"toc-list", "Section One"},
-			notEmpty: true,
+			contains:    []string{"toc-list", "Section One"},
+			notContains: []string{"Main Title"}, // Single H1 should be excluded
+			notEmpty:    true,
 		},
 		{
 			name: "multiple h2",
@@ -65,12 +67,26 @@ Content.`,
 			notEmpty: false,
 		},
 		{
-			name: "h1 ignored",
+			name: "single h1 excluded",
 			input: `# H1 Title
 
 ## H2 Section
 Content.`,
-			contains: []string{"H2 Section"},
+			contains:    []string{"H2 Section"},
+			notContains: []string{"H1 Title"}, // Single H1 should be excluded
+			notEmpty:    true,
+		},
+		{
+			name: "multiple h1 included",
+			input: `# First H1 Title
+
+## H2 Section
+
+# Second H1 Title
+
+## Another H2 Section
+Content.`,
+			contains: []string{"First H1 Title", "Second H1 Title", "H2 Section", "Another H2 Section"},
 			notEmpty: true,
 		},
 		{
@@ -98,6 +114,11 @@ Content.`,
 				for _, substr := range tt.contains {
 					if !strings.Contains(tocStr, substr) {
 						t.Errorf("TOC should contain %q, got %q", substr, tocStr)
+					}
+				}
+				for _, substr := range tt.notContains {
+					if strings.Contains(tocStr, substr) {
+						t.Errorf("TOC should NOT contain %q, got %q", substr, tocStr)
 					}
 				}
 			} else {

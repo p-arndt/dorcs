@@ -21,7 +21,8 @@ type tocItem struct {
 }
 
 // BuildTOC parses markdown headings from the source and generates a nested <ul>...</ul> table of contents.
-// It includes h2/h3/h4 with visual hierarchy (h2 = top-level, h3 = nested, h4 = more nested).
+// It includes h1/h2/h3/h4 with visual hierarchy (h1 = top-level, h2 = nested, h3 = more nested, h4 = most nested).
+// If there's only one H1 heading, it's excluded (typically the page title). If there are multiple H1s, they're included.
 // If no headings are found, it returns empty.
 func BuildTOC(md goldmark.Markdown, markdownSource string) template.HTML {
 	src := []byte(markdownSource)
@@ -31,9 +32,28 @@ func BuildTOC(md goldmark.Markdown, markdownSource string) template.HTML {
 	reader := text.NewReader(src)
 	doc := md.Parser().Parse(reader, parser.WithContext(ctx))
 
+	// First pass: count H1 headings
+	h1Count := 0
+	_ = gmast.Walk(doc, func(n gmast.Node, entering bool) (gmast.WalkStatus, error) {
+		if !entering {
+			return gmast.WalkContinue, nil
+		}
+		h, ok := n.(*gmast.Heading)
+		if !ok {
+			return gmast.WalkContinue, nil
+		}
+		if h.Level == 1 {
+			h1Count++
+		}
+		return gmast.WalkContinue, nil
+	})
+
+	// Determine if we should include H1 headings
+	includeH1 := h1Count > 1
+
 	var items []tocItem
 
-	// Walk the AST, collect headings
+	// Second pass: collect headings
 	_ = gmast.Walk(doc, func(n gmast.Node, entering bool) (gmast.WalkStatus, error) {
 		if !entering {
 			return gmast.WalkContinue, nil
@@ -43,8 +63,13 @@ func BuildTOC(md goldmark.Markdown, markdownSource string) template.HTML {
 			return gmast.WalkContinue, nil
 		}
 
-		// Include H2, H3, H4 for better hierarchy
-		if h.Level < 2 || h.Level > 4 {
+		// Include H1 only if there are multiple H1s, otherwise skip single H1
+		if h.Level == 1 && !includeH1 {
+			return gmast.WalkContinue, nil
+		}
+
+		// Include H1, H2, H3, H4 for better hierarchy
+		if h.Level < 1 || h.Level > 4 {
 			return gmast.WalkContinue, nil
 		}
 
@@ -82,14 +107,27 @@ func BuildTOC(md goldmark.Markdown, markdownSource string) template.HTML {
 	}
 
 	// Build properly nested list HTML.
-	// h2 items are top-level, h3 items nest inside the preceding h2, h4 inside h3, etc.
+	// If H1s are included: h1 items are top-level, h2 items nest inside the preceding h1, h3 inside h2, h4 inside h3, etc.
+	// If H1s are excluded: h2 items are top-level, h3 items nest inside the preceding h2, h4 inside h3, etc.
 	var b strings.Builder
 
 	b.WriteString(`<ul class="toc-list">`)
 
+	// Determine base level based on whether H1s are included
+	baseLevel := 1
+	if !includeH1 && len(items) > 0 {
+		// If we excluded H1s, find the minimum level in items
+		minLevel := items[0].Level
+		for _, it := range items {
+			if it.Level < minLevel {
+				minLevel = it.Level
+			}
+		}
+		baseLevel = minLevel
+	}
+
 	// Stack tracks how many nested <ul> are open beyond the root.
-	// Level 2 = root list (already open), level 3 = one nested, level 4 = two nested.
-	baseLevel := 2
+	// baseLevel = root list (already open), baseLevel+1 = one nested, etc.
 	currentLevel := baseLevel
 
 	for i, it := range items {
