@@ -147,6 +147,11 @@
         document.title = newTitle.textContent;
       }
 
+      // Re-initialize copy buttons for code blocks
+      if (window.dorcsInitCopyButtons) {
+        window.dorcsInitCopyButtons();
+      }
+
       // Restore scroll position after a short delay to allow content to render
       setTimeout(function() {
         window.scrollTo(scrollX, scrollY);
