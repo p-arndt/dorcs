@@ -26,7 +26,15 @@
   {{- end }}
 
   {{- if and .Config .Config.Site.Favicon }}
-  <link rel="icon" href="{{ .Config.Site.Favicon }}" type="image/x-icon" />
+  {{- $favicon := .Config.Site.Favicon }}
+  {{- if and (not (hasPrefix $favicon "http://")) (not (hasPrefix $favicon "https://")) }}
+    {{- if hasPrefix $favicon "/" }}
+      {{- $favicon = printf "%s%s" .BasePath $favicon }}
+    {{- else }}
+      {{- $favicon = printf "%s/%s" .BasePath $favicon }}
+    {{- end }}
+  {{- end }}
+  <link rel="icon" href="{{ $favicon }}" type="image/x-icon" />
   {{- else }}
   <link rel="icon" href="{{ .BasePath }}/static/favicon.ico" type="image/x-icon" />
   {{- end }}

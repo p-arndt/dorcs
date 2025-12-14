@@ -32,9 +32,14 @@ dorcs looks for the configuration file in this order:
 site:
   title: "My Docs"              # Site title (shown in header)
   description: "..."            # Meta description
-  logo: "/static/logo.png"      # Logo image URL (optional)
-  favicon: "/static/favicon.ico" # Custom favicon (optional)
+  logo: "/logo.png"             # Logo image URL (optional)
+                                 # Place logo.png in the root directory where dorcs is running
+  favicon: "/favicon.ico"       # Custom favicon (optional)
+                                 # Place favicon.ico in the root directory where dorcs is running
 ```
+
+> [!NOTE]
+> **Static Files Location**: Logo and favicon files should be placed in the **root directory** where you run the dorcs executable (the current working directory). The server will first check the root directory for static assets, then fall back to the docs directory. Files are accessible at their path (e.g., `/logo.png`). If you're using a `--base-url` prefix, the BasePath will be automatically prepended to these URLs.
 
 ### Theme
 
@@ -159,8 +164,8 @@ site:
 site:
   title: "My Awesome Documentation"
   description: "Complete guide to my project"
-  logo: "/static/logo.svg"
-  favicon: "/static/favicon.ico"
+  logo: "/logo.svg"        # Place logo.svg in the root directory where dorcs is running
+  favicon: "/favicon.ico"  # Place favicon.ico in the root directory where dorcs is running
 
 theme:
   mode: auto

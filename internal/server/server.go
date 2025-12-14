@@ -21,6 +21,7 @@ import (
 // Config contains runtime configuration for the HTTP app.
 type Config struct {
 	DocsDir   string
+	RootDir   string // Root directory where dorcs is running (for static assets like logo/favicon)
 	SiteTitle string
 	BasePath  string
 	Cache     bool
@@ -206,7 +207,8 @@ func isStaticAsset(filePath string) bool {
 	return staticExts[ext]
 }
 
-// tryServeStaticAsset attempts to serve a static asset from the docs folder.
+// tryServeStaticAsset attempts to serve a static asset.
+// First checks the root directory (where dorcs is running), then falls back to docs directory.
 // Returns true if the file was found and served, false otherwise.
 func (h *Handler) tryServeStaticAsset(w http.ResponseWriter, _ *http.Request, relPath string) bool {
 	// Only serve files that look like static assets
@@ -215,13 +217,43 @@ func (h *Handler) tryServeStaticAsset(w http.ResponseWriter, _ *http.Request, re
 	}
 
 	h.mu.RLock()
+	rootDir := h.cfg.RootDir
 	docsDir := h.cfg.DocsDir
 	h.mu.RUnlock()
 
-	// Build the full file path
-	filePath := filepath.Join(docsDir, filepath.FromSlash(relPath))
+	// Clean the relative path to prevent directory traversal
+	cleanRelPath := filepath.Clean(filepath.FromSlash(relPath))
+	if strings.HasPrefix(cleanRelPath, "..") || filepath.IsAbs(cleanRelPath) {
+		return false
+	}
 
-	// Security: ensure the file is within the docs directory
+	// Try root directory first (for logo, favicon, etc.)
+	var filePath string
+	var absBaseDir string
+	var err error
+
+	if rootDir != "" {
+		filePath = filepath.Join(rootDir, cleanRelPath)
+		absBaseDir, err = filepath.Abs(rootDir)
+		if err == nil {
+			absFilePath, err := filepath.Abs(filePath)
+			if err == nil {
+				// Security: ensure the file is within the root directory
+				if strings.HasPrefix(absFilePath, absBaseDir+string(filepath.Separator)) || absFilePath == absBaseDir {
+					if file, err := os.Open(filePath); err == nil {
+						defer file.Close()
+						if stat, err := file.Stat(); err == nil && !stat.IsDir() {
+							// Found in root directory, serve it
+							return h.serveStaticFile(w, file, stat, cleanRelPath)
+						}
+					}
+				}
+			}
+		}
+	}
+
+	// Fall back to docs directory
+	filePath = filepath.Join(docsDir, cleanRelPath)
 	absDocsDir, err := filepath.Abs(docsDir)
 	if err != nil {
 		return false
@@ -230,6 +262,7 @@ func (h *Handler) tryServeStaticAsset(w http.ResponseWriter, _ *http.Request, re
 	if err != nil {
 		return false
 	}
+	// Security: ensure the file is within the docs directory
 	if !strings.HasPrefix(absFilePath, absDocsDir+string(filepath.Separator)) && absFilePath != absDocsDir {
 		return false
 	}
@@ -245,6 +278,12 @@ func (h *Handler) tryServeStaticAsset(w http.ResponseWriter, _ *http.Request, re
 	if err != nil || stat.IsDir() {
 		return false
 	}
+
+	return h.serveStaticFile(w, file, stat, cleanRelPath)
+}
+
+// serveStaticFile serves a static file with appropriate headers.
+func (h *Handler) serveStaticFile(w http.ResponseWriter, file *os.File, stat os.FileInfo, relPath string) bool {
 
 	// Set content type based on extension
 	ext := strings.ToLower(filepath.Ext(relPath))
@@ -291,8 +330,11 @@ func (h *Handler) tryServeStaticAsset(w http.ResponseWriter, _ *http.Request, re
 	// Set content length
 	w.Header().Set("Content-Length", fmt.Sprintf("%d", stat.Size()))
 
+	// Reset file pointer to beginning (in case it was already read)
+	file.Seek(0, 0)
+
 	// Copy file content to response
-	_, err = io.Copy(w, file)
+	_, err := io.Copy(w, file)
 	return err == nil
 }
 

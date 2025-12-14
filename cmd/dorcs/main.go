@@ -53,6 +53,16 @@ func main() {
 	)
 	flag.Parse()
 
+	// Get root directory (where dorcs is running) for static assets like logo/favicon
+	rootDir, err := os.Getwd()
+	if err != nil {
+		log.Fatalf("get working directory: %v", err)
+	}
+	absRootDir, err := filepath.Abs(rootDir)
+	if err != nil {
+		log.Fatalf("resolve root dir: %v", err)
+	}
+
 	// Resolve and validate docs directory
 	absDir, err := filepath.Abs(*dir)
 	if err != nil {
@@ -130,6 +140,7 @@ func main() {
 	// Document handler (created before watcher so it can be referenced in config reload callback)
 	handler := server.New(server.Config{
 		DocsDir:           absDir,
+		RootDir:           absRootDir,
 		SiteTitle:         siteTitle,
 		BasePath:          prefix,
 		Cache:             *cache,

@@ -16,8 +16,16 @@
           </svg>
         </button>
         {{- if and .Config .Config.Site.Logo }}
+        {{- $logo := .Config.Site.Logo }}
+        {{- if and (not (hasPrefix $logo "http://")) (not (hasPrefix $logo "https://")) }}
+          {{- if hasPrefix $logo "/" }}
+            {{- $logo = printf "%s%s" .BasePath $logo }}
+          {{- else }}
+            {{- $logo = printf "%s/%s" .BasePath $logo }}
+          {{- end }}
+        {{- end }}
         <a class="brand" href="{{ .BasePath }}/">
-          <img src="{{ .Config.Site.Logo }}" alt="{{ .SiteTitle }}" style="height: 28px; vertical-align: middle;" />
+          <img src="{{ $logo }}" alt="{{ .SiteTitle }}" style="height: 28px; vertical-align: middle;" />
         </a>
         {{- else }}
         <a class="brand" href="{{ .BasePath }}/">{{ .SiteTitle }}</a>

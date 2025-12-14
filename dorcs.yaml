@@ -12,10 +12,12 @@ site:
   description: "Single static binary documentation server for Markdown files"
 
   # Logo URL - replaces text title if set (optional)
-  # logo: "/static/logo.png"
+  # Place logo.png in the root directory where dorcs is running and reference it as "/logo.png"
+  # logo: "/logo.png"
 
   # Custom favicon URL (optional)
-  # favicon: "/static/custom-favicon.ico"
+  # Place favicon.ico in the root directory where dorcs is running and reference it as "/favicon.ico"
+  # favicon: "/favicon.ico"
 
 # Theme and styling configuration
 theme:
