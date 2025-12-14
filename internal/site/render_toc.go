@@ -4,16 +4,30 @@ import (
 	"html"
 	"html/template"
 	"net/url"
+	"strconv"
 	"strings"
 
 	"dorcs-v2/internal/markdown"
 )
 
-// generateAndProcessTOC generates a table of contents and processes [[TOC]] and [[TOC-ROOT]] placeholders.
+// generateAndProcessTOC generates a table of contents and processes all placeholders.
 // Returns the TOC HTML (for sidebar), root TOC HTML, and the processed markdown.
 func (s *Site) generateAndProcessTOC(raw string, doc *Doc, key string) (template.HTML, template.HTML, string) {
+	// Create placeholder context
+	ctx := PlaceholderContext{
+		CurrentDoc: doc,
+		CurrentKey: key,
+		BasePath:   s.BasePath,
+		Site:       s,
+	}
+
+	// Build all placeholders
+	placeholders := make(markdown.PlaceholderMap)
+
+	// Check for TOC placeholders
 	hasTOCPlaceholder := strings.Contains(raw, "[[TOC]]")
 	hasRootTOCPlaceholder := strings.Contains(raw, "[[TOC-ROOT]]")
+	hasTOCFiltered := strings.Contains(raw, "[[TOC:")
 
 	var toc template.HTML
 	var rootTOC template.HTML
@@ -21,20 +35,53 @@ func (s *Site) generateAndProcessTOC(raw string, doc *Doc, key string) (template
 	// Generate root navigation TOC if needed
 	if hasRootTOCPlaceholder {
 		rootTOC = s.BuildRootNavTOC(s.BasePath)
+		placeholders["TOC-ROOT"] = rootTOC
 	}
 
 	// Generate page TOC if needed
 	if hasTOCPlaceholder {
 		// [[TOC]] always generates heading-based TOC for the current page
 		toc = markdown.BuildTOC(s.md, raw)
+		placeholders["TOC"] = toc
 	}
 
-	// Process both placeholders
-	var found map[string]bool
-	raw, found = markdown.ProcessTOCPlaceholder(raw, toc, rootTOC)
+	// Handle filtered TOC (e.g., [[TOC:2]] for depth 2)
+	if hasTOCFiltered {
+		// Extract depth from placeholders like [[TOC:2]]
+		lines := strings.Split(raw, "\n")
+		for _, line := range lines {
+			trimmed := strings.TrimSpace(line)
+			if strings.HasPrefix(trimmed, "[[TOC:") && strings.HasSuffix(trimmed, "]]") {
+				depthStr := strings.TrimPrefix(strings.TrimSuffix(trimmed, "]]"), "[[TOC:")
+				if depth, err := strconv.Atoi(depthStr); err == nil && depth > 0 {
+					// Build filtered TOC with specified depth
+					filteredTOC := markdown.BuildTOCWithDepth(s.md, raw, depth)
+					placeholders["TOC:"+depthStr] = filteredTOC
+				}
+			}
+		}
+	}
 
-	// If no placeholders were found, generate default TOC for sidebar
-	if !found["TOC"] && !found["TOC-ROOT"] {
+	// Generate all other placeholders
+	placeholders["BREADCRUMBS"] = BuildBreadcrumbs(ctx)
+	placeholders["CHILDREN"] = BuildChildren(ctx)
+	placeholders["SIBLINGS"] = BuildSiblings(ctx)
+	placeholders["RELATED"] = BuildRelated(ctx)
+	placeholders["RECENT"] = BuildRecent(ctx)
+	placeholders["TAGS"] = BuildTags(ctx)
+	placeholders["INDEX"] = BuildIndex(ctx)
+	placeholders["DATE"] = BuildDate(ctx)
+	placeholders["PUBLISHED"] = BuildDate(ctx) // Alias
+	placeholders["LAST-UPDATED"] = BuildLastUpdated(ctx)
+	placeholders["AUTHOR"] = BuildAuthor(ctx)
+	placeholders["SUMMARY"] = BuildSummary(ctx)
+	placeholders["PAGES-BY-TAG"] = BuildPagesByTag(ctx)
+
+	// Process all placeholders
+	raw = markdown.ProcessPlaceholders(raw, placeholders)
+
+	// If no TOC placeholders were found, generate default TOC for sidebar
+	if !hasTOCPlaceholder && !hasRootTOCPlaceholder {
 		// Generate a table of contents from headings (h2/h3 by default) for sidebar
 		toc = markdown.BuildTOC(s.md, raw)
 	}

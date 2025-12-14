@@ -177,6 +177,157 @@ func BuildTOC(md goldmark.Markdown, markdownSource string) template.HTML {
 	return template.HTML(b.String())
 }
 
+// BuildTOCWithDepth parses markdown headings and generates a TOC with a maximum depth.
+// maxDepth specifies the maximum heading level to include (1-6).
+func BuildTOCWithDepth(md goldmark.Markdown, markdownSource string, maxDepth int) template.HTML {
+	if maxDepth < 1 || maxDepth > 6 {
+		maxDepth = 4 // Default to 4
+	}
+
+	src := []byte(markdownSource)
+
+	// Parse to AST so we can inspect headings and their auto IDs.
+	ctx := parser.NewContext()
+	reader := text.NewReader(src)
+	doc := md.Parser().Parse(reader, parser.WithContext(ctx))
+
+	// First pass: count H1 headings
+	h1Count := 0
+	_ = gmast.Walk(doc, func(n gmast.Node, entering bool) (gmast.WalkStatus, error) {
+		if !entering {
+			return gmast.WalkContinue, nil
+		}
+		h, ok := n.(*gmast.Heading)
+		if !ok {
+			return gmast.WalkContinue, nil
+		}
+		if h.Level == 1 {
+			h1Count++
+		}
+		return gmast.WalkContinue, nil
+	})
+
+	// Determine if we should include H1 headings
+	includeH1 := h1Count > 1
+
+	var items []tocItem
+
+	// Second pass: collect headings up to maxDepth
+	_ = gmast.Walk(doc, func(n gmast.Node, entering bool) (gmast.WalkStatus, error) {
+		if !entering {
+			return gmast.WalkContinue, nil
+		}
+		h, ok := n.(*gmast.Heading)
+		if !ok {
+			return gmast.WalkContinue, nil
+		}
+
+		// Include H1 only if there are multiple H1s, otherwise skip single H1
+		if h.Level == 1 && !includeH1 {
+			return gmast.WalkContinue, nil
+		}
+
+		// Filter by maxDepth
+		if h.Level < 1 || h.Level > maxDepth {
+			return gmast.WalkContinue, nil
+		}
+
+		// goldmark stores attributes as interface{}; for heading ids it's typically []byte.
+		idVal, _ := h.AttributeString("id")
+		var idStr string
+		switch v := idVal.(type) {
+		case []byte:
+			idStr = strings.TrimSpace(string(v))
+		case string:
+			idStr = strings.TrimSpace(v)
+		default:
+			idStr = ""
+		}
+		if idStr == "" {
+			// AutoHeadingID should provide this; if not, skip.
+			return gmast.WalkContinue, nil
+		}
+
+		txt := strings.TrimSpace(ExtractNodeText(h, src))
+		if txt == "" {
+			return gmast.WalkContinue, nil
+		}
+
+		items = append(items, tocItem{
+			Level: h.Level,
+			ID:    idStr,
+			Text:  txt,
+		})
+		return gmast.WalkContinue, nil
+	})
+
+	if len(items) == 0 {
+		return ""
+	}
+
+	// Build properly nested list HTML (same logic as BuildTOC)
+	var b strings.Builder
+	b.WriteString(`<ul class="toc-list">`)
+
+	baseLevel := 1
+	if !includeH1 && len(items) > 0 {
+		minLevel := items[0].Level
+		for _, it := range items {
+			if it.Level < minLevel {
+				minLevel = it.Level
+			}
+		}
+		baseLevel = minLevel
+	}
+
+	currentLevel := baseLevel
+
+	for i, it := range items {
+		level := it.Level
+		if level < baseLevel {
+			level = baseLevel
+		}
+
+		// Close lists if going back up
+		for currentLevel > level {
+			b.WriteString(`</li></ul>`)
+			currentLevel--
+		}
+
+		// Open nested lists if going deeper
+		for currentLevel < level {
+			b.WriteString(`<ul class="toc-nested">`)
+			currentLevel++
+		}
+
+		// Close previous sibling li if same level (except first item)
+		if i > 0 && level == items[i-1].Level {
+			b.WriteString(`</li>`)
+		}
+
+		// Write the item
+		b.WriteString(`<li class="toc-item toc-h`)
+		b.WriteString(fmt.Sprintf("%d", it.Level))
+		b.WriteString(`"><a href="#`)
+		b.WriteString(html.EscapeString(it.ID))
+		b.WriteString(`">`)
+		b.WriteString(html.EscapeString(it.Text))
+		b.WriteString(`</a>`)
+	}
+
+	// Close all remaining open items and lists
+	for currentLevel >= baseLevel {
+		b.WriteString(`</li>`)
+		if currentLevel > baseLevel {
+			b.WriteString(`</ul>`)
+		}
+		currentLevel--
+	}
+	b.WriteString(`</ul>`)
+
+	return template.HTML(b.String())
+}
+
 // ExtractNodeText extracts plain text from a goldmark AST node using the source buffer.
 func ExtractNodeText(n gmast.Node, source []byte) string {
 	var b strings.Builder

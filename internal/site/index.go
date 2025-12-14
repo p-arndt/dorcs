@@ -66,6 +66,7 @@ func (s *Site) BuildIndex() error {
 			Tags:        append([]string(nil), meta.Tags...),
 			Draft:       meta.Draft,
 			Order:       meta.Order,
+			Author:      strings.TrimSpace(meta.Author),
 			UpdatedAt:   stat.ModTime(),
 			ContentHash: contentHash,
 		}

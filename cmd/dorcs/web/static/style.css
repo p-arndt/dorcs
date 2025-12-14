@@ -585,6 +585,60 @@ footer.site-footer .footer-version {
     color: var(--muted);
 }
 
+/* Breadcrumbs */
+.breadcrumbs {
+    margin: 1rem 0 1.5rem;
+    font-size: 0.9rem;
+}
+
+.breadcrumb-list {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    gap: 4px;
+}
+
+.breadcrumb-item {
+    display: flex;
+    align-items: center;
+}
+
+.breadcrumb-item a {
+    color: var(--muted);
+    text-decoration: none;
+    transition: color 0.2s ease;
+    display: flex;
+    align-items: center;
+}
+
+.breadcrumb-item a:hover {
+    color: var(--link);
+    text-decoration: none;
+}
+
+.breadcrumb-separator {
+    display: flex;
+    align-items: center;
+    color: var(--muted);
+    opacity: 0.6;
+    margin: 0 2px;
+    flex-shrink: 0;
+}
+
+.breadcrumb-separator svg {
+    width: 14px;
+    height: 14px;
+    display: block;
+}
+
+.breadcrumb-current {
+    color: var(--fg);
+    font-weight: 500;
+}
+
 /* Doc list (index page) */
 .doc-list {
     list-style: none;

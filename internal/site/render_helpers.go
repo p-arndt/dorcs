@@ -50,6 +50,9 @@ func (s *Site) reconcileMetadata(doc *Doc, meta markdown.FrontMatter, hash strin
 	}
 	merged.Draft = meta.Draft
 	merged.Order = meta.Order
+	if a := strings.TrimSpace(meta.Author); a != "" {
+		merged.Author = a
+	}
 	if ds := strings.TrimSpace(meta.Date); ds != "" {
 		if t, ok := parseDate(ds); ok {
 			merged.Date = t

@@ -8,5 +8,6 @@ type FrontMatter struct {
 	Date        string   `yaml:"date" toml:"date" json:"date"`
 	Tags        []string `yaml:"tags" toml:"tags" json:"tags"`
 	Draft       bool     `yaml:"draft" toml:"draft" json:"draft"`
-	Order       int      `yaml:"order" toml:"order" json:"order"` // Order for sorting (lower numbers appear first)
+	Order       int      `yaml:"order" toml:"order" json:"order"`    // Order for sorting (lower numbers appear first)
+	Author      string   `yaml:"author" toml:"author" json:"author"` // Author name
 }

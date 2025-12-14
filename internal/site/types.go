@@ -52,7 +52,8 @@ type Doc struct {
 	Date        time.Time
 	Tags        []string
 	Draft       bool
-	Order       int // Order for sorting (lower numbers appear first)
+	Order       int    // Order for sorting (lower numbers appear first)
+	Author      string // Author name
 
 	// UpdatedAt is the file modtime.
 	UpdatedAt time.Time

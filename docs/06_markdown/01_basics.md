@@ -1,19 +1,14 @@
 ---
-title: "Markdown Features"
-description: "Complete guide to all markdown features supported by dorcs."
-tags: [markdown, features, guide]
-date: 2025-12-13
+title: "Markdown Basics"
+description: "Basic markdown features"
+tags: [markdown, basics]
+date: 2025-12-14
 draft: false
 ---
 
-# Markdown Features
+# Markdown Basics
 
-dorcs supports a comprehensive set of markdown features, including GitHub Flavored Markdown (GFM), syntax highlighting, footnotes, alert blocks, and more. This guide covers all available features with examples.
-
-
-## Basic Markdown
-
-### Headings
+## Headings
 
 Create headings using `#` symbols:
 
@@ -28,7 +23,6 @@ Create headings using `#` symbols:
 
 **Result:**
 
-# Heading 1
 ## Heading 2
 ### Heading 3
 #### Heading 4
@@ -136,14 +130,14 @@ ___bold and italic___
 ### Images
 
 ```markdown
-![Alt text](./logo.png)
-![Alt text with title](./logo.png "Logo title")
+![Alt text](../logo.png)
+![Alt text with title](../logo.png "Logo title")
 ![Alt text](https://example.com/image.png)
 ```
 
 **Result:**
 
-![Alt text](./logo.png)
+![Alt text](../logo.png)
 
 ### Blockquotes
 
@@ -287,30 +281,6 @@ https://example.com
 www.example.com
 email@example.com
 
-
-## Table of Contents
-
-Create a table of contents using the placeholder:
-
-```markdown
-[[TOC]]
-```
-
-**Result:**
-
-[[TOC]]
-
-## Table of Contents Root Navigation
-
-Create a table of contents for the root navigation using the placeholder:
-
-```markdown
-[[TOC-ROOT]]
-```
-
-**Result:**
-
-[[TOC-ROOT]]
 
 ## Code Blocks & Syntax Highlighting
 
@@ -465,59 +435,6 @@ ORDER BY created_at DESC;
 > [!TIP]
 > The syntax highlighting theme can be configured in `dorcs.yaml` using the `code_theme` option. See [Configuration](./03_configuration.md) for details.
 
-## Alert Blocks
-
-dorcs supports GitHub-style alert blocks for callouts and important information:
-
-```markdown
-> [!NOTE]
-> This is a note alert block.
-> It can contain multiple lines.
-
-> [!TIP]
-> This is a tip alert block.
-> Use it for helpful suggestions.
-
-> [!IMPORTANT]
-> This is an important alert block.
-> Use it for critical information.
-
-> [!WARNING]
-> This is a warning alert block.
-> Use it to warn users about potential issues.
-
-> [!CAUTION]
-> This is a caution alert block.
-> Use it for dangerous or risky operations.
-```
-
-**Result:**
-
-> [!NOTE]
-> This is a note alert block.
-> It can contain multiple lines.
-
-
-> [!TIP]
-> This is a tip alert block.
-> Use it for helpful suggestions.
-
-
-> [!IMPORTANT]
-> This is an important alert block.
-> Use it for critical information.
-
-
-> [!WARNING]
-> This is a warning alert block.
-> Use it to warn users about potential issues.
-
-
-> [!CAUTION]
-> This is a caution alert block.
-> Use it for dangerous or risky operations.
-
-
 ## Footnotes
 
 Create footnotes using the footnote syntax:
@@ -542,46 +459,6 @@ Another sentence with multiple footnotes[^2][^3].
 [^2]: This is the second footnote.
 [^3]: This is the third footnote with **bold text** and `code`.
 
-## YAML Front Matter
-
-Add metadata to your markdown files using YAML front matter at the top of the file:
-
-```yaml
----
-title: "Page Title"
-description: "Page description for SEO"
-date: 2025-12-13
-tags: [tag1, tag2, tag3]
-draft: false
-order: 1
----
-```
-
-**Available fields:**
-
-- `title` - Page title (used in navigation and browser tab)
-- `description` - Meta description for SEO
-- `date` - Publication date (YYYY-MM-DD format)
-- `tags` - List of tags for categorization
-- `draft` - Set to `true` to hide from navigation (when using `--no-drafts`)
-- `order` - Numeric value for sorting pages in navigation (lower numbers appear first)
-
-**Example:**
-
-```yaml
----
-title: "Getting Started"
-description: "Learn how to get started with dorcs"
-date: 2025-12-13
-tags: [tutorial, beginner, quickstart]
-draft: false
-order: 1
----
-
-# Getting Started
-
-Your content here...
-```
 
 ## HTML Support
 
@@ -727,22 +604,3 @@ Check out the [footnote](#footnotes) section[^example] for more details.
 Check out the [footnote](#footnotes) section[^example] for more details.
 
 [^example]: This is an example footnote in a combined example.
-
-## Summary
-
-dorcs supports a comprehensive set of markdown features:
-
-- ✅ Standard Markdown (headings, lists, links, images, etc.)
-- ✅ GitHub Flavored Markdown (tables, strikethrough, task lists)
-- ✅ Syntax highlighting for 200+ languages
-- ✅ Alert blocks (NOTE, TIP, IMPORTANT, WARNING, CAUTION)
-- ✅ Footnotes
-- ✅ YAML front matter
-- ✅ HTML embedding
-- ✅ Auto heading IDs
-- ✅ Typographer (smart quotes, dashes, etc.)
-- ✅ Hard wraps
-
-For more information, see:
-- [Getting Started](./01_getting-started.md) - Quick start guide
-- [Configuration](./03_configuration.md) - Customize your site
