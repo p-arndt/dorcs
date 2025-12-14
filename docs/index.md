@@ -26,7 +26,7 @@ Ready to get started? Check out the [Getting Started guide](./01_getting-started
 - ⚙️ [Configuration](./03_configuration.md) - Customize your site with `dorcs.yaml`
 - 🚢 [Deployment](./04_deployment.md) - Deploy to production
 - 🎨 [Themes](./05_themes.md) - Browse all available themes
-- 📝 [Markdown Features](./06_markdown-features.md) - Complete guide to markdown features
+- 📝 [Markdown Features](./06_markdown/index.md) - Complete guide to markdown features
 
 ## Features
 

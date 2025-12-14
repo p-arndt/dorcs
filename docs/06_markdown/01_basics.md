@@ -431,7 +431,7 @@ ORDER BY created_at DESC;
 ```
 
 > [!TIP]
-> The syntax highlighting theme can be configured in `dorcs.yaml` using the `code_theme` option. See [Configuration](./03_configuration.md) for details.
+> The syntax highlighting theme can be configured in `dorcs.yaml` using the `code_theme` option. See [Configuration](./../../03_configuration.md) for details.
 
 ## Footnotes
 

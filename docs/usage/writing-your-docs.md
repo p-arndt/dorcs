@@ -33,4 +33,4 @@ This will watch for changes in the `docs` directory and automatically reload the
 
 ## YAML Front Matter
 
-You can add metadata to your Markdown files using YAML front matter. This is a simple way to add metadata to your docs. See [YAML Front Matter](../06_markdown/00_yaml_frontmatter.md) for more information.
+You can add metadata to your Markdown files using YAML front matter. This is a simple way to add metadata to your docs. See [Metadata](metadata.md) for more information.

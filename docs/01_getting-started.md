@@ -116,7 +116,7 @@ Your content here...
 - `author` - Author name (displayed with [[AUTHOR]] placeholder)
 - `after` - Key of item this should appear after in navigation (use `"index"` to place after index.md)
 
-See [YAML Front Matter](../usage/yaml-frontmatter.md) for detailed documentation on all front matter fields, including navigation ordering with `after` and `order`.
+See [Metadata](./usage/metadata.md) for detailed documentation on all front matter fields, including navigation ordering with `after` and `order`.
 
 ## Watch Mode
 
