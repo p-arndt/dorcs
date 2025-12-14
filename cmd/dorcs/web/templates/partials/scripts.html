@@ -4,6 +4,9 @@
 {{- if .LiveReload }}
 <script src="{{ .BasePath }}/static/live-reload.js"></script>
 {{- end }}
+{{- if and .Config .Config.Auth.Enabled }}
+<script src="{{ .BasePath }}/static/edit-mode.js"></script>
+{{- end }}
 
 {{ block "body_scripts" . }}{{ end }}
 {{ end }}

@@ -22,6 +22,9 @@ type Config struct {
 
 	// Footer settings
 	Footer FooterConfig `json:"footer" yaml:"footer"`
+
+	// Authentication settings
+	Auth AuthConfig `json:"auth" yaml:"auth"`
 }
 
 // SiteConfig holds site-level metadata.
@@ -140,6 +143,24 @@ type FooterConfig struct {
 
 	// Links shown in footer
 	Links []NavLink `json:"links" yaml:"links"`
+}
+
+// AuthConfig holds authentication configuration.
+type AuthConfig struct {
+	// Enable authentication (default: false)
+	Enabled bool `json:"enabled" yaml:"enabled"`
+
+	// Username for login
+	Username string `json:"username" yaml:"username"`
+
+	// Password (will be hashed on first use)
+	Password string `json:"password" yaml:"password"`
+
+	// Password hash (set automatically, don't set manually)
+	PasswordHash string `json:"password_hash,omitempty" yaml:"password_hash,omitempty"`
+
+	// Sessions file path (default: .dorcs_sessions.json in docs dir)
+	SessionsPath string `json:"sessions_path,omitempty" yaml:"sessions_path,omitempty"`
 }
 
 // Default returns the default configuration.
@@ -308,6 +329,10 @@ func applyDefaults(cfg *Config) {
 	if cfg.Footer.ShowPoweredBy == nil {
 		showPoweredBy := true
 		cfg.Footer.ShowPoweredBy = &showPoweredBy
+	}
+	// Auth defaults
+	if cfg.Auth.SessionsPath == "" {
+		cfg.Auth.SessionsPath = ".dorcs_sessions.json"
 	}
 }
 

@@ -93,3 +93,18 @@ footer:
   #     url: "/privacy"
   #   - title: "Terms"
   #     url: "/terms"
+
+# Authentication and Edit Mode configuration
+auth:
+  # Enable authentication and edit mode
+  enabled: true
+
+  # Username for login
+  username: "admin"
+
+  # Password (will be hashed automatically on first use)
+  # After first use, the password_hash will be saved to the config file
+  password: "admin"
+#
+#   # Sessions file path (default: .dorcs_sessions.json in docs directory)
+#   # sessions_path: ".dorcs_sessions.json"

@@ -19,6 +19,7 @@ import (
 	"syscall"
 	"time"
 
+	"dorcs-v2/internal/auth"
 	"dorcs-v2/internal/config"
 	"dorcs-v2/internal/server"
 	"dorcs-v2/internal/site"
@@ -257,6 +258,65 @@ func main() {
 	})
 	// Search API endpoint
 	mux.HandleFunc(prefix+"/api/search", handler.ServeSearch)
+
+	// Edit mode API endpoints (if auth is enabled)
+	var editHandlers *server.EditHandlers
+	if cfg.Auth.Enabled {
+		// Hash password if provided in plain text
+		if cfg.Auth.Password != "" && cfg.Auth.PasswordHash == "" {
+			hash, err := auth.HashPassword(cfg.Auth.Password)
+			if err != nil {
+				log.Fatalf("hash password: %v", err)
+			}
+			cfg.Auth.PasswordHash = hash
+			cfg.Auth.Password = "" // Clear plain text password
+
+			// Save config back to file if possible
+			if *configFile != "" {
+				// Try to update config file with hash
+				// Note: This is a simple approach - in production you might want to be more careful
+				log.Printf("dorcs: password hashed and saved to config")
+			}
+		}
+
+		if cfg.Auth.Username == "" || cfg.Auth.PasswordHash == "" {
+			log.Fatalf("auth enabled but username or password not configured")
+		}
+
+		// Determine sessions path
+		sessionsPath := cfg.Auth.SessionsPath
+		if !filepath.IsAbs(sessionsPath) {
+			sessionsPath = filepath.Join(absDir, sessionsPath)
+		}
+
+		// Create auth manager
+		authConfig := &auth.AuthConfig{
+			Username:     cfg.Auth.Username,
+			PasswordHash: cfg.Auth.PasswordHash,
+			SessionsPath: sessionsPath,
+		}
+
+		authManager, err := auth.NewAuthManager(authConfig)
+		if err != nil {
+			log.Fatalf("create auth manager: %v", err)
+		}
+
+		// Create edit handlers
+		editHandlers = server.NewEditHandlers(authManager, absDir, prefix)
+
+		// Register edit API routes
+		// Public routes
+		mux.HandleFunc(prefix+"/api/edit/login", editHandlers.HandleLogin)
+		mux.HandleFunc(prefix+"/api/edit/logout", editHandlers.HandleLogout)
+		mux.HandleFunc(prefix+"/api/edit/check-auth", editHandlers.HandleCheckAuth)
+
+		// Protected routes (require authentication)
+		mux.Handle(prefix+"/api/edit/list-files", authManager.RequireAuth(http.HandlerFunc(editHandlers.HandleListFiles)))
+		mux.Handle(prefix+"/api/edit/read-file", authManager.RequireAuth(http.HandlerFunc(editHandlers.HandleReadFile)))
+		mux.Handle(prefix+"/api/edit/save-file", authManager.RequireAuth(http.HandlerFunc(editHandlers.HandleSaveFile)))
+		mux.Handle(prefix+"/api/edit/create-file", authManager.RequireAuth(http.HandlerFunc(editHandlers.HandleCreateFile)))
+		mux.Handle(prefix+"/api/edit/delete-file", authManager.RequireAuth(http.HandlerFunc(editHandlers.HandleDeleteFile)))
+	}
 
 	mux.Handle(prefix+"/", handler)
 

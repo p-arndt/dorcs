@@ -56,6 +56,12 @@
           {{- end }}
         {{- end }}
         </nav>
+        {{- if and .Config .Config.Auth.Enabled }}
+        <div class="edit-auth-buttons">
+          <button id="edit-edit-btn" class="edit-auth-btn" onclick="window.dorcsEditMode.open()" style="display: none;">Edit</button>
+          <button id="edit-logout-btn" class="edit-auth-btn" onclick="window.dorcsEditMode.logout()" style="display: none;">Logout</button>
+        </div>
+        {{- end }}
       </div>
     </div>
   </div>

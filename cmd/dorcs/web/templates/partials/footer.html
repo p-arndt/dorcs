@@ -20,6 +20,11 @@
       {{- if or (not .Config) (not .Config.Footer.ShowPoweredBy) (deref .Config.Footer.ShowPoweredBy) }}
       <div class="muted">Served by <code>dorcs</code></div>
       {{- end }}
+      {{- if and .Config .Config.Auth.Enabled }}
+      <div class="edit-auth-buttons">
+        <button id="edit-login-btn" class="edit-auth-btn" onclick="window.dorcsEditMode.login()" style="display: none;">Login</button>
+      </div>
+      {{- end }}
     </div>
     {{- if .Version }}
     <div class="footer-version">v{{ .Version }}</div>
