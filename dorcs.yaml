@@ -1,0 +1,95 @@
+# dorcs Configuration File
+# Place this file in your project root (current working directory) or docs directory
+# The config file is looked for in the current directory first, then in the docs directory
+# You can also specify a custom path with --config flag
+
+# Site metadata
+site:
+  # Title shown in the header/brand area (top-left)
+  title: "Dorcs"
+
+  # Description for meta tags (optional)
+  description: "Single static binary documentation server for Markdown files"
+
+  # Logo URL - replaces text title if set (optional)
+  # logo: "/static/logo.png"
+
+  # Custom favicon URL (optional)
+  # favicon: "/static/custom-favicon.ico"
+
+# Theme and styling configuration
+theme:
+  # Mode: "light", "dark", or "auto" (follows system preference)
+  mode: auto
+
+  # Preset theme: default, ocean, forest, sunset, midnight, lavender, rose
+  preset: default 
+
+  # Custom colors (override preset colors)
+  # colors:
+  #   light:
+  #     background: "#ffffff"
+  #     foreground: "#1f2328"
+  #     muted: "#57606a"
+  #     border: "#d0d7de"
+  #     accent: "#0969da"
+  #     code_background: "#f6f8fa"
+  #     header_background: "#ffffff"
+  #     sidebar_background: "#fafbfc"
+  #   dark:
+  #     background: "#0d1117"
+  #     foreground: "#e6edf3"
+  #     muted: "#8b949e"
+  #     border: "#30363d"
+  #     accent: "#2f81f7"
+  #     code_background: "#161b22"
+
+  # Note: Code syntax highlighting theme is now automatically determined by the preset theme
+  # The code_theme option is deprecated and ignored 
+
+  # Path to custom CSS file (relative to docs directory)
+  # custom_css: "custom.css"
+
+  # Custom font family for body text (CSS font-family value)
+  # font_family: '"Inter", system-ui, sans-serif'
+
+  # Custom font family for code (CSS font-family value)
+  # mono_font_family: '"JetBrains Mono", monospace'
+
+# Navigation configuration
+nav:
+  # Show search box in sidebar (default: true)
+  show_search: true
+
+  # Keep all folders expanded by default (default: false)
+  expand_all: false
+
+  # Additional navigation links shown in the header
+  links:
+    - title: "GitHub"
+      url: "https://github.com/p-arndt/dorcs"
+      external: true
+      icon: "github"  # Options: github, twitter, discord, external
+  #
+  #   - title: "Discord"
+  #     url: "https://discord.gg/yourserver"
+  #     external: true
+  #     icon: "discord"
+
+# Footer configuration
+footer:
+  # Copyright text
+  # copyright: "© 2024 Your Name"
+
+  # Custom footer text
+  text: "Built with ❤️"
+
+  # Show "Powered by dorcs" (default: true)
+  show_powered_by: true
+
+  # Footer links
+  # links:
+  #   - title: "Privacy Policy"
+  #     url: "/privacy"
+  #   - title: "Terms"
+  #     url: "/terms"

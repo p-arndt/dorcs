@@ -1,0 +1,47 @@
+{{/* Head section partial */}}
+{{ define "head" }}
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="color-scheme" content="light dark" />
+
+  <title>
+    {{- $t := .Meta.Title -}}
+    {{- if not $t -}}
+      {{- $t = .DocTitleFallback -}}
+    {{- end -}}
+    {{- if not $t -}}
+      {{- $t = .RootTitle -}}
+    {{- end -}}
+    {{- $tLower := lower $t -}}
+    {{- if or (eq $tLower "index") (eq $tLower "") -}}
+      {{.SiteTitle}}
+    {{- else -}}
+      {{$t}} · {{.SiteTitle}}
+    {{- end -}}
+  </title>
+
+  {{- with .Meta.Description }}
+    <meta name="description" content="{{ . }}" />
+  {{- end }}
+
+  {{- if and .Config .Config.Site.Favicon }}
+  <link rel="icon" href="{{ .Config.Site.Favicon }}" type="image/x-icon" />
+  {{- else }}
+  <link rel="icon" href="{{ .BasePath }}/static/favicon.ico" type="image/x-icon" />
+  {{- end }}
+  <link rel="stylesheet" href="{{ .BasePath }}/static/style.css" />
+  <link rel="stylesheet" href="{{ .BasePath }}/static/layout.css" />
+  <link rel="stylesheet" href="{{ .BasePath }}/static/syntax.css" />
+  {{- if and .Config .Config.Theme.CustomCSS }}
+  <link rel="stylesheet" href="{{ .BasePath }}/static/custom.css" />
+  {{- end }}
+
+  {{- /* Theme CSS from config */ -}}
+  {{- if .ThemeCSS }}
+  <style>{{ .ThemeCSS }}</style>
+  {{- end }}
+
+  {{ block "head_extra" . }}{{ end }}
+</head>
+{{ end }}

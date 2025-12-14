@@ -1,0 +1,41 @@
+{{/* Collapsible navigation tree */}}
+{{ define "nav_tree_collapsible" }}
+{{- $current := .CurrentPath -}}
+{{- $base := .BasePath -}}
+{{- range .Nodes }}
+  {{- if .IsDir }}
+    {{- if .Children }}
+      {{/* Folder WITH children - show toggle */}}
+      <li class="folder" data-key="{{ .Path }}">
+        {{- if .Path }}
+          <a class="node{{ if eq .Path $current }} active{{ end }}" href="{{ $base }}{{ .Path }}" data-title="{{ .Title }}">
+            <span class="toggle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg></span>
+            <span class="label">{{ if .Title }}{{ .Title }}{{ else }}{{ .Path }}{{ end }}</span>
+          </a>
+        {{- else }}
+          <span class="node" data-title="{{ .Title }}">
+            <span class="toggle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg></span>
+            <span class="label">{{ if .Title }}{{ .Title }}{{ else }}Folder{{ end }}</span>
+          </span>
+        {{- end }}
+        <ul class="children">
+          {{- template "nav_tree_collapsible" (dict "Nodes" .Children "CurrentPath" $current "BasePath" $base) -}}
+        </ul>
+      </li>
+    {{- else }}
+      {{/* Folder WITHOUT children (only index.md) - simple link, no toggle */}}
+      <li>
+        <a class="node{{ if eq .Path $current }} active{{ end }}" href="{{ $base }}{{ .Path }}" data-title="{{ .Title }}">
+          <span class="label">{{ if .Title }}{{ .Title }}{{ else }}{{ .Path }}{{ end }}</span>
+        </a>
+      </li>
+    {{- end }}
+  {{- else }}
+    <li>
+      <a class="node{{ if eq .Path $current }} active{{ end }}" href="{{ $base }}{{ .Path }}" data-title="{{ .Title }}">
+        <span class="label">{{ if .Title }}{{ .Title }}{{ else }}{{ .Path }}{{ end }}</span>
+      </a>
+    </li>
+  {{- end }}
+{{- end }}
+{{ end }}

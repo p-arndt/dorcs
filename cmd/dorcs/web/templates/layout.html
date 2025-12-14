@@ -1,0 +1,35 @@
+{{/* Base layout template used by index and doc pages */}}
+
+{{ define "layout" }}
+<!doctype html>
+<html lang="en">
+  {{ template "head" . }}
+
+  <body data-base-path="{{ .BasePath }}"{{ if .LiveReload }} data-live-reload="true"{{ end }}>
+    <!-- Sidebar overlay for mobile -->
+    <div class="sidebar-overlay" id="sidebar-overlay"></div>
+
+    {{ template "header" . }}
+
+    <main class="site-main">
+      <div class="shell">
+        <div class="grid">
+          {{ template "sidebar" . }}
+
+          <section class="main">
+            {{ template "mobile_toc" . }}
+
+            {{ block "content" . }}{{ end }}
+          </section>
+
+          {{ template "desktop_toc" . }}
+        </div>
+      </div>
+    </main>
+
+    {{ template "footer" . }}
+
+    {{ template "scripts" . }}
+  </body>
+</html>
+{{ end }}

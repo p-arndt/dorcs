@@ -1,47 +1,56 @@
 ---
-title: Introduction
-position: 1
+title: "Dorcs"
+description: "Welcome to dorcs - a single-binary static documentation server for Markdown files."
+tags: [docs, markdown]
+date: 2025-12-13
+draft: false
 ---
 
-<!-- # Dorcs -->
 
-<p align="center">
-  <img src="./dorcs_logo.png" alt="Dorcs Logo" width="200">
-</p>
+# Dorcs
 
-<h1 align="center">Dorcs</h1>
-
-<p align="center">
-  <strong>Static site generator in a single file 📄</strong>
-</p>
-
-Dorcs is a static site generator that transforms markdown files into a website. \
-It is designed to be simple and easy to use, requiring no external dependencies other than a single binary file.
-
-<div style="background-color: #f6e05e; padding: 10px; border-radius: 4px; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);">
-  <p style="font-weight: bold; color: #333; text-align: center;">
-  ⚠️ This project is still in development and may introduce breaking changes in the future. Use with caution. ⚠️
-  </p>
+<div style="display: flex; justify-content: center; align-items: center;">
+<img src="./logo.png" alt="Dorcs Logo" width="200" height="200" style="border: none;" />
 </div>
 
-## 🚀 Features
+Dorcs is a single-binary static documentation server for Markdown files. It is a simple and easy to use documentation server that allows you to create and host your documentation site in minutes.
 
-- ✅ Markdown to HTML conversion
-- ✅ Table of contents generation
-- ✅ Sidebar navigation with automatic links
-- ✅ Page metadata like title and position in the sidebar
-- ✅ Support for images and media files
-- ✅ Nested sidebar navigation for subpages
-- ✅ Responsive design and dark mode
-- ✅ Syntax highlighting for code blocks
-- ✅ Hot reload in watch mode
-- ✅ Built-in server for previewing the generated documentation
-- [ ] Customizable templates
-- [ ] Search functionality
-- [ ] Support for multiple languages
-- [ ] Plugin system for extending functionality
-- [ ] MDX support
+## Get Started
 
-## Quick Start
+Ready to get started? Check out the [Getting Started guide](./01_getting-started.md) to have your documentation site running in under 5 minutes.
 
-So you're here and want to start directly? Have a look at the [quick start guide](./02_quick_start).
+## Documentation
+
+- 🚀 [Getting Started](./01_getting-started.md) - Complete quick start guide
+- 📦 [Installation](./02_installation.md) - Detailed installation instructions
+- ⚙️ [Configuration](./03_configuration.md) - Customize your site with `dorcs.yaml`
+- 🚢 [Deployment](./04_deployment.md) - Deploy to production
+- 🎨 [Themes](./05_themes.md) - Browse all available themes
+
+## Features
+
+- **Single binary** – no runtime dependencies, statically linkable
+- **Extensionless URLs** – `/guide/getting-started` serves `docs/guide/getting-started.md`
+- **YAML front matter** – metadata support (title, description, date, tags, draft)
+- **Table of Contents** – auto-generated from headings with scrollspy
+- **Navigation sidebar** – built automatically from your folder structure
+- **Responsive design** – mobile-friendly with collapsible sidebar
+- **Dark mode** – automatic based on system preference
+- **Live reload** – watch mode for development with smart content updates
+- **Multiple themes** – choose from 20+ built-in themes
+- **Search** – built-in search functionality
+
+## How It Works
+
+### URL Routing
+
+dorcs uses extensionless URLs that map directly to your file structure:
+
+| File Path                    | URL                   |
+| ---------------------------- | --------------------- |
+| `docs/index.md`              | `/`                   |
+| `docs/getting-started.md`    | `/getting-started`    |
+| `docs/guide/index.md`        | `/guide`              |
+| `docs/guide/installation.md` | `/guide/installation` |
+
+It will also automatically build navigation from your structure and generate a sidebar and a table of contents for each page.
