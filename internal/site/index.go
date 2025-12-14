@@ -98,8 +98,6 @@ func (s *Site) BuildIndex() error {
 
 	// Atomic swap of index + nav tree.
 	s.mu.Lock()
-	defer s.mu.Unlock()
-
 	newIndex := make(map[string]*Doc, len(docs))
 	for _, f := range docs {
 		// Important: allow empty key (root index) to be indexed.
@@ -107,6 +105,11 @@ func (s *Site) BuildIndex() error {
 	}
 	s.index = newIndex
 	s.nav = buildNavTree(newIndex)
+	s.mu.Unlock()
+
+	// Check for broken links after building the index
+	s.ReportBrokenLinks()
+
 	return nil
 }
 
