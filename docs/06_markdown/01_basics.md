@@ -110,7 +110,6 @@ ___bold and italic___
 ```md
 [Link text](https://example.com)
 [Link with title](https://example.com "Title text")
-[Relative link](./other-page.md)
 [Anchor link](#heading-id)
 
 <https://example.com>
@@ -121,7 +120,6 @@ ___bold and italic___
 
 [Link text](https://example.com)
 [Link with title](https://example.com "Title text")
-[Relative link](./other-page.md)
 [Anchor link](#heading-id)
 
 <https://example.com>
