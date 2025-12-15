@@ -3,6 +3,7 @@ package markdown
 import (
 	chromahtml "github.com/alecthomas/chroma/v2/formatters/html"
 	"github.com/alecthomas/chroma/v2/styles"
+	katex "github.com/brickellis/goldmark-katex"
 	"github.com/yuin/goldmark"
 	highlighting "github.com/yuin/goldmark-highlighting/v2"
 	meta "github.com/yuin/goldmark-meta"
@@ -35,6 +36,8 @@ func NewRenderer(codeTheme string) goldmark.Markdown {
 					chromahtml.WithLineNumbers(false),
 				),
 			),
+
+			&katex.Extender{},
 		),
 		goldmark.WithParserOptions(
 			parser.WithAutoHeadingID(),

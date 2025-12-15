@@ -602,3 +602,31 @@ Check out the [footnote](#footnotes) section[^example] for more details.
 Check out the [footnote](#footnotes) section[^example] for more details.
 
 [^example]: This is an example footnote in a combined example.
+
+## LaTex Support
+
+dorcs supports LaTex math rendering using [KaTeX](https://katex.org/). Simply enclose your math in `$$` tags:
+
+```markdown
+$$
+f(x) = \int_{-\infty}^\infty
+\hat f(\xi)\,e^{2 \pi i \xi x}
+\,d\xi
+$$
+```
+
+**Result:**
+
+$$
+f(x) = \int_{-\infty}^\infty \hat f(\xi)\,e^{2 \pi i \xi x} \,d\xi
+$$
+
+Or simply use inline math:
+
+```markdown
+A pi function $f(x) = x \cdot \pi$
+```
+
+**Result:**
+
+A pi function $f(x) = x \cdot \pi$  
