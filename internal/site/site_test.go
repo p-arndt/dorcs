@@ -330,7 +330,7 @@ func TestSiteNew(t *testing.T) {
 	defer os.RemoveAll(tmpDir)
 
 	t.Run("valid directory", func(t *testing.T) {
-		s, err := New(tmpDir, "github", "")
+		s, err := New(tmpDir, "github", "", "")
 		if err != nil {
 			t.Errorf("New(%q) returned error: %v", tmpDir, err)
 		}
@@ -340,14 +340,14 @@ func TestSiteNew(t *testing.T) {
 	})
 
 	t.Run("empty path", func(t *testing.T) {
-		_, err := New("", "github", "")
+		_, err := New("", "github", "", "")
 		if err == nil {
 			t.Error("New(\"\") should return error")
 		}
 	})
 
 	t.Run("non-existent directory", func(t *testing.T) {
-		_, err := New("/non/existent/path", "github", "")
+		_, err := New("/non/existent/path", "github", "", "")
 		if err == nil {
 			t.Error("New() with non-existent path should return error")
 		}
@@ -358,7 +358,7 @@ func TestSiteNew(t *testing.T) {
 		if err := os.WriteFile(tmpFile, []byte("test"), 0644); err != nil {
 			t.Fatalf("failed to create temp file: %v", err)
 		}
-		_, err := New(tmpFile, "github", "")
+		_, err := New(tmpFile, "github", "", "")
 		if err == nil {
 			t.Error("New() with file path should return error")
 		}
@@ -406,7 +406,7 @@ draft: true
 		}
 	}
 
-	s, err := New(tmpDir, "github", "")
+	s, err := New(tmpDir, "github", "", "")
 	if err != nil {
 		t.Fatalf("New() failed: %v", err)
 	}
@@ -511,7 +511,7 @@ Final content.
 		t.Fatalf("failed to write test file: %v", err)
 	}
 
-	s, err := New(tmpDir, "github", "")
+	s, err := New(tmpDir, "github", "", "")
 	if err != nil {
 		t.Fatalf("New() failed: %v", err)
 	}

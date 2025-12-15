@@ -56,7 +56,7 @@ Install the software using these steps.`,
 		}
 	}
 
-	s, err := New(tmpDir, "github", "")
+	s, err := New(tmpDir, "github", "", "")
 	if err != nil {
 		t.Fatalf("New() failed: %v", err)
 	}

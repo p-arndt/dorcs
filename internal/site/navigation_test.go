@@ -48,7 +48,7 @@ title: Endpoints
 		}
 	}
 
-	s, err := New(tmpDir, "github", "")
+	s, err := New(tmpDir, "github", "", "")
 	if err != nil {
 		t.Fatalf("New() failed: %v", err)
 	}
