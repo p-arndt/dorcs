@@ -613,6 +613,61 @@ updateActiveSection();
   window.dorcsInitCopyButtons = initCopyButtons;
 
   // =====================
+  // Dark Mode Toggle
+  // =====================
+  (function() {
+    const darkModeToggle = document.getElementById('dark-mode-toggle');
+    if (!darkModeToggle) return;
+
+    // Apply theme by adding/removing classes
+    function applyTheme(theme) {
+      const html = document.documentElement;
+      html.classList.remove('dark-mode', 'light-mode');
+      
+      if (theme === 'dark') {
+        html.classList.add('dark-mode');
+      } else if (theme === 'light') {
+        html.classList.add('light-mode');
+      }
+      // If theme is null/undefined, remove both classes to use server default
+      
+      if (theme) {
+        localStorage.setItem('dorcs-theme', theme);
+      } else {
+        localStorage.removeItem('dorcs-theme');
+      }
+    }
+
+    // Get current effective theme (checking classes and system preference)
+    function getEffectiveTheme() {
+      const html = document.documentElement;
+      if (html.classList.contains('dark-mode')) {
+        return 'dark';
+      }
+      if (html.classList.contains('light-mode')) {
+        return 'light';
+      }
+      // No manual override - check system preference
+      return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    }
+
+    // Initialize theme on page load
+    const saved = localStorage.getItem('dorcs-theme');
+    if (saved === 'dark' || saved === 'light') {
+      // User has a saved preference, apply it to override server default
+      applyTheme(saved);
+    }
+    // Otherwise, let the server-generated CSS handle it (respects theme.mode config)
+
+    // Toggle theme on button click
+    darkModeToggle.addEventListener('click', () => {
+      const current = getEffectiveTheme();
+      const newTheme = current === 'dark' ? 'light' : 'dark';
+      applyTheme(newTheme);
+    });
+  })();
+
+  // =====================
   // Language Switcher
   // =====================
   window.dorcsLangSwitcher = {

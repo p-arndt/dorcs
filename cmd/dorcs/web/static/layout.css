@@ -52,6 +52,56 @@ body {
   gap: 12px;
 }
 
+.dark-mode-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  border-radius: 8px;
+  transition: background-color 0.15s, color 0.15s;
+  -webkit-tap-highlight-color: transparent;
+  border: 1px solid var(--border);
+  position: relative;
+}
+
+.dark-mode-toggle:hover {
+  background: color-mix(in srgb, var(--code-bg) 78%, transparent);
+  color: var(--fg);
+}
+
+.dark-mode-toggle svg {
+  width: 20px;
+  height: 20px;
+  transition: opacity 0.2s, transform 0.2s;
+}
+
+.dark-mode-toggle .icon-moon {
+  position: absolute;
+  opacity: 0;
+  transform: rotate(90deg);
+}
+
+.dark-mode-toggle .icon-sun {
+  opacity: 1;
+  transform: rotate(0deg);
+}
+
+:root.dark-mode .dark-mode-toggle .icon-moon {
+  opacity: 1;
+  transform: rotate(0deg);
+}
+
+:root.dark-mode .dark-mode-toggle .icon-sun {
+  opacity: 0;
+  transform: rotate(-90deg);
+}
+
 .search-toggle {
   display: flex;
   align-items: center;
@@ -854,6 +904,11 @@ aside.toc {
 
   .nav-tree .node .label {
     font-size: 1rem;
+  }
+
+  .dark-mode-toggle {
+    width: 44px;
+    height: 44px;
   }
 
   .search-toggle {

@@ -436,7 +436,7 @@ func (c *Config) GenerateThemeCSS() string {
 		return ""
 	}
 
-	// Light mode (default)
+	// Define light mode variables (default)
 	css += ":root {\n"
 	css += addColor("--bg", colors.Light.Background)
 	css += addColor("--fg", colors.Light.Foreground)
@@ -461,10 +461,26 @@ func (c *Config) GenerateThemeCSS() string {
 	css += "    --radius-sm: 10px;\n"
 	css += "}\n\n"
 
-	// Dark mode
+	// Define dark mode variables as CSS custom properties for manual toggle
+	css += ":root {\n"
+	css += "  --bg-dark: " + colors.Dark.Background + ";\n"
+	css += "  --fg-dark: " + colors.Dark.Foreground + ";\n"
+	css += "  --muted-dark: " + colors.Dark.Muted + ";\n"
+	css += "  --border-dark: " + colors.Dark.Border + ";\n"
+	css += "  --link-dark: " + colors.Dark.Accent + ";\n"
+	css += "  --code-bg-dark: " + colors.Dark.CodeBackground + ";\n"
+	if colors.Dark.HeaderBackground != "" {
+		css += "  --header-bg-dark: " + colors.Dark.HeaderBackground + ";\n"
+	}
+	if colors.Dark.SidebarBackground != "" {
+		css += "  --sidebar-bg-dark: " + colors.Dark.SidebarBackground + ";\n"
+	}
+	css += "}\n\n"
+
+	// Apply dark mode based on theme mode setting
 	switch c.Theme.Mode {
 	case "dark":
-		// Force dark mode
+		// Force dark mode by default
 		css += ":root {\n"
 		css += addColor("--bg", colors.Dark.Background)
 		css += addColor("--fg", colors.Dark.Foreground)
@@ -478,13 +494,42 @@ func (c *Config) GenerateThemeCSS() string {
 		if colors.Dark.SidebarBackground != "" {
 			css += addColor("--sidebar-bg", colors.Dark.SidebarBackground)
 		}
+		css += "}\n\n"
+		// Allow manual override to light mode
+		css += ":root.light-mode {\n"
+		css += addColor("--bg", colors.Light.Background)
+		css += addColor("--fg", colors.Light.Foreground)
+		css += addColor("--muted", colors.Light.Muted)
+		css += addColor("--border", colors.Light.Border)
+		css += addColor("--link", colors.Light.Accent)
+		css += addColor("--code-bg", colors.Light.CodeBackground)
+		if colors.Light.HeaderBackground != "" {
+			css += addColor("--header-bg", colors.Light.HeaderBackground)
+		}
+		if colors.Light.SidebarBackground != "" {
+			css += addColor("--sidebar-bg", colors.Light.SidebarBackground)
+		}
 		css += "}\n"
 	case "light":
-		// Already set as default, nothing more needed
+		// Already set as default, allow manual override to dark mode
+		css += ":root.dark-mode {\n"
+		css += addColor("--bg", colors.Dark.Background)
+		css += addColor("--fg", colors.Dark.Foreground)
+		css += addColor("--muted", colors.Dark.Muted)
+		css += addColor("--border", colors.Dark.Border)
+		css += addColor("--link", colors.Dark.Accent)
+		css += addColor("--code-bg", colors.Dark.CodeBackground)
+		if colors.Dark.HeaderBackground != "" {
+			css += addColor("--header-bg", colors.Dark.HeaderBackground)
+		}
+		if colors.Dark.SidebarBackground != "" {
+			css += addColor("--sidebar-bg", colors.Dark.SidebarBackground)
+		}
+		css += "}\n"
 	default:
-		// Auto mode - use prefers-color-scheme
+		// Auto mode - use prefers-color-scheme by default, but allow manual override
 		css += "@media (prefers-color-scheme: dark) {\n"
-		css += "  :root {\n"
+		css += "  :root:not(.light-mode) {\n"
 		css += "  " + addColor("--bg", colors.Dark.Background)
 		css += "  " + addColor("--fg", colors.Dark.Foreground)
 		css += "  " + addColor("--muted", colors.Dark.Muted)
@@ -498,6 +543,36 @@ func (c *Config) GenerateThemeCSS() string {
 			css += "  " + addColor("--sidebar-bg", colors.Dark.SidebarBackground)
 		}
 		css += "  }\n"
+		css += "}\n\n"
+		// Manual dark mode override (works even in light system preference)
+		css += ":root.dark-mode {\n"
+		css += addColor("--bg", colors.Dark.Background)
+		css += addColor("--fg", colors.Dark.Foreground)
+		css += addColor("--muted", colors.Dark.Muted)
+		css += addColor("--border", colors.Dark.Border)
+		css += addColor("--link", colors.Dark.Accent)
+		css += addColor("--code-bg", colors.Dark.CodeBackground)
+		if colors.Dark.HeaderBackground != "" {
+			css += addColor("--header-bg", colors.Dark.HeaderBackground)
+		}
+		if colors.Dark.SidebarBackground != "" {
+			css += addColor("--sidebar-bg", colors.Dark.SidebarBackground)
+		}
+		css += "}\n\n"
+		// Manual light mode override (works even in dark system preference)
+		css += ":root.light-mode {\n"
+		css += addColor("--bg", colors.Light.Background)
+		css += addColor("--fg", colors.Light.Foreground)
+		css += addColor("--muted", colors.Light.Muted)
+		css += addColor("--border", colors.Light.Border)
+		css += addColor("--link", colors.Light.Accent)
+		css += addColor("--code-bg", colors.Light.CodeBackground)
+		if colors.Light.HeaderBackground != "" {
+			css += addColor("--header-bg", colors.Light.HeaderBackground)
+		}
+		if colors.Light.SidebarBackground != "" {
+			css += addColor("--sidebar-bg", colors.Light.SidebarBackground)
+		}
 		css += "}\n"
 	}
 

@@ -33,23 +33,9 @@
     --active-border: color-mix(in srgb, var(--link) 45%, var(--border));
 }
 
-@media (prefers-color-scheme: dark) {
-    :root {
-        --bg: #0d1117;
-        --fg: #e6edf3;
-        --muted: #8b949e;
-        --border: #30363d;
-        --link: #2f81f7;
-
-        --code-bg: #161b22;
-        --quote-bg: #161b22;
-
-        --shadow: none;
-
-        --header-bg: var(--bg);
-        --header-shadow: 0 1px 3px rgba(0, 0, 0, 0.25), 0 6px 16px rgba(0, 0, 0, 0.15);
-    }
-}
+/* Theme colors are now generated server-side based on theme preset */
+/* Dark mode is handled via @media (prefers-color-scheme: dark) or .dark-mode class */
+/* Light mode can be forced via .light-mode class */
 
 * {
     box-sizing: border-box;
@@ -220,18 +206,34 @@ a:hover {
 }
 
 @media (prefers-color-scheme: dark) {
-    .markdown .alert-note {
+    :root:not(.light-mode) .markdown .alert-note,
+    :root.dark-mode .markdown .alert-note {
         border-left-color: #2f81f7;
         background: color-mix(in srgb, #2f81f7 12%, var(--bg));
     }
     
-    .markdown .alert-note .alert-title {
+    :root:not(.light-mode) .markdown .alert-note .alert-title,
+    :root.dark-mode .markdown .alert-note .alert-title {
         color: #2f81f7;
     }
     
-    .markdown .alert-note .alert-title::before {
+    :root:not(.light-mode) .markdown .alert-note .alert-title::before,
+    :root.dark-mode .markdown .alert-note .alert-title::before {
         background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='%232f81f7'%3E%3Cpath d='M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14m0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16'/%3E%3Cpath d='m8.93 6.588-2.29.287-.082.38.45.083c.294.07.352.176.288.469l-.738 3.468c-.194.897.105 1.319.808 1.319.545 0 1.178-.252 1.465-.598l.088-.416c-.2.176-.492.246-.686.246-.275 0-.375-.193-.304-.533zM9 4.5a1 1 0 1 1-2 0 1 1 0 0 1 2 0'/%3E%3C/svg%3E");
     }
+}
+
+html.dark-mode .markdown .alert-note {
+    border-left-color: #2f81f7;
+    background: color-mix(in srgb, #2f81f7 12%, var(--bg));
+}
+
+html.dark-mode .markdown .alert-note .alert-title {
+    color: #2f81f7;
+}
+
+html.dark-mode .markdown .alert-note .alert-title::before {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='%232f81f7'%3E%3Cpath d='M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14m0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16'/%3E%3Cpath d='m8.93 6.588-2.29.287-.082.38.45.083c.294.07.352.176.288.469l-.738 3.468c-.194.897.105 1.319.808 1.319.545 0 1.178-.252 1.465-.598l.088-.416c-.2.176-.492.246-.686.246-.275 0-.375-.193-.304-.533zM9 4.5a1 1 0 1 1-2 0 1 1 0 0 1 2 0'/%3E%3C/svg%3E");
 }
 
 /* Tip alert */
@@ -249,18 +251,34 @@ a:hover {
 }
 
 @media (prefers-color-scheme: dark) {
-    .markdown .alert-tip {
+    :root:not(.light-mode) .markdown .alert-tip,
+    :root.dark-mode .markdown .alert-tip {
         border-left-color: #3fb950;
         background: color-mix(in srgb, #3fb950 12%, var(--bg));
     }
     
-    .markdown .alert-tip .alert-title {
+    :root:not(.light-mode) .markdown .alert-tip .alert-title,
+    :root.dark-mode .markdown .alert-tip .alert-title {
         color: #3fb950;
     }
     
-    .markdown .alert-tip .alert-title::before {
+    :root:not(.light-mode) .markdown .alert-tip .alert-title::before,
+    :root.dark-mode .markdown .alert-tip .alert-title::before {
         background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='%233fb950'%3E%3Cpath d='M2 6a6 6 0 1 1 10.174 4.31c-.203.196-.359.4-.453.619l-.762 1.769A.5.5 0 0 1 10.5 13a.5.5 0 0 1 0 1 .5.5 0 0 1 0 1l-.224.447a1 1 0 0 1-.894.553H6.618a1 1 0 0 1-.894-.553L5.5 15a.5.5 0 0 1 0-1 .5.5 0 0 1 0-1 .5.5 0 0 1-.46-.302l-.761-1.77a1.964 1.964 0 0 0-.453-.618A5.984 5.984 0 0 1 2 6m6-5a5 5 0 0 0-3.479 8.592c.263.254.514.564.676.941L5.83 12h4.342l.632-1.467c.162-.377.413-.687.676-.941A5 5 0 0 0 8 1'/%3E%3C/svg%3E");
     }
+}
+
+html.dark-mode .markdown .alert-tip {
+    border-left-color: #3fb950;
+    background: color-mix(in srgb, #3fb950 12%, var(--bg));
+}
+
+html.dark-mode .markdown .alert-tip .alert-title {
+    color: #3fb950;
+}
+
+html.dark-mode .markdown .alert-tip .alert-title::before {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='%233fb950'%3E%3Cpath d='M2 6a6 6 0 1 1 10.174 4.31c-.203.196-.359.4-.453.619l-.762 1.769A.5.5 0 0 1 10.5 13a.5.5 0 0 1 0 1 .5.5 0 0 1 0 1l-.224.447a1 1 0 0 1-.894.553H6.618a1 1 0 0 1-.894-.553L5.5 15a.5.5 0 0 1 0-1 .5.5 0 0 1 0-1 .5.5 0 0 1-.46-.302l-.761-1.77a1.964 1.964 0 0 0-.453-.618A5.984 5.984 0 0 1 2 6m6-5a5 5 0 0 0-3.479 8.592c.263.254.514.564.676.941L5.83 12h4.342l.632-1.467c.162-.377.413-.687.676-.941A5 5 0 0 0 8 1'/%3E%3C/svg%3E");
 }
 
 /* Important/Info alert */
@@ -278,18 +296,34 @@ a:hover {
 }
 
 @media (prefers-color-scheme: dark) {
-    .markdown .alert-important {
+    :root:not(.light-mode) .markdown .alert-important,
+    :root.dark-mode .markdown .alert-important {
         border-left-color: #a371f7;
         background: color-mix(in srgb, #a371f7 12%, var(--bg));
     }
     
-    .markdown .alert-important .alert-title {
+    :root:not(.light-mode) .markdown .alert-important .alert-title,
+    :root.dark-mode .markdown .alert-important .alert-title {
         color: #a371f7;
     }
     
-    .markdown .alert-important .alert-title::before {
+    :root:not(.light-mode) .markdown .alert-important .alert-title::before,
+    :root.dark-mode .markdown .alert-important .alert-title::before {
         background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='%23a371f7'%3E%3Cpath d='M14 1a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1zM2 0a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2z'/%3E%3Cpath d='M7.002 11a1 1 0 1 1 2 0 1 1 0 0 1-2 0zM7.1 4.995a.905.905 0 1 1 1.8 0l-.35 3.507a.552.552 0 0 1-1.1 0z'/%3E%3C/svg%3E");
     }
+}
+
+html.dark-mode .markdown .alert-important {
+    border-left-color: #a371f7;
+    background: color-mix(in srgb, #a371f7 12%, var(--bg));
+}
+
+html.dark-mode .markdown .alert-important .alert-title {
+    color: #a371f7;
+}
+
+html.dark-mode .markdown .alert-important .alert-title::before {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='%23a371f7'%3E%3Cpath d='M14 1a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1zM2 0a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2z'/%3E%3Cpath d='M7.002 11a1 1 0 1 1 2 0 1 1 0 0 1-2 0zM7.1 4.995a.905.905 0 1 1 1.8 0l-.35 3.507a.552.552 0 0 1-1.1 0z'/%3E%3C/svg%3E");
 }
 
 /* Warning alert */
@@ -307,18 +341,34 @@ a:hover {
 }
 
 @media (prefers-color-scheme: dark) {
-    .markdown .alert-warning {
+    :root:not(.light-mode) .markdown .alert-warning,
+    :root.dark-mode .markdown .alert-warning {
         border-left-color: #d29922;
         background: color-mix(in srgb, #d29922 12%, var(--bg));
     }
     
-    .markdown .alert-warning .alert-title {
+    :root:not(.light-mode) .markdown .alert-warning .alert-title,
+    :root.dark-mode .markdown .alert-warning .alert-title {
         color: #d29922;
     }
     
-    .markdown .alert-warning .alert-title::before {
+    :root:not(.light-mode) .markdown .alert-warning .alert-title::before,
+    :root.dark-mode .markdown .alert-warning .alert-title::before {
         background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='%23d29922'%3E%3Cpath d='M7.938 2.016A.13.13 0 0 1 8.002 2a.13.13 0 0 1 .063.016.146.146 0 0 1 .054.057l6.857 11.667c.036.06.035.124.002.183a.163.163 0 0 1-.054.06.116.116 0 0 1-.066.017H1.146a.115.115 0 0 1-.066-.017.163.163 0 0 1-.054-.06.176.176 0 0 1 .002-.183L7.884 2.073a.147.147 0 0 1 .054-.057zm1.044-.45a1.13 1.13 0 0 0-1.96 0L.165 13.233c-.457.778.091 1.767.98 1.767h13.713c.889 0 1.438-.99.98-1.767L8.982 1.566z'/%3E%3Cpath d='M7.002 12a1 1 0 1 1 2 0 1 1 0 0 1-2 0zM7.1 5.995a.905.905 0 1 1 1.8 0l-.35 3.507a.552.552 0 0 1-1.1 0z'/%3E%3C/svg%3E");
     }
+}
+
+html.dark-mode .markdown .alert-warning {
+    border-left-color: #d29922;
+    background: color-mix(in srgb, #d29922 12%, var(--bg));
+}
+
+html.dark-mode .markdown .alert-warning .alert-title {
+    color: #d29922;
+}
+
+html.dark-mode .markdown .alert-warning .alert-title::before {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='%23d29922'%3E%3Cpath d='M7.938 2.016A.13.13 0 0 1 8.002 2a.13.13 0 0 1 .063.016.146.146 0 0 1 .054.057l6.857 11.667c.036.06.035.124.002.183a.163.163 0 0 1-.054.06.116.116 0 0 1-.066.017H1.146a.115.115 0 0 1-.066-.017.163.163 0 0 1-.054-.06.176.176 0 0 1 .002-.183L7.884 2.073a.147.147 0 0 1 .054-.057zm1.044-.45a1.13 1.13 0 0 0-1.96 0L.165 13.233c-.457.778.091 1.767.98 1.767h13.713c.889 0 1.438-.99.98-1.767L8.982 1.566z'/%3E%3Cpath d='M7.002 12a1 1 0 1 1 2 0 1 1 0 0 1-2 0zM7.1 5.995a.905.905 0 1 1 1.8 0l-.35 3.507a.552.552 0 0 1-1.1 0z'/%3E%3C/svg%3E");
 }
 
 /* Caution/Danger alert */
@@ -336,18 +386,34 @@ a:hover {
 }
 
 @media (prefers-color-scheme: dark) {
-    .markdown .alert-caution {
+    :root:not(.light-mode) .markdown .alert-caution,
+    :root.dark-mode .markdown .alert-caution {
         border-left-color: #f85149;
         background: color-mix(in srgb, #f85149 12%, var(--bg));
     }
     
-    .markdown .alert-caution .alert-title {
+    :root:not(.light-mode) .markdown .alert-caution .alert-title,
+    :root.dark-mode .markdown .alert-caution .alert-title {
         color: #f85149;
     }
     
-    .markdown .alert-caution .alert-title::before {
+    :root:not(.light-mode) .markdown .alert-caution .alert-title::before,
+    :root.dark-mode .markdown .alert-caution .alert-title::before {
         background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='%23f85149'%3E%3Cpath d='M4.54.146A.5.5 0 0 1 4.893 0h6.214a.5.5 0 0 1 .353.146l4.394 4.394a.5.5 0 0 1 .146.353v6.214a.5.5 0 0 1-.146.353l-4.394 4.394a.5.5 0 0 1-.353.146H4.893a.5.5 0 0 1-.353-.146L.146 11.46A.5.5 0 0 1 0 11.107V4.893a.5.5 0 0 1 .146-.353L4.54.146zM5.1 1 1 5.1v5.8L5.1 15h5.8l4.1-4.1V5.1L10.9 1z'/%3E%3Cpath d='M7.002 11a1 1 0 1 1 2 0 1 1 0 0 1-2 0zM7.1 4.995a.905.905 0 1 1 1.8 0l-.35 3.507a.552.552 0 0 1-1.1 0z'/%3E%3C/svg%3E");
     }
+}
+
+html.dark-mode .markdown .alert-caution {
+    border-left-color: #f85149;
+    background: color-mix(in srgb, #f85149 12%, var(--bg));
+}
+
+html.dark-mode .markdown .alert-caution .alert-title {
+    color: #f85149;
+}
+
+html.dark-mode .markdown .alert-caution .alert-title::before {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='%23f85149'%3E%3Cpath d='M4.54.146A.5.5 0 0 1 4.893 0h6.214a.5.5 0 0 1 .353.146l4.394 4.394a.5.5 0 0 1 .146.353v6.214a.5.5 0 0 1-.146.353l-4.394 4.394a.5.5 0 0 1-.353.146H4.893a.5.5 0 0 1-.353-.146L.146 11.46A.5.5 0 0 1 0 11.107V4.893a.5.5 0 0 1 .146-.353L4.54.146zM5.1 1 1 5.1v5.8L5.1 15h5.8l4.1-4.1V5.1L10.9 1z'/%3E%3Cpath d='M7.002 11a1 1 0 1 1 2 0 1 1 0 0 1-2 0zM7.1 4.995a.905.905 0 1 1 1.8 0l-.35 3.507a.552.552 0 0 1-1.1 0z'/%3E%3C/svg%3E");
 }
 
 .markdown hr {
@@ -464,17 +530,32 @@ a:hover {
 }
 
 @media (prefers-color-scheme: dark) {
-    .markdown pre .copy-button.copied {
+    :root:not(.light-mode) .markdown pre .copy-button.copied,
+    :root.dark-mode .markdown pre .copy-button.copied {
         border-color: #3fb950;
     }
     
-    .markdown pre .copy-button.copied .check-icon {
+    :root:not(.light-mode) .markdown pre .copy-button.copied .check-icon,
+    :root.dark-mode .markdown pre .copy-button.copied .check-icon {
         color: #3fb950;
     }
     
-    .markdown pre .copy-button.copied {
+    :root:not(.light-mode) .markdown pre .copy-button.copied,
+    :root.dark-mode .markdown pre .copy-button.copied {
         background: color-mix(in srgb, #3fb950 10%, var(--code-bg));
     }
+}
+
+html.dark-mode .markdown pre .copy-button.copied {
+    border-color: #3fb950;
+}
+
+html.dark-mode .markdown pre .copy-button.copied .check-icon {
+    color: #3fb950;
+}
+
+html.dark-mode .markdown pre .copy-button.copied {
+    background: color-mix(in srgb, #3fb950 10%, var(--code-bg));
 }
 
 /* Line wrapper should inherit foreground color */
