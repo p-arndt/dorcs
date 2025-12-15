@@ -259,7 +259,8 @@ func ResolveLinkToDocKey(href string, currentDirKey string) (string, bool) {
 // - query strings (?...)
 //
 // basePath is the URL path prefix (e.g., "/docs"). Empty string means no prefix.
-func RewriteExtensionlessDocLinks(md string, currentDirKey string, basePath string) string {
+// language is the language code (e.g., "de"). Empty string means default language (no prefix).
+func RewriteExtensionlessDocLinks(md string, currentDirKey string, basePath string, language string) string {
 	return mdInlineLinkRE.ReplaceAllStringFunc(md, func(m string) string {
 		sub := mdInlineLinkRE.FindStringSubmatch(m)
 		if len(sub) != 3 {
@@ -321,31 +322,37 @@ func RewriteExtensionlessDocLinks(md string, currentDirKey string, basePath stri
 			return m
 		}
 
+		// Build language prefix if not default
+		langPrefix := ""
+		if language != "" {
+			langPrefix = "/" + language
+		}
+
 		// Handle index.md references: folder/index -> /folder, index -> /
 		if clean == "index" {
-			newHref := "/"
+			newHref := langPrefix + "/"
 			if basePath != "" {
-				newHref = basePath + "/"
+				newHref = basePath + newHref
 			}
 			return "[" + text + "](" + newHref + ")"
 		}
 		if strings.HasSuffix(clean, "/index") {
 			clean = strings.TrimSuffix(clean, "/index")
 			if clean == "" {
-				newHref := "/"
+				newHref := langPrefix + "/"
 				if basePath != "" {
-					newHref = basePath + "/"
+					newHref = basePath + newHref
 				}
 				return "[" + text + "](" + newHref + ")"
 			}
-			newHref := "/" + clean
+			newHref := langPrefix + "/" + clean
 			if basePath != "" {
 				newHref = basePath + newHref
 			}
 			return "[" + text + "](" + newHref + ")"
 		}
 
-		newHref := "/" + clean
+		newHref := langPrefix + "/" + clean
 		if basePath != "" {
 			newHref = basePath + newHref
 		}

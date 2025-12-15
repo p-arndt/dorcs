@@ -16,6 +16,9 @@ type Site struct {
 	// BasePath is the URL path prefix (e.g., "/docs"). Empty string means no prefix.
 	BasePath string
 
+	// Language is the language code this site instance serves (empty for default language)
+	Language string
+
 	md goldmark.Markdown
 
 	mu    sync.RWMutex

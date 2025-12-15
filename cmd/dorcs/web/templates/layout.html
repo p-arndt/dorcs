@@ -5,7 +5,7 @@
 <html lang="en">
   {{ template "head" . }}
 
-  <body data-base-path="{{ .BasePath }}"{{ if .LiveReload }} data-live-reload="true"{{ end }}>
+  <body data-base-path="{{ .BasePath }}"{{ if .LiveReload }} data-live-reload="true"{{ end }}{{ if .CurrentLanguage }} data-current-language="{{ .CurrentLanguage }}"{{ end }}{{ if .DocPath }} data-doc-path="{{ .DocPath }}"{{ end }}>
     <!-- Sidebar overlay for mobile -->
     <div class="sidebar-overlay" id="sidebar-overlay"></div>
 

@@ -64,6 +64,20 @@
           {{- end }}
         {{- end }}
         </nav>
+        {{- if and .Config .Config.IsMultiLingual }}
+        <div class="lang-switcher">
+          <select id="lang-select" data-default-lang="{{ .Config.Languages.Default }}" onchange="window.dorcsLangSwitcher.switchLanguage(this.value, this.dataset.defaultLang)">
+            {{- $currentLang := .CurrentLanguage }}
+            {{- $defaultLang := .Config.Languages.Default }}
+            {{- if eq $currentLang "" }}
+              {{- $currentLang = $defaultLang }}
+            {{- end }}
+            {{- range .Config.Languages.Enabled }}
+            <option value="{{ .Code }}"{{ if eq .Code $currentLang }} selected{{ end }}>{{ .Name }}</option>
+            {{- end }}
+          </select>
+        </div>
+        {{- end }}
         {{- if and .Config .Config.Auth.Enabled }}
         <div class="edit-auth-buttons">
           <button id="edit-edit-btn" class="edit-auth-btn" onclick="window.dorcsEditMode.open()" style="display: none;">Edit</button>

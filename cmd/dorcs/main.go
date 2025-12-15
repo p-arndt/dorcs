@@ -119,7 +119,7 @@ func runBuild() {
 
 	// Build site index
 	codeTheme := cfg.GetCodeTheme()
-	s, err := site.New(absDir, codeTheme, prefix)
+	s, err := site.New(absDir, codeTheme, prefix, "")
 	if err != nil {
 		log.Fatalf("init site: %v", err)
 	}
@@ -240,13 +240,62 @@ func main() {
 
 	// Build site index
 	codeTheme := cfg.GetCodeTheme()
-	s, err := site.New(absDir, codeTheme, prefix)
-	if err != nil {
-		log.Fatalf("init site: %v", err)
+
+	// Create sites for each language if multi-lingual is enabled
+	var defaultSite *site.Site
+	sites := make(map[string]*site.Site)
+
+	if cfg.IsMultiLingual() {
+		defaultLang := cfg.GetDefaultLanguage()
+		for _, lang := range cfg.Languages.Enabled {
+			// Default language uses empty string (root docs folder)
+			// Other languages use their code (docs/__lang__/{lang}/ folder)
+			langCodeForSite := ""
+			if lang.Code != defaultLang {
+				langCodeForSite = lang.Code
+			}
+
+			langSite, err := site.New(absDir, codeTheme, prefix, langCodeForSite)
+			if err != nil {
+				// Language folder doesn't exist, skip it
+				log.Printf("dorcs: warning: language folder for %s not found, skipping", lang.Code)
+				continue
+			}
+			if err := langSite.BuildIndex(); err != nil {
+				log.Fatalf("build index for language %s: %v", lang.Code, err)
+			}
+
+			// Store in sites map: default language uses empty key, others use their code
+			if lang.Code == defaultLang {
+				sites[""] = langSite
+				defaultSite = langSite
+			} else {
+				sites[lang.Code] = langSite
+			}
+		}
+		// If no default site was set, use first available
+		if defaultSite == nil && len(sites) > 0 {
+			for _, s := range sites {
+				defaultSite = s
+				break
+			}
+		}
+	} else {
+		// Single language mode (backward compatible)
+		singleSite, err := site.New(absDir, codeTheme, prefix, "")
+		if err != nil {
+			log.Fatalf("init site: %v", err)
+		}
+		if err := singleSite.BuildIndex(); err != nil {
+			log.Fatalf("build index: %v", err)
+		}
+		defaultSite = singleSite
 	}
-	if err := s.BuildIndex(); err != nil {
-		log.Fatalf("build index: %v", err)
+
+	if defaultSite == nil {
+		log.Fatalf("no site instances available")
 	}
+	s := defaultSite
 
 	// Parse templates
 	// Note: doc.html must be parsed AFTER index.html so its "content" block overrides index.html's
@@ -274,6 +323,7 @@ func main() {
 		Cache:             *cache,
 		HideDraft:         *noDrafts,
 		Site:              s,
+		Sites:             sites,
 		DocumentTmpl:      tmplDoc,
 		SiteConfig:        cfg,
 		ReloadBroadcaster: reloadBroadcaster,

@@ -27,7 +27,7 @@ func (s *Site) preprocessMarkdown(raw string, doc *Doc) string {
 		// This is an index.md file, so the document's directory is its Key
 		docDir = doc.Key
 	}
-	raw = markdown.RewriteExtensionlessDocLinks(raw, docDir, s.BasePath)
+	raw = markdown.RewriteExtensionlessDocLinks(raw, docDir, s.BasePath, s.Language)
 
 	// Convert GitHub-style alert blocks in markdown (pre-process for goldmark)
 	raw = markdown.ConvertAlertBlocksInMarkdown(raw)

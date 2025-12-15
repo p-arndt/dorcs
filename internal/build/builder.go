@@ -69,23 +69,89 @@ func (b *Builder) Build(includeDrafts bool) error {
 		return fmt.Errorf("create output dir: %w", err)
 	}
 
-	// Copy static assets
+	// Copy static assets (shared across all languages)
 	if err := b.copyStaticAssets(); err != nil {
 		return fmt.Errorf("copy static assets: %w", err)
 	}
 
-	// Generate syntax highlighting CSS
+	// Generate syntax highlighting CSS (shared)
 	if err := b.writeSyntaxCSS(); err != nil {
 		return fmt.Errorf("write syntax CSS: %w", err)
 	}
 
-	// Copy custom CSS if configured
+	// Copy custom CSS if configured (shared)
 	if err := b.copyCustomCSS(); err != nil {
 		return fmt.Errorf("copy custom CSS: %w", err)
 	}
 
-	// Get all documents
-	docs := b.site.ListDocs(includeDrafts)
+	// Check if multi-lingual is enabled
+	if b.config != nil && b.config.IsMultiLingual() {
+		// Build each language
+		defaultLang := b.config.GetDefaultLanguage()
+		for _, lang := range b.config.Languages.Enabled {
+			isDefault := lang.Code == defaultLang
+			// Default language uses empty string (root docs folder)
+			// Other languages use their code (docs/__lang__/{lang}/ folder)
+			langCodeForSite := ""
+			if !isDefault {
+				langCodeForSite = lang.Code
+			}
+			if err := b.buildLanguage(langCodeForSite, isDefault, lang.Code, includeDrafts); err != nil {
+				return fmt.Errorf("build language %s: %w", lang.Code, err)
+			}
+		}
+	} else {
+		// Single language build (backward compatible)
+		if err := b.buildLanguage("", true, "", includeDrafts); err != nil {
+			return fmt.Errorf("build site: %w", err)
+		}
+	}
+
+	// Copy static assets from docs directory (images, etc.)
+	if err := b.copyDocsStaticAssets(); err != nil {
+		return fmt.Errorf("copy docs static assets: %w", err)
+	}
+
+	return nil
+}
+
+// buildLanguage builds the static site for a specific language.
+// langCodeForSite is the language code to pass to site.New (empty for default)
+// isDefault indicates if this is the default language
+// langCodeForURL is the language code for URLs (used in output paths)
+func (b *Builder) buildLanguage(langCodeForSite string, isDefault bool, langCodeForURL string, includeDrafts bool) error {
+	// Create site instance for this language
+	codeTheme := b.config.GetCodeTheme()
+	langSite, err := site.New(b.docsDir, codeTheme, b.basePath, langCodeForSite)
+	if err != nil {
+		// If language folder doesn't exist, skip it
+		return nil
+	}
+	if err := langSite.BuildIndex(); err != nil {
+		return fmt.Errorf("build index for language %s: %w", langCodeForURL, err)
+	}
+
+	// Get all documents for this language
+	docs := langSite.ListDocs(includeDrafts)
+
+	// Determine output directory for this language
+	var langOutputDir string
+	if isDefault {
+		langOutputDir = b.outputDir
+	} else {
+		langOutputDir = filepath.Join(b.outputDir, langCodeForURL)
+		if err := os.MkdirAll(langOutputDir, 0755); err != nil {
+			return fmt.Errorf("create language output dir: %w", err)
+		}
+	}
+
+	// Create sites map for handler
+	sites := make(map[string]*site.Site)
+	if isDefault {
+		sites[""] = langSite
+	} else {
+		sites[langCodeForURL] = langSite
+	}
 
 	// Create a handler for rendering pages
 	handler := server.New(server.Config{
@@ -95,7 +161,8 @@ func (b *Builder) Build(includeDrafts bool) error {
 		BasePath:     b.basePath,
 		Cache:        false, // Not needed for static build
 		HideDraft:    !includeDrafts,
-		Site:         b.site,
+		Site:         langSite,
+		Sites:        sites,
 		DocumentTmpl: b.template,
 		SiteConfig:   b.config,
 		Version:      "static",
@@ -103,19 +170,14 @@ func (b *Builder) Build(includeDrafts bool) error {
 
 	// Render each document
 	for _, doc := range docs {
-		if err := b.renderDocument(handler, doc); err != nil {
+		if err := b.renderDocumentForLanguage(handler, doc, langCodeForURL, isDefault, langOutputDir); err != nil {
 			return fmt.Errorf("render document %s: %w", doc.Key, err)
 		}
 	}
 
-	// Generate sitemap
-	if err := b.generateSitemap(docs); err != nil {
+	// Generate sitemap for this language
+	if err := b.generateSitemapForLanguage(docs, langCodeForURL, isDefault, langOutputDir); err != nil {
 		return fmt.Errorf("generate sitemap: %w", err)
-	}
-
-	// Copy static assets from docs directory (images, etc.)
-	if err := b.copyDocsStaticAssets(); err != nil {
-		return fmt.Errorf("copy docs static assets: %w", err)
 	}
 
 	return nil
@@ -226,12 +288,22 @@ func (b *Builder) copyCustomCSS() error {
 
 // renderDocument renders a single document to HTML and writes it to the appropriate path.
 func (b *Builder) renderDocument(handler *server.Handler, doc *site.Doc) error {
+	return b.renderDocumentForLanguage(handler, doc, "", true, b.outputDir)
+}
+
+// renderDocumentForLanguage renders a single document for a specific language.
+func (b *Builder) renderDocumentForLanguage(handler *server.Handler, doc *site.Doc, langCode string, isDefault bool, langOutputDir string) error {
 	// Build the URL path for this document
 	var urlPath string
 	if doc.Key == "" {
 		urlPath = "/"
 	} else {
 		urlPath = "/" + doc.Key
+	}
+
+	// Add language prefix if not default
+	if !isDefault && langCode != "" {
+		urlPath = "/" + langCode + urlPath
 	}
 
 	// Add base path if configured
@@ -243,11 +315,11 @@ func (b *Builder) renderDocument(handler *server.Handler, doc *site.Doc) error {
 	var outputPath string
 	if doc.Key == "" {
 		// Root index -> index.html
-		outputPath = filepath.Join(b.outputDir, "index.html")
+		outputPath = filepath.Join(langOutputDir, "index.html")
 	} else {
 		// Regular page -> create directory and index.html
 		// e.g., "guide/getting-started" -> guide/getting-started/index.html
-		outputPath = filepath.Join(b.outputDir, doc.Key, "index.html")
+		outputPath = filepath.Join(langOutputDir, doc.Key, "index.html")
 	}
 
 	// Create directory if needed
@@ -292,6 +364,10 @@ func (b *Builder) copyDocsStaticAssets() error {
 		}
 
 		if d.IsDir() {
+			// Skip __lang__ folder and its contents
+			if d.Name() == "__lang__" {
+				return filepath.SkipDir
+			}
 			return nil
 		}
 
@@ -343,7 +419,12 @@ func (b *Builder) copyDocsStaticAssets() error {
 
 // generateSitemap generates a sitemap.xml file.
 func (b *Builder) generateSitemap(docs []*site.Doc) error {
-	sitemapPath := filepath.Join(b.outputDir, "sitemap.xml")
+	return b.generateSitemapForLanguage(docs, "", true, b.outputDir)
+}
+
+// generateSitemapForLanguage generates a sitemap.xml file for a specific language.
+func (b *Builder) generateSitemapForLanguage(docs []*site.Doc, langCode string, isDefault bool, langOutputDir string) error {
+	sitemapPath := filepath.Join(langOutputDir, "sitemap.xml")
 	file, err := os.Create(sitemapPath)
 	if err != nil {
 		return err
@@ -363,6 +444,9 @@ func (b *Builder) generateSitemap(docs []*site.Doc) error {
 	for _, doc := range docs {
 		// Build URL path
 		urlPath := baseURL
+		if !isDefault && langCode != "" {
+			urlPath += langCode + "/"
+		}
 		if doc.Key == "" {
 			if !strings.HasSuffix(urlPath, "/") {
 				urlPath += "/"

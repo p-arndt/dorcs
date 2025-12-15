@@ -28,7 +28,7 @@ func (s *Site) BuildIndex() error {
 		if d.IsDir() {
 			// Skip common folders that shouldn't be indexed.
 			name := d.Name()
-			if name == ".git" || name == "node_modules" || name == ".idea" || name == ".vscode" {
+			if name == ".git" || name == "node_modules" || name == ".idea" || name == ".vscode" || name == "__lang__" {
 				return filepath.SkipDir
 			}
 			return nil

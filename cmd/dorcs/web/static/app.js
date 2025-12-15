@@ -611,5 +611,86 @@ updateActiveSection();
 
   // Expose function globally for live-reload to use
   window.dorcsInitCopyButtons = initCopyButtons;
+
+  // =====================
+  // Language Switcher
+  // =====================
+  window.dorcsLangSwitcher = {
+    // Save language preference to localStorage
+    saveLanguagePreference: function(langCode) {
+      try {
+        localStorage.setItem('dorcs-language', langCode || '');
+      } catch (e) {
+        // Ignore localStorage errors (e.g., in private browsing)
+      }
+    },
+    
+    // Get saved language preference from localStorage
+    getLanguagePreference: function() {
+      try {
+        return localStorage.getItem('dorcs-language') || '';
+      } catch (e) {
+        return '';
+      }
+    },
+    
+    switchLanguage: function(langCode, defaultLang) {
+      const basePath = document.body.dataset.basePath || '';
+      // Use DocPath from server (already calculated correctly, without language prefix)
+      let docPath = document.body.dataset.docPath || '/';
+      
+      // Ensure docPath starts with /
+      if (!docPath.startsWith('/')) {
+        docPath = '/' + docPath;
+      }
+      
+      // Build new path with the selected language
+      let newPath = '';
+      if (langCode === defaultLang || langCode === '') {
+        // Default language - no prefix, use docPath as-is
+        newPath = docPath;
+      } else {
+        // Other language - add prefix
+        if (docPath === '/') {
+          newPath = '/' + langCode + '/';
+        } else {
+          // Ensure docPath starts with /, then add language prefix
+          newPath = '/' + langCode + docPath;
+        }
+      }
+      
+      // Save preference and navigate
+      this.saveLanguagePreference(langCode);
+      window.location.href = basePath + newPath;
+    }
+  };
+  
+  // On page load, check if we should redirect to saved language preference
+  (function() {
+    const savedLang = window.dorcsLangSwitcher.getLanguagePreference();
+    const currentLang = document.body.dataset.currentLanguage || '';
+    const langSelect = document.getElementById('lang-select');
+    const defaultLang = langSelect ? langSelect.dataset.defaultLang : '';
+    
+    // Only redirect if:
+    // 1. We have a saved language preference
+    // 2. It's different from current language
+    // 3. We're on the default language (root path)
+    // 4. The saved language is not the default
+    if (savedLang && savedLang !== '' && savedLang !== defaultLang && 
+        (!currentLang || currentLang === '') && 
+        (window.location.pathname === '/' || window.location.pathname.endsWith('/'))) {
+      const basePath = document.body.dataset.basePath || '';
+      let pathWithoutBase = window.location.pathname;
+      if (basePath && pathWithoutBase.startsWith(basePath)) {
+        pathWithoutBase = pathWithoutBase.slice(basePath.length);
+      }
+      if (pathWithoutBase === '/' || pathWithoutBase === '') {
+        // Redirect to saved language
+        const newPath = basePath + '/' + savedLang + '/';
+        window.location.href = newPath;
+      }
+    }
+  })();
 })();
 

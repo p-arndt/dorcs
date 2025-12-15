@@ -25,6 +25,9 @@ type Config struct {
 
 	// Authentication settings
 	Auth AuthConfig `json:"auth" yaml:"auth"`
+
+	// Languages configuration for multi-lingual support
+	Languages LanguagesConfig `json:"languages" yaml:"languages"`
 }
 
 // SiteConfig holds site-level metadata.
@@ -161,6 +164,24 @@ type AuthConfig struct {
 
 	// Sessions file path (default: .dorcs_sessions.json in docs dir)
 	SessionsPath string `json:"sessions_path,omitempty" yaml:"sessions_path,omitempty"`
+}
+
+// LanguagesConfig holds multi-lingual configuration.
+type LanguagesConfig struct {
+	// Default language code (e.g., "en")
+	Default string `json:"default" yaml:"default"`
+
+	// Enabled languages list
+	Enabled []Language `json:"enabled" yaml:"enabled"`
+}
+
+// Language represents a single language configuration.
+type Language struct {
+	// Code is the language code (e.g., "en", "de", "fr")
+	Code string `json:"code" yaml:"code"`
+
+	// Name is the display name (e.g., "English", "Deutsch", "Français")
+	Name string `json:"name" yaml:"name"`
 }
 
 // Default returns the default configuration.
@@ -333,6 +354,10 @@ func applyDefaults(cfg *Config) {
 	// Auth defaults
 	if cfg.Auth.SessionsPath == "" {
 		cfg.Auth.SessionsPath = ".dorcs_sessions.json"
+	}
+	// Languages defaults - if default is set but no enabled list, add default to enabled
+	if cfg.Languages.Default != "" && len(cfg.Languages.Enabled) == 0 {
+		cfg.Languages.Enabled = []Language{{Code: cfg.Languages.Default, Name: cfg.Languages.Default}}
 	}
 }
 
@@ -518,6 +543,38 @@ func getCodeThemeForPreset(preset string) string {
 // GetCodeTheme returns the code theme to use, determined by the preset.
 func (c *Config) GetCodeTheme() string {
 	return getCodeThemeForPreset(c.Theme.Preset)
+}
+
+// IsMultiLingual returns true if multiple languages are enabled.
+func (c *Config) IsMultiLingual() bool {
+	return len(c.Languages.Enabled) > 1
+}
+
+// GetLanguage returns the Language config for a given code, or nil if not found.
+func (c *Config) GetLanguage(code string) *Language {
+	for _, lang := range c.Languages.Enabled {
+		if lang.Code == code {
+			return &lang
+		}
+	}
+	return nil
+}
+
+// IsLanguageEnabled returns true if the given language code is enabled.
+func (c *Config) IsLanguageEnabled(code string) bool {
+	return c.GetLanguage(code) != nil
+}
+
+// GetDefaultLanguage returns the default language code, or empty string if not configured.
+func (c *Config) GetDefaultLanguage() string {
+	if c.Languages.Default != "" {
+		return c.Languages.Default
+	}
+	// If no default set but languages are enabled, use first one
+	if len(c.Languages.Enabled) > 0 {
+		return c.Languages.Enabled[0].Code
+	}
+	return ""
 }
 
 // itoa converts int to string without importing strconv

@@ -6,7 +6,12 @@
   <div class="sidebar-body">
     <ul class="nav-tree" id="nav-tree">
       <li>
-        <a class="node{{ if eq .CurrentPath "/" }} active{{ end }}" href="{{ .BasePath }}/" data-title="{{ if .RootTitle }}{{ .RootTitle }}{{ else }}Home{{ end }}">
+        {{- $rootPath := "/" }}
+        {{- if .CurrentLanguage }}
+          {{- $rootPath = printf "/%s/" .CurrentLanguage }}
+        {{- end }}
+        {{- $fullRootPath := printf "%s%s" .BasePath $rootPath }}
+        <a class="node{{ if eq .CurrentPath $fullRootPath }} active{{ end }}" href="{{ $fullRootPath }}" data-title="{{ if .RootTitle }}{{ .RootTitle }}{{ else }}Home{{ end }}">
           <span class="label">{{ if .RootTitle }}{{ .RootTitle }}{{ else }}Home{{ end }}</span>
         </a>
       </li>

@@ -28,11 +28,15 @@ type Config struct {
 	Cache     bool
 	HideDraft bool
 
-	Site         *site.Site
+	Site         *site.Site // Default language site (for backward compatibility)
 	DocumentTmpl *template.Template
 
 	// SiteConfig holds the loaded dorcs config for theming/branding
 	SiteConfig *config.Config
+
+	// Sites is a map of language code to Site instance (for multi-lingual support)
+	// If nil or empty, only the default Site is used
+	Sites map[string]*site.Site
 
 	// ReloadBroadcaster enables live reload in watch mode
 	ReloadBroadcaster *site.ReloadBroadcaster
@@ -87,6 +91,9 @@ type DocPageModel struct {
 	// CurrentPath is the request path used to highlight the active item in the sidebar.
 	CurrentPath string
 
+	// DocPath is the document path without language prefix (e.g., "/getting-started" or "/")
+	DocPath string
+
 	// Navigation sidebar tree (layout expects `.Nav.Nodes`)
 	Nav struct {
 		Nodes []NavItem
@@ -117,6 +124,9 @@ type DocPageModel struct {
 
 	// Version is the version identifier for dorcs
 	Version string
+
+	// CurrentLanguage is the language code for the current page
+	CurrentLanguage string
 }
 
 // ServeHTTP routes requests:
@@ -133,6 +143,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	reqPath := r.URL.Path
 	h.mu.RLock()
 	basePath := h.cfg.BasePath
+	siteConfig := h.cfg.SiteConfig
 	h.mu.RUnlock()
 	if basePath != "" {
 		if !strings.HasPrefix(reqPath, basePath) {
@@ -145,14 +156,61 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	// Root -> docs/index.md
+	// Detect language from URL path
+	var currentLang string
+	var docPath string
 	if reqPath == "/" {
-		h.handleDocByKey(w, r, "")
+		docPath = "/"
+	} else {
+		// Extract first path segment as potential language code
+		parts := strings.Split(strings.TrimPrefix(reqPath, "/"), "/")
+		if len(parts) > 0 && parts[0] != "" {
+			// Check if first segment is a valid language code
+			if siteConfig != nil && siteConfig.IsLanguageEnabled(parts[0]) {
+				currentLang = parts[0]
+				// Remove language prefix from path
+				if len(parts) > 1 {
+					docPath = "/" + strings.Join(parts[1:], "/")
+				} else {
+					docPath = "/"
+				}
+			} else {
+				// Not a language code, treat as document path
+				docPath = reqPath
+			}
+		} else {
+			docPath = reqPath
+		}
+	}
+
+	// Get the appropriate Site instance for this language
+	var targetSite *site.Site
+	h.mu.RLock()
+	if h.cfg.Sites != nil && len(h.cfg.Sites) > 0 {
+		// Default language uses empty key in Sites map
+		siteKey := currentLang
+		if currentLang == "" {
+			siteKey = "" // Default language
+		}
+		if langSite, ok := h.cfg.Sites[siteKey]; ok {
+			targetSite = langSite
+		}
+	}
+	// Fall back to default site if no language-specific site found
+	if targetSite == nil {
+		targetSite = h.cfg.Site
+		currentLang = "" // Use default language
+	}
+	h.mu.RUnlock()
+
+	// Root -> docs/index.md
+	if docPath == "/" {
+		h.handleDocByKeyWithSite(w, r, "", targetSite, currentLang, docPath)
 		return
 	}
 
 	// Everything else: strip leading "/" and try to resolve to doc.
-	rel := strings.TrimPrefix(reqPath, "/")
+	rel := strings.TrimPrefix(docPath, "/")
 	rel = strings.Trim(rel, "/")
 	if rel == "" {
 		http.NotFound(w, r)
@@ -160,8 +218,8 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Support folder index: /guide -> docs/guide/index.md
-	if strings.HasSuffix(reqPath, "/") {
-		h.handleDocByKey(w, r, path.Clean(rel))
+	if strings.HasSuffix(docPath, "/") {
+		h.handleDocByKeyWithSite(w, r, path.Clean(rel), targetSite, currentLang, docPath)
 		return
 	}
 
@@ -171,11 +229,11 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// First: try docs/<rel>.md
-	if h.tryServeDoc(w, r, rel) {
+	if h.tryServeDocWithSite(w, r, rel, targetSite, currentLang) {
 		return
 	}
 	// Second: try docs/<rel>/index.md (folder index)
-	if h.tryServeDoc(w, r, path.Clean(rel)) {
+	if h.tryServeDocWithSite(w, r, path.Clean(rel), targetSite, currentLang) {
 		return
 	}
 
@@ -340,12 +398,26 @@ func (h *Handler) serveStaticFile(w http.ResponseWriter, file *os.File, stat os.
 }
 
 func (h *Handler) tryServeDoc(w http.ResponseWriter, r *http.Request, key string) bool {
-	key = cleanKey(key)
 	h.mu.RLock()
 	site := h.cfg.Site
 	h.mu.RUnlock()
-	if _, ok := site.GetDoc(key); ok {
-		h.handleDocByKey(w, r, key)
+	return h.tryServeDocWithSite(w, r, key, site, "")
+}
+
+func (h *Handler) tryServeDocWithSite(w http.ResponseWriter, r *http.Request, key string, targetSite *site.Site, currentLang string) bool {
+	if targetSite == nil {
+		return false
+	}
+	key = cleanKey(key)
+	if _, ok := targetSite.GetDoc(key); ok {
+		// Reconstruct docPath from key for tryServeDocWithSite
+		var docPathForCall string
+		if key == "" {
+			docPathForCall = "/"
+		} else {
+			docPathForCall = "/" + key
+		}
+		h.handleDocByKeyWithSite(w, r, key, targetSite, currentLang, docPathForCall)
 		return true
 	}
 	return false
@@ -354,25 +426,39 @@ func (h *Handler) tryServeDoc(w http.ResponseWriter, r *http.Request, key string
 func (h *Handler) handleDocByKey(w http.ResponseWriter, r *http.Request, key string) {
 	h.mu.RLock()
 	site := h.cfg.Site
+	h.mu.RUnlock()
+	// For single language mode, docPath is reconstructed from key
+	var docPath string
+	if key == "" {
+		docPath = "/"
+	} else {
+		docPath = "/" + key
+	}
+	h.handleDocByKeyWithSite(w, r, key, site, "", docPath)
+}
+
+func (h *Handler) handleDocByKeyWithSite(w http.ResponseWriter, r *http.Request, key string, targetSite *site.Site, currentLang string, docPath string) {
+	h.mu.RLock()
 	documentTmpl := h.cfg.DocumentTmpl
 	basePath := h.cfg.BasePath
+	siteConfig := h.cfg.SiteConfig
 	h.mu.RUnlock()
 
-	if site == nil || documentTmpl == nil {
+	if targetSite == nil || documentTmpl == nil {
 		http.Error(w, "server not configured", http.StatusInternalServerError)
 		return
 	}
 
 	key = cleanKey(key)
 
-	// Build navigation tree
-	nav := h.buildNavItems()
+	// Build navigation tree for this site
+	nav := h.buildNavItemsWithSite(targetSite)
 
 	// Get root title from navigation tree
-	rootTitle := h.getRootTitle()
+	rootTitle := h.getRootTitleWithSite(targetSite)
 
 	// Use site renderer
-	rendered, err := site.RenderDoc(key)
+	rendered, err := targetSite.RenderDoc(key)
 	if err != nil {
 		http.NotFound(w, r)
 		return
@@ -394,8 +480,20 @@ func (h *Handler) handleDocByKey(w http.ResponseWriter, r *http.Request, key str
 	m.LastModified = rendered.Doc.UpdatedAt.UTC().Format(time.RFC3339)
 	m.Nav.Nodes = nav
 	m.RootTitle = rootTitle
-	m.CurrentPath = r.URL.Path
+	// Set current path - for root index, use "/" for default language or "/{lang}/" for others
+	if key == "" {
+		if currentLang != "" {
+			m.CurrentPath = basePath + "/" + currentLang + "/"
+		} else {
+			m.CurrentPath = basePath + "/"
+		}
+	} else {
+		m.CurrentPath = r.URL.Path
+	}
+	// DocPath is the document path without language prefix (used for building language links)
+	m.DocPath = docPath
 	m.BasePath = basePath
+	m.CurrentLanguage = currentLang
 
 	m.Meta.Title = rendered.Doc.Title
 	m.Meta.Description = rendered.Doc.Description
@@ -403,11 +501,7 @@ func (h *Handler) handleDocByKey(w http.ResponseWriter, r *http.Request, key str
 	m.Meta.Tags = append([]string(nil), rendered.Doc.Tags...)
 	m.Meta.SourcePath = rendered.Doc.RelPath
 
-	// Add config and theme CSS if available (read with lock)
-	h.mu.RLock()
-	siteConfig := h.cfg.SiteConfig
-	h.mu.RUnlock()
-
+	// Add config and theme CSS if available
 	if siteConfig != nil {
 		m.Config = siteConfig
 		m.ThemeCSS = template.CSS(siteConfig.GenerateThemeCSS())
@@ -415,7 +509,6 @@ func (h *Handler) handleDocByKey(w http.ResponseWriter, r *http.Request, key str
 		if siteConfig.Site.Title != "" {
 			m.SiteTitle = siteConfig.Site.Title
 		}
-		// Otherwise, m.SiteTitle is already set from the earlier read
 	}
 
 	// Enable live reload if broadcaster is configured
@@ -438,23 +531,48 @@ func (h *Handler) handleDocByKey(w http.ResponseWriter, r *http.Request, key str
 // buildNavItems converts the site's NavTree to the template-friendly NavItem slice.
 func (h *Handler) buildNavItems() []NavItem {
 	h.mu.RLock()
-	hideDraft := h.cfg.HideDraft
 	site := h.cfg.Site
 	h.mu.RUnlock()
-	tree := site.NavTree(!hideDraft)
+	return h.buildNavItemsWithSite(site)
+}
+
+// buildNavItemsWithSite converts the given site's NavTree to the template-friendly NavItem slice.
+func (h *Handler) buildNavItemsWithSite(targetSite *site.Site) []NavItem {
+	if targetSite == nil {
+		return nil
+	}
+	h.mu.RLock()
+	hideDraft := h.cfg.HideDraft
+	basePath := h.cfg.BasePath
+	currentLang := ""
+	if targetSite.Language != "" {
+		currentLang = targetSite.Language
+	}
+	h.mu.RUnlock()
+	tree := targetSite.NavTree(!hideDraft)
 	if tree == nil {
 		return nil
 	}
-	return convertNavNodes(tree.Children)
+	return convertNavNodesWithLang(tree.Children, basePath, currentLang)
 }
 
 // getRootTitle extracts the title from the root index.md page.
 func (h *Handler) getRootTitle() string {
 	h.mu.RLock()
-	hideDraft := h.cfg.HideDraft
 	site := h.cfg.Site
 	h.mu.RUnlock()
-	tree := site.NavTree(!hideDraft)
+	return h.getRootTitleWithSite(site)
+}
+
+// getRootTitleWithSite extracts the title from the root index.md page of the given site.
+func (h *Handler) getRootTitleWithSite(targetSite *site.Site) string {
+	if targetSite == nil {
+		return "Home"
+	}
+	h.mu.RLock()
+	hideDraft := h.cfg.HideDraft
+	h.mu.RUnlock()
+	tree := targetSite.NavTree(!hideDraft)
 	if tree == nil {
 		return "Home"
 	}
@@ -469,6 +587,10 @@ func (h *Handler) getRootTitle() string {
 }
 
 func convertNavNodes(nodes []*site.NavNode) []NavItem {
+	return convertNavNodesWithLang(nodes, "", "")
+}
+
+func convertNavNodesWithLang(nodes []*site.NavNode, basePath string, currentLang string) []NavItem {
 	if len(nodes) == 0 {
 		return nil
 	}
@@ -485,17 +607,25 @@ func convertNavNodes(nodes []*site.NavNode) []NavItem {
 		item := NavItem{
 			Title:    title,
 			IsDir:    n.IsDir,
-			Children: convertNavNodes(n.Children),
+			Children: convertNavNodesWithLang(n.Children, basePath, currentLang),
 		}
 
 		// Set path - folders are only clickable if they have a landing page
+		pathPrefix := basePath
+		if currentLang != "" {
+			if pathPrefix != "" {
+				pathPrefix += "/" + currentLang
+			} else {
+				pathPrefix = "/" + currentLang
+			}
+		}
 		if n.IsDir {
 			if n.Page != nil {
-				item.Path = "/" + n.Key
+				item.Path = pathPrefix + "/" + n.Key
 			}
 			// Path stays empty for folders without index.md
 		} else {
-			item.Path = "/" + n.Key
+			item.Path = pathPrefix + "/" + n.Key
 		}
 
 		items = append(items, item)
