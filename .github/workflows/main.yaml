@@ -49,17 +49,42 @@ jobs:
           echo "VERSION=$(git describe --tags --abbrev=0)" >> $GITHUB_OUTPUT
           echo "Tag version: $(git describe --tags --abbrev=0)"
 
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y musl-tools gcc-mingw-w64-x86-64 gcc-mingw-w64
+          # Note: Windows ARM64 cross-compilation may require additional setup
+          # macOS builds with CGO may have dynamic linking dependencies
+
       - name: Build binary
         env:
           GOOS: ${{ matrix.goos }}
           GOARCH: ${{ matrix.goarch }}
-          CGO_ENABLED: 0
+          CGO_ENABLED: 1
           VERSION: ${{ steps.get_tag.outputs.VERSION }}
         run: |
           mkdir -p binaries
+          
+          # Set C compiler and linker flags based on target platform
+          if [ "${{ matrix.goos }}" = "linux" ]; then
+            export CC=musl-gcc
+            export LDFLAGS="-linkmode=external -extldflags=-static"
+          elif [ "${{ matrix.goos }}" = "windows" ]; then
+            if [ "${{ matrix.goarch }}" = "amd64" ]; then
+              export CC=x86_64-w64-mingw32-gcc
+            else
+              # Windows ARM64 - use aarch64 compiler if available
+              export CC=aarch64-w64-mingw32-gcc
+            fi
+            export LDFLAGS="-extldflags=-static"
+          else
+            # macOS - CGO enabled but may have dynamic linking
+            export LDFLAGS=""
+          fi
+          
           go build \
             -trimpath \
-            -ldflags "-s -w -X dorcs-v2/cmd/dorcs.Version=${VERSION}" \
+            -ldflags "-s -w -X dorcs-v2/cmd/dorcs.Version=${VERSION} ${LDFLAGS}" \
             -o binaries/${{ matrix.binary_name }} \
             ./cmd/dorcs
 
