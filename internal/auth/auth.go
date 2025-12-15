@@ -339,4 +339,3 @@ func (a *AuthManager) RequireAuth(next http.Handler) http.Handler {
 func (a *AuthManager) GetStore() *SessionStore {
 	return a.store
 }
-

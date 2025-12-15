@@ -460,4 +460,3 @@ func (h *EditHandlers) HandleDeleteFile(w http.ResponseWriter, r *http.Request) 
 		"success": true,
 	})
 }
-

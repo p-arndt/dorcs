@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"html/template"
 	"io"
+	"mime"
 	"net/http"
 	"net/url"
 	"os"
@@ -343,44 +344,38 @@ func (h *Handler) tryServeStaticAsset(w http.ResponseWriter, _ *http.Request, re
 
 // serveStaticFile serves a static file with appropriate headers.
 func (h *Handler) serveStaticFile(w http.ResponseWriter, file *os.File, stat os.FileInfo, relPath string) bool {
+	// MIME type overrides for cases where we want different behavior than Go's default
+	mimeOverrides := map[string]string{
+		".zip": "application/zip",                       // Go returns "application/x-zip-compressed"
+		".xml": "application/xml",                       // Go returns "text/xml; charset=utf-8"
+		".js":  "application/javascript; charset=utf-8", // Ensure charset for JS
+	}
+
+	// Fallback MIME types for extensions not in Go's default mime database
+	mimeFallbacks := map[string]string{
+		".woff":  "font/woff",
+		".woff2": "font/woff2",
+		".ttf":   "font/ttf",
+		".eot":   "application/vnd.ms-fontobject",
+	}
 
 	// Set content type based on extension
 	ext := strings.ToLower(filepath.Ext(relPath))
-	switch ext {
-	case ".png":
-		w.Header().Set("Content-Type", "image/png")
-	case ".jpg", ".jpeg":
-		w.Header().Set("Content-Type", "image/jpeg")
-	case ".gif":
-		w.Header().Set("Content-Type", "image/gif")
-	case ".svg":
-		w.Header().Set("Content-Type", "image/svg+xml")
-	case ".webp":
-		w.Header().Set("Content-Type", "image/webp")
-	case ".ico":
-		w.Header().Set("Content-Type", "image/x-icon")
-	case ".pdf":
-		w.Header().Set("Content-Type", "application/pdf")
-	case ".zip":
-		w.Header().Set("Content-Type", "application/zip")
-	case ".json":
-		w.Header().Set("Content-Type", "application/json")
-	case ".xml":
-		w.Header().Set("Content-Type", "application/xml")
-	case ".txt":
-		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
-	case ".css":
-		w.Header().Set("Content-Type", "text/css; charset=utf-8")
-	case ".js":
-		w.Header().Set("Content-Type", "application/javascript; charset=utf-8")
-	case ".woff":
-		w.Header().Set("Content-Type", "font/woff")
-	case ".woff2":
-		w.Header().Set("Content-Type", "font/woff2")
-	case ".ttf":
-		w.Header().Set("Content-Type", "font/ttf")
-	case ".eot":
-		w.Header().Set("Content-Type", "application/vnd.ms-fontobject")
+	contentType := ""
+
+	// Check overrides first
+	if override, ok := mimeOverrides[ext]; ok {
+		contentType = override
+	} else if fallback, ok := mimeFallbacks[ext]; ok {
+		// Use fallback for extensions not in Go's mime database
+		contentType = fallback
+	} else {
+		// Use Go's mime package
+		contentType = mime.TypeByExtension(ext)
+	}
+
+	if contentType != "" {
+		w.Header().Set("Content-Type", contentType)
 	}
 
 	// Set cache headers
@@ -527,8 +522,6 @@ func (h *Handler) buildNavItemsWithSite(targetSite *site.Site) []NavItem {
 	return convertNavNodesWithLang(tree.Children, basePath, currentLang)
 }
 
-
-
 // getRootTitleWithSite extracts the title from the root index.md page of the given site.
 func (h *Handler) getRootTitleWithSite(targetSite *site.Site) string {
 	if targetSite == nil {
@@ -550,8 +543,6 @@ func (h *Handler) getRootTitleWithSite(targetSite *site.Site) string {
 	}
 	return "Home"
 }
-
-
 
 func convertNavNodesWithLang(nodes []*site.NavNode, basePath string, currentLang string) []NavItem {
 	if len(nodes) == 0 {
@@ -614,7 +605,6 @@ func formatDate(t time.Time) string {
 	}
 	return t.Format("2006-01-02")
 }
-
 
 // SearchResponse represents the JSON response for search API.
 type SearchResponse struct {
