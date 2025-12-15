@@ -47,17 +47,19 @@ jobs:
         id: get_tag
         run: |
           echo "VERSION=$(git describe --tags --abbrev=0)" >> $GITHUB_OUTPUT
+          echo "Tag version: $(git describe --tags --abbrev=0)"
 
       - name: Build binary
         env:
           GOOS: ${{ matrix.goos }}
           GOARCH: ${{ matrix.goarch }}
           CGO_ENABLED: 0
+          VERSION: ${{ steps.get_tag.outputs.VERSION }}
         run: |
           mkdir -p binaries
           go build \
             -trimpath \
-            -ldflags="-s -w -X dorcs-v2/cmd/dorcs.Version=${{ steps.get_tag.outputs.VERSION }}" \
+            -ldflags "-s -w -X dorcs-v2/cmd/dorcs.Version=${VERSION}" \
             -o binaries/${{ matrix.binary_name }} \
             ./cmd/dorcs
 
