@@ -98,6 +98,63 @@ footer:
       url: "/privacy"
 ```
 
+### Multi-lingual Support
+
+Configure multiple languages for your documentation:
+
+```yaml
+languages:
+  default: "en"                 # Default language code (served at root URL)
+  enabled:
+    - code: "en"
+      name: "English"
+    - code: "de"
+      name: "Deutsch"
+    - code: "fr"
+      name: "Français"
+```
+
+**How it works:**
+
+- **Default language**: Served at root URL (`/`) - place docs in `docs/` folder
+- **Other languages**: Served at `/{lang}/` - place docs in `docs/__lang__/{lang}/` folders
+- **Language switcher**: Automatically appears in header when multiple languages are enabled
+- **URL structure**:
+  - Default: `/getting-started` → `docs/getting-started.md`
+  - German: `/de/getting-started` → `docs/__lang__/de/getting-started.md`
+  - French: `/fr/getting-started` → `docs/__lang__/fr/getting-started.md`
+
+**File Structure Example:**
+
+```
+docs/
+  index.md                    # Default language (English)
+  getting-started.md
+  guide/
+    installation.md
+  __lang__/                   # Language-specific folder
+    de/                       # German language folder
+      index.md
+      getting-started.md
+      guide/
+        installation.md
+    fr/                       # French language folder
+      index.md
+      getting-started.md
+      guide/
+        installation.md
+```
+
+**Notes:**
+
+- Each language folder should have a complete copy of your documentation structure
+- The `__lang__` folder keeps language-specific content separate and avoids conflicts with regular folders
+- The default language stays in the root `docs/` folder
+- Other languages go in `docs/__lang__/{lang}/` folders where `{lang}` is the language code
+- The language switcher preserves the current page path when switching languages
+- If only one language is configured (or none), the language switcher is hidden
+- Language codes should follow ISO 639-1 standard (e.g., "en", "de", "fr", "es", "ja")
+
 ### Authentication & Edit Mode
 
 Enable online editing with username/password authentication:
@@ -197,6 +254,16 @@ footer:
     - title: "Terms"
       url: "/terms"
 
+languages:
+  default: "en"
+  enabled:
+    - code: "en"
+      name: "English"
+    - code: "de"
+      name: "Deutsch"
+    - code: "fr"
+      name: "Français"
+
 auth:
   enabled: true
   username: "admin"
@@ -207,3 +274,212 @@ auth:
 
 - 🎨 [Themes](./05_themes.md) - Browse all available themes
 - 🚀 [Deployment](./04_deployment.md) - Deploy to production
+
+
+
+
+**How it works:**
+
+
+
+- When enabled, a **Login** button appears in the footer
+
+- After logging in, **Edit** and **Logout** buttons appear in the header
+
+- Click **Edit** to open the edit mode panel where you can:
+
+  - Browse and edit files
+
+  - Create new files and folders
+
+  - Delete files
+
+  - Save changes directly to the filesystem
+
+
+
+**Security Notes:**
+
+
+
+- Passwords are automatically hashed using Argon2id on first use
+
+- Sessions expire after 24 hours
+
+- All edit operations require authentication
+
+- The password hash is saved to the config file after first login
+
+
+
+> [!WARNING]
+
+> Only enable edit mode on trusted networks or behind proper authentication. The edit mode allows full file system access to your docs directory.
+
+
+
+## Command-Line Flags
+
+
+
+All configuration options can be overridden via command-line flags:
+
+
+
+| Flag | Description | Example |
+
+|------|-------------|---------|
+
+| `--dir` | Docs directory | `--dir ./docs` |
+
+| `--addr` | Listen address | `--addr :8080` |
+
+| `--base-url` | URL path prefix | `--base-url /docs` |
+
+| `--title` | Site title | `--title "My Docs"` |
+
+| `--config` | Config file path | `--config /path/to/config.yaml` |
+
+| `--theme` | Theme preset | `--theme midnight` |
+
+| `--theme-mode` | Theme mode | `--theme-mode dark` |
+
+| `--cache` | Enable caching | `--cache=true` |
+
+| `--no-drafts` | Hide drafts | `--no-drafts=true` |
+
+| `--watch` | Watch mode | `--watch` |
+
+
+
+**Note:** Command-line flags override configuration file settings.
+
+
+
+## Examples
+
+
+
+### Minimal
+
+
+
+```yaml
+
+site:
+
+  title: "My Docs"
+
+```
+
+
+
+### Full Customization
+
+
+
+```yaml
+
+site:
+
+  title: "My Awesome Documentation"
+
+  description: "Complete guide to my project"
+
+  logo: "/logo.svg"        # Place logo.svg in the root directory where dorcs is running
+
+  favicon: "/favicon.ico"  # Place favicon.ico in the root directory where dorcs is running
+
+
+
+theme:
+
+  mode: auto
+
+  preset: midnight
+
+  custom_css: "overrides.css"
+
+  font_family: '"SF Pro Display", system-ui, sans-serif'
+
+  mono_font_family: '"SF Mono", monospace'
+
+
+
+nav:
+
+  show_search: true
+
+  expand_all: true
+
+  links:
+
+    - title: "GitHub"
+
+      url: "https://github.com/user/repo"
+
+      external: true
+
+      icon: "github"
+
+    - title: "Discord"
+
+      url: "https://discord.gg/server"
+
+      external: true
+
+      icon: "discord"
+
+
+
+footer:
+
+  copyright: "© 2024 My Company"
+
+  text: "Made with ❤️ using dorcs"
+
+  show_powered_by: false
+
+  links:
+
+    - title: "Privacy"
+
+      url: "/privacy"
+
+    - title: "Terms"
+
+      url: "/terms"
+
+
+
+languages:
+  default: "en"
+  enabled:
+    - code: "en"
+      name: "English"
+    - code: "de"
+      name: "Deutsch"
+    - code: "fr"
+      name: "Français"
+
+auth:
+
+  enabled: true
+
+  username: "admin"
+
+  password: "secure-password-here"
+
+```
+
+
+
+## Next Steps
+
+
+
+- 🎨 [Themes](./05_themes.md) - Browse all available themes
+
+- 🚀 [Deployment](./04_deployment.md) - Deploy to production
+
+

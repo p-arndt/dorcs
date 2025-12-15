@@ -96,6 +96,23 @@ footer:
   #   - title: "Terms"
   #     url: "/terms"
 
+# Multi-lingual support configuration
+languages:
+  # Default language code (served at root URL, no prefix)
+  default: "en"
+
+  # Enabled languages list
+  enabled:
+    - code: "en"
+      name: "English"
+    - code: "de"
+      name: "Deutsch"
+  # Add more languages as needed:
+  #   - code: "fr"
+  #     name: "Français"
+  #   - code: "es"
+  #     name: "Español"
+
 # Authentication and Edit Mode configuration
 auth:
   # Enable authentication and edit mode

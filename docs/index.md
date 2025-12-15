@@ -32,6 +32,7 @@ Ready to get started? Check out the [Getting Started guide](./01_getting-started
 
 - **Single binary** – no runtime dependencies, statically linkable
 - **Extensionless URLs** – `/guide/getting-started` serves `docs/guide/getting-started.md`
+- **Multi-lingual support** – serve documentation in multiple languages with automatic language switching
 - **YAML front matter** – metadata support (title, description, date, tags, draft)
 - **Table of Contents** – auto-generated from headings with scrollspy
 - **Navigation sidebar** – built automatically from your folder structure
@@ -54,5 +55,17 @@ dorcs uses extensionless URLs that map directly to your file structure:
 | `docs/getting-started.md`    | `/getting-started`    |
 | `docs/guide/index.md`        | `/guide`              |
 | `docs/guide/installation.md` | `/guide/installation` |
+
+**Multi-lingual URLs:**
+
+When multiple languages are configured, non-default languages use a language prefix:
+
+| File Path                         | URL                      |
+| --------------------------------- | ------------------------ |
+| `docs/de/index.md`                | `/de/`                   |
+| `docs/de/getting-started.md`      | `/de/getting-started`    |
+| `docs/fr/guide/installation.md`   | `/fr/guide/installation` |
+
+The default language is served at the root URL (no prefix), while other languages use `/{lang}/` prefixes.
 
 It will also automatically build navigation from your structure and generate a sidebar and a table of contents for each page.
