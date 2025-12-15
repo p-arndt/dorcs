@@ -651,11 +651,15 @@ updateActiveSection();
       return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
     }
 
-    // Initialize theme on page load
+    // Initialize theme on page load (theme may already be applied by inline script in head)
+    // This ensures the toggle button state is correct
     const saved = localStorage.getItem('dorcs-theme');
     if (saved === 'dark' || saved === 'light') {
-      // User has a saved preference, apply it to override server default
-      applyTheme(saved);
+      // Ensure theme is applied (may already be done by inline script, but ensure consistency)
+      const html = document.documentElement;
+      if (!html.classList.contains(saved + '-mode')) {
+        applyTheme(saved);
+      }
     }
     // Otherwise, let the server-generated CSS handle it (respects theme.mode config)
 

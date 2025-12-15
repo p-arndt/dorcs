@@ -50,6 +50,20 @@
   <style>{{ .ThemeCSS }}</style>
   {{- end }}
 
+  {{- /* Apply theme preference immediately to prevent flicker */ -}}
+  <script>
+    (function() {
+      try {
+        const saved = localStorage.getItem('dorcs-theme');
+        if (saved === 'dark' || saved === 'light') {
+          document.documentElement.classList.add(saved + '-mode');
+        }
+      } catch (e) {
+        // Ignore localStorage errors (e.g., in private browsing)
+      }
+    })();
+  </script>
+
   {{ block "head_extra" . }}{{ end }}
 </head>
 {{ end }}
