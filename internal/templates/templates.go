@@ -56,12 +56,3 @@ func ParseFS(fs embed.FS, name string, patterns ...string) (*template.Template, 
 	}
 	return tmpl, nil
 }
-
-// MustParseFS is like ParseFS but panics on error.
-func MustParseFS(fs embed.FS, name string, patterns ...string) *template.Template {
-	tmpl, err := ParseFS(fs, name, patterns...)
-	if err != nil {
-		panic(err)
-	}
-	return tmpl
-}

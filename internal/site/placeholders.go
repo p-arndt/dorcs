@@ -97,11 +97,6 @@ func BuildBreadcrumbs(ctx PlaceholderContext) template.HTML {
 	return template.HTML(b.String())
 }
 
-// BuildNavSection generates section navigation (children of current section)
-func BuildNavSection(ctx PlaceholderContext) template.HTML {
-	return ctx.Site.BuildNavTOC(ctx.CurrentKey, ctx.BasePath)
-}
-
 // BuildChildren generates a list of all children pages in the current folder/section
 func BuildChildren(ctx PlaceholderContext) template.HTML {
 	ctx.Site.mu.RLock()
@@ -289,71 +284,6 @@ func BuildChildren(ctx PlaceholderContext) template.HTML {
 	}
 
 	b.WriteString(`</ul>`)
-	b.WriteString(`</nav>`)
-	return template.HTML(b.String())
-}
-
-// BuildPrevNext generates previous/next page navigation
-func BuildPrevNext(ctx PlaceholderContext) template.HTML {
-	allDocs := ctx.Site.ListDocs(false)
-	if len(allDocs) == 0 {
-		return ""
-	}
-
-	// Find current doc index
-	currentIdx := -1
-	for i, doc := range allDocs {
-		if doc.Key == ctx.CurrentKey {
-			currentIdx = i
-			break
-		}
-	}
-
-	if currentIdx == -1 {
-		return ""
-	}
-
-	var b strings.Builder
-	b.WriteString(`<nav class="prev-next-nav" aria-label="Page navigation">`)
-
-	// Previous link
-	if currentIdx > 0 {
-		prevDoc := allDocs[currentIdx-1]
-		prevURL := buildDocURL(prevDoc.Key, ctx.BasePath)
-		prevTitle := prevDoc.Title
-		if prevTitle == "" {
-			prevTitle = prevDoc.Key
-		}
-
-		b.WriteString(`<div class="prev-next-item prev-item">`)
-		b.WriteString(`<span class="prev-next-label">Previous</span>`)
-		b.WriteString(`<a href="`)
-		b.WriteString(html.EscapeString(prevURL))
-		b.WriteString(`" class="prev-next-link">`)
-		b.WriteString(html.EscapeString(prevTitle))
-		b.WriteString(`</a>`)
-		b.WriteString(`</div>`)
-	}
-
-	// Next link
-	if currentIdx < len(allDocs)-1 {
-		nextDoc := allDocs[currentIdx+1]
-		nextURL := buildDocURL(nextDoc.Key, ctx.BasePath)
-		nextTitle := nextDoc.Title
-		if nextTitle == "" {
-			nextTitle = nextDoc.Key
-		}
-
-		b.WriteString(`<div class="prev-next-item next-item">`)
-		b.WriteString(`<span class="prev-next-label">Next</span>`)
-		b.WriteString(`<a href="`)
-		b.WriteString(html.EscapeString(nextURL))
-		b.WriteString(`" class="prev-next-link">`)
-		b.WriteString(html.EscapeString(nextTitle))
-		b.WriteString(`</a>`)
-		b.WriteString(`</div>`)
-	}
-
 	b.WriteString(`</nav>`)
 	return template.HTML(b.String())
 }

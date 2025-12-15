@@ -286,11 +286,6 @@ func (b *Builder) copyCustomCSS() error {
 	return nil
 }
 
-// renderDocument renders a single document to HTML and writes it to the appropriate path.
-func (b *Builder) renderDocument(handler *server.Handler, doc *site.Doc) error {
-	return b.renderDocumentForLanguage(handler, doc, "", true, b.outputDir)
-}
-
 // renderDocumentForLanguage renders a single document for a specific language.
 func (b *Builder) renderDocumentForLanguage(handler *server.Handler, doc *site.Doc, langCode string, isDefault bool, langOutputDir string) error {
 	// Build the URL path for this document
@@ -415,11 +410,6 @@ func (b *Builder) copyDocsStaticAssets() error {
 
 		return nil
 	})
-}
-
-// generateSitemap generates a sitemap.xml file.
-func (b *Builder) generateSitemap(docs []*site.Doc) error {
-	return b.generateSitemapForLanguage(docs, "", true, b.outputDir)
 }
 
 // generateSitemapForLanguage generates a sitemap.xml file for a specific language.

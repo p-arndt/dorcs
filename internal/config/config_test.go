@@ -308,27 +308,6 @@ nav:
 	}
 }
 
-func TestItoa(t *testing.T) {
-	tests := []struct {
-		input    int
-		expected string
-	}{
-		{0, "0"},
-		{1, "1"},
-		{12, "12"},
-		{123, "123"},
-		{-5, "-5"},
-		{-123, "-123"},
-	}
-
-	for _, tt := range tests {
-		result := itoa(tt.input)
-		if result != tt.expected {
-			t.Errorf("itoa(%d) = %q, expected %q", tt.input, result, tt.expected)
-		}
-	}
-}
-
 // Helper function
 func contains(s, substr string) bool {
 	return len(s) >= len(substr) && (s == substr || len(s) > 0 && containsHelper(s, substr))

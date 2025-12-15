@@ -397,13 +397,6 @@ func (h *Handler) serveStaticFile(w http.ResponseWriter, file *os.File, stat os.
 	return err == nil
 }
 
-func (h *Handler) tryServeDoc(w http.ResponseWriter, r *http.Request, key string) bool {
-	h.mu.RLock()
-	site := h.cfg.Site
-	h.mu.RUnlock()
-	return h.tryServeDocWithSite(w, r, key, site, "")
-}
-
 func (h *Handler) tryServeDocWithSite(w http.ResponseWriter, r *http.Request, key string, targetSite *site.Site, currentLang string) bool {
 	if targetSite == nil {
 		return false
@@ -421,20 +414,6 @@ func (h *Handler) tryServeDocWithSite(w http.ResponseWriter, r *http.Request, ke
 		return true
 	}
 	return false
-}
-
-func (h *Handler) handleDocByKey(w http.ResponseWriter, r *http.Request, key string) {
-	h.mu.RLock()
-	site := h.cfg.Site
-	h.mu.RUnlock()
-	// For single language mode, docPath is reconstructed from key
-	var docPath string
-	if key == "" {
-		docPath = "/"
-	} else {
-		docPath = "/" + key
-	}
-	h.handleDocByKeyWithSite(w, r, key, site, "", docPath)
 }
 
 func (h *Handler) handleDocByKeyWithSite(w http.ResponseWriter, r *http.Request, key string, targetSite *site.Site, currentLang string, docPath string) {
@@ -528,14 +507,6 @@ func (h *Handler) handleDocByKeyWithSite(w http.ResponseWriter, r *http.Request,
 	}
 }
 
-// buildNavItems converts the site's NavTree to the template-friendly NavItem slice.
-func (h *Handler) buildNavItems() []NavItem {
-	h.mu.RLock()
-	site := h.cfg.Site
-	h.mu.RUnlock()
-	return h.buildNavItemsWithSite(site)
-}
-
 // buildNavItemsWithSite converts the given site's NavTree to the template-friendly NavItem slice.
 func (h *Handler) buildNavItemsWithSite(targetSite *site.Site) []NavItem {
 	if targetSite == nil {
@@ -556,13 +527,7 @@ func (h *Handler) buildNavItemsWithSite(targetSite *site.Site) []NavItem {
 	return convertNavNodesWithLang(tree.Children, basePath, currentLang)
 }
 
-// getRootTitle extracts the title from the root index.md page.
-func (h *Handler) getRootTitle() string {
-	h.mu.RLock()
-	site := h.cfg.Site
-	h.mu.RUnlock()
-	return h.getRootTitleWithSite(site)
-}
+
 
 // getRootTitleWithSite extracts the title from the root index.md page of the given site.
 func (h *Handler) getRootTitleWithSite(targetSite *site.Site) string {
@@ -586,9 +551,7 @@ func (h *Handler) getRootTitleWithSite(targetSite *site.Site) string {
 	return "Home"
 }
 
-func convertNavNodes(nodes []*site.NavNode) []NavItem {
-	return convertNavNodesWithLang(nodes, "", "")
-}
+
 
 func convertNavNodesWithLang(nodes []*site.NavNode, basePath string, currentLang string) []NavItem {
 	if len(nodes) == 0 {
@@ -652,12 +615,6 @@ func formatDate(t time.Time) string {
 	return t.Format("2006-01-02")
 }
 
-func firstNonEmpty(v, fallback string) string {
-	if strings.TrimSpace(v) == "" {
-		return fallback
-	}
-	return v
-}
 
 // SearchResponse represents the JSON response for search API.
 type SearchResponse struct {
