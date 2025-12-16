@@ -24,6 +24,17 @@ dorcs sucht die Konfigurationsdatei in dieser Reihenfolge:
 2. **Dokumentationsverzeichnis** - `./docs/dorcs.yaml` (wenn anders als Arbeitsverzeichnis)
 3. **Benutzerdefinierter Pfad** - Verwenden Sie `--config /pfad/zu/config.yaml`, um einen genauen Pfad anzugeben
 
+### Server-Port
+
+Konfigurieren Sie den Port, auf dem dorcs laufen soll:
+
+```yaml
+port: 8000  # Optional: Port angeben (Standard: 8080)
+```
+
+> [!IMPORTANT]
+> Das `--addr` Befehlszeilen-Flag überschreibt die Port-Einstellung in der Konfigurationsdatei, falls angegeben.
+
 ## Konfigurationsabschnitte
 
 ### Site
@@ -190,7 +201,7 @@ Alle Konfigurationsoptionen können über Befehlszeilen-Flags überschrieben wer
 | Flag | Beschreibung | Beispiel |
 |------|-------------|---------|
 | `--dir` | Dokumentationsverzeichnis | `--dir ./docs` |
-| `--addr` | Listen-Adresse | `--addr :8080` |
+| `--addr` | Listen-Adresse (überschreibt Config-Port) | `--addr :8080` |
 | `--base-url` | URL-Pfad-Präfix | `--base-url /docs` |
 | `--title` | Seitentitel | `--title "My Docs"` |
 | `--config` | Konfigurationsdatei-Pfad | `--config /pfad/zu/config.yaml` |
@@ -200,13 +211,15 @@ Alle Konfigurationsoptionen können über Befehlszeilen-Flags überschrieben wer
 | `--no-drafts` | Entwürfe ausblenden | `--no-drafts=true` |
 | `--watch` | Watch-Modus | `--watch` |
 
-**Hinweis:** Befehlszeilen-Flags überschreiben Konfigurationsdatei-Einstellungen.
+**Hinweis:** Befehlszeilen-Flags überschreiben Konfigurationsdatei-Einstellungen. Das `--addr` Flag überschreibt die `port` Einstellung in der Konfigurationsdatei.
 
 ## Beispiele
 
 ### Minimal
 
 ```yaml
+port: 8080  # Optional: Standard ist 8080
+
 site:
   title: "My Docs"
 ```
@@ -214,6 +227,8 @@ site:
 ### Vollständige Anpassung
 
 ```yaml
+port: 8000  # Optional: Port angeben (Standard: 8080)
+
 site:
   title: "My Awesome Documentation"
   description: "Vollständiger Leitfaden zu meinem Projekt"

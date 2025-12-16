@@ -11,6 +11,9 @@ import (
 
 // Config holds all configuration options for the documentation site.
 type Config struct {
+	// Server port (default: 8080)
+	Port int `json:"port" yaml:"port"`
+
 	// Site metadata
 	Site SiteConfig `json:"site" yaml:"site"`
 

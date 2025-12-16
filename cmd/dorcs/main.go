@@ -511,9 +511,16 @@ func main() {
 
 	mux.Handle(prefix+"/", handler)
 
+	// Determine listen address: use config port if set and addr flag is default, otherwise use flag
+	listenAddr := *addr
+	if cfg.Port > 0 && *addr == ":8080" {
+		// Config has a port set and addr flag is still default, use config port
+		listenAddr = fmt.Sprintf(":%d", cfg.Port)
+	}
+
 	// Create server
 	srv := &http.Server{
-		Addr:              *addr,
+		Addr:              listenAddr,
 		Handler:           server.LoggingMiddleware(mux),
 		ReadHeaderTimeout: 5 * time.Second,
 	}

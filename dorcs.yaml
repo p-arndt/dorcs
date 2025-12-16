@@ -3,6 +3,10 @@
 # The config file is looked for in the current directory first, then in the docs directory
 # You can also specify a custom path with --config flag
 
+# Server port (default: 8080)
+# Optional: specify the port on which dorcs should run
+port: 8080
+
 # Site metadata
 site:
   # Title shown in the header/brand area (top-left)
