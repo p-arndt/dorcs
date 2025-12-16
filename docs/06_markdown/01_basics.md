@@ -630,3 +630,28 @@ A pi function $f(x) = x \cdot \pi$
 **Result:**
 
 A pi function $f(x) = x \cdot \pi$  
+
+
+## Mermaid Diagrams
+
+dorcs supports [Mermaid](https://mermaid.js.org/) diagrams for flowcharts, sequence diagrams, and more. Enclose your Mermaid code in `mermaid` code fences:
+
+````markdown
+```mermaid
+graph TD
+	A[Docs server] --> B[goldmark-mermaid]
+	B --> C[Browser]
+	C --> D[Rendered diagram]
+```
+````
+
+**Result:**
+
+```mermaid
+graph TD
+	A[Docs server] --> B[goldmark-mermaid]
+	B --> C[Browser]
+	C --> D[Rendered diagram]
+```
+
+

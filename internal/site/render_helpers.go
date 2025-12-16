@@ -74,8 +74,10 @@ func (s *Site) convertMarkdownToHTML(raw string) (string, error) {
 		return "", fmt.Errorf("render markdown: %w", err)
 	}
 
+	htmlOutput := buf.String()
+
 	// Convert GitHub-style alert blocks in the HTML output
-	htmlOutput := markdown.ConvertAlertBlocksInHTML(buf.String())
+	htmlOutput = markdown.ConvertAlertBlocksInHTML(htmlOutput)
 
 	return htmlOutput, nil
 }

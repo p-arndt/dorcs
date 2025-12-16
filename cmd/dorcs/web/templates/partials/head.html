@@ -64,6 +64,109 @@
     })();
   </script>
 
+  {{- /* Decode HTML entities in mermaid blocks before mermaid.js processes them */ -}}
+  {{- /* goldmark-mermaid HTML-escapes content (e.g., --> becomes --&gt;), but mermaid.js */ -}}
+  {{- /* needs decoded content. This script MUST run before mermaid.js loads. */ -}}
+  <script>
+  (function() {
+    'use strict';
+    
+    var processedBlocks = new WeakSet();
+    
+    function decodeMermaidEntities() {
+      document.querySelectorAll('pre.mermaid').forEach(function(block) {
+        // Skip if already processed
+        if (processedBlocks.has(block)) {
+          return;
+        }
+        
+        // Decode HTML entities by using the browser's built-in parser
+        var content = block.innerHTML;
+        if (content) {
+          var temp = document.createElement('div');
+          temp.innerHTML = content;
+          var decoded = temp.textContent || temp.innerText;
+          block.textContent = decoded;
+          processedBlocks.add(block);
+        }
+      });
+    }
+    
+    // Decode existing blocks when DOM is ready
+    function initDecoding() {
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', decodeMermaidEntities);
+      } else {
+        decodeMermaidEntities();
+      }
+    }
+    initDecoding();
+    
+    // Watch for dynamically added mermaid blocks
+    if (typeof MutationObserver !== 'undefined') {
+      var observer = new MutationObserver(function(mutations) {
+        var hasMermaid = false;
+        for (var i = 0; i < mutations.length; i++) {
+          var addedNodes = mutations[i].addedNodes;
+          for (var j = 0; j < addedNodes.length; j++) {
+            var node = addedNodes[j];
+            if (node.nodeType === 1) { // Element node
+              if (node.classList && node.classList.contains('mermaid')) {
+                hasMermaid = true;
+                break;
+              }
+              if (node.querySelector && node.querySelector('pre.mermaid')) {
+                hasMermaid = true;
+                break;
+              }
+            }
+          }
+          if (hasMermaid) break;
+        }
+        if (hasMermaid) {
+          decodeMermaidEntities();
+        }
+      });
+      
+      if (document.body) {
+        observer.observe(document.body, {
+          childList: true,
+          subtree: true
+        });
+      } else {
+        document.addEventListener('DOMContentLoaded', function() {
+          observer.observe(document.body, {
+            childList: true,
+            subtree: true
+          });
+        });
+      }
+    }
+    
+    // Intercept mermaid.initialize to decode before initialization
+    function interceptMermaid() {
+      if (typeof window.mermaid === 'undefined' || !window.mermaid || !window.mermaid.initialize) {
+        return false;
+      }
+      
+      if (window.mermaid.initialize._intercepted) {
+        return true;
+      }
+      
+      var originalInitialize = window.mermaid.initialize;
+      window.mermaid.initialize = function(config) {
+        decodeMermaidEntities();
+        return originalInitialize.call(this, config);
+      };
+      window.mermaid.initialize._intercepted = true;
+      return true;
+    }
+    
+    // Try to intercept immediately if mermaid is already loaded
+    interceptMermaid();
+  })();
+  </script>
+
   {{ block "head_extra" . }}{{ end }}
 </head>
 {{ end }}
