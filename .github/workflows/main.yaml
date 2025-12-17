@@ -62,7 +62,7 @@ jobs:
           
           go build \
             -trimpath \
-            -ldflags "-s -w -X dorcs-v2/cmd/dorcs.Version=${VERSION} ${LDFLAGS}" \
+            -ldflags "-s -w -X main.Version=${VERSION} ${LDFLAGS}" \
             -o binaries/${{ matrix.binary_name }} \
             ./cmd/dorcs
 

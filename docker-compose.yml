@@ -1,10 +1,15 @@
 services:
   dorcs:
-    build: .
+    build: 
+      context: .
+      args:
+        VERSION: 1.4.0
     ports:
-      - "8080:8080"
+      # - "8080:8080"
+      - "8000:8000"
     volumes:
       - ./docs:/app/docs
+      - ./dorcs.yaml:/app/dorcs.yaml
     restart: unless-stopped
     # Uncomment the command below to enable watch mode
     command: ["/app/dorcs", "--watch"]
