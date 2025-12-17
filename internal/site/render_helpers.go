@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	"dorcs-v2/internal/markdown"
+	"github.com/p-arndt/dorcs/internal/markdown"
 )
 
 // preprocessMarkdown prepares markdown for rendering by:

@@ -7,8 +7,8 @@ import (
 	"path/filepath"
 	"strings"
 
-	"dorcs-v2/internal/markdown"
-	"dorcs-v2/internal/syntax"
+	"github.com/p-arndt/dorcs/internal/markdown"
+	"github.com/p-arndt/dorcs/internal/syntax"
 )
 
 // New creates a Site serving markdown documents from rootDir.

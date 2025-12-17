@@ -9,8 +9,8 @@ import (
 	"strings"
 	"testing"
 
-	"dorcs-v2/internal/config"
-	"dorcs-v2/internal/site"
+	"github.com/p-arndt/dorcs/internal/config"
+	"github.com/p-arndt/dorcs/internal/site"
 )
 
 func TestNew(t *testing.T) {

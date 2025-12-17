@@ -19,12 +19,13 @@ import (
 	"syscall"
 	"time"
 
-	"dorcs-v2/internal/auth"
-	"dorcs-v2/internal/build"
-	"dorcs-v2/internal/config"
-	"dorcs-v2/internal/server"
-	"dorcs-v2/internal/site"
-	"dorcs-v2/internal/templates"
+	"github.com/p-arndt/dorcs/internal/build"
+	"github.com/p-arndt/dorcs/internal/config"
+	"github.com/p-arndt/dorcs/internal/server"
+	"github.com/p-arndt/dorcs/internal/site"
+	"github.com/p-arndt/dorcs/internal/templates"
+
+	"github.com/p-arndt/dorcs/internal/auth"
 )
 
 //go:embed web/templates/*.html web/templates/partials/*.html
@@ -36,7 +37,7 @@ var staticFS embed.FS
 // Version is the version identifier for dorcs.
 // This can be set at build time using -ldflags:
 //
-//	go build -ldflags "-X dorcs-v2/cmd/dorcs.Version=1.0.0"
+//	go build -ldflags "-X github.com/p-arndt/dorcs/cmd/dorcs.Version=1.0.0"
 var Version = "dev"
 
 // runBuild handles the build subcommand for generating static sites.

@@ -4,7 +4,7 @@ package server
 import (
 	"strings"
 
-	"dorcs-v2/internal/site"
+	"github.com/p-arndt/dorcs/internal/site"
 )
 
 // buildNavItemsWithSite converts the given site's NavTree to the template-friendly NavItem slice.

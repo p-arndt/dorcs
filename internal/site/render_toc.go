@@ -7,7 +7,7 @@ import (
 	"strconv"
 	"strings"
 
-	"dorcs-v2/internal/markdown"
+	"github.com/p-arndt/dorcs/internal/markdown"
 )
 
 // generateAndProcessTOC generates a table of contents and processes all placeholders.

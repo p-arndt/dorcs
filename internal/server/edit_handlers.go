@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	"dorcs-v2/internal/auth"
+	"github.com/p-arndt/dorcs/internal/auth"
 )
 
 // EditHandlers provides handlers for edit mode operations.

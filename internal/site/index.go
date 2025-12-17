@@ -8,7 +8,7 @@ import (
 	"sort"
 	"strings"
 
-	"dorcs-v2/internal/markdown"
+	"github.com/p-arndt/dorcs/internal/markdown"
 )
 
 // BuildIndex scans the RootDir recursively for ".md" files and builds an in-memory index.

@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"time"
 
-	"dorcs-v2/internal/site"
+	"github.com/p-arndt/dorcs/internal/site"
 )
 
 func (h *Handler) tryServeDocWithSite(w http.ResponseWriter, r *http.Request, key string, targetSite *site.Site, currentLang string) bool {

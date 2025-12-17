@@ -4,7 +4,7 @@ import (
 	"html/template"
 	"io/fs"
 
-	"dorcs-v2/internal/markdown"
+	"github.com/p-arndt/dorcs/internal/markdown"
 )
 
 // RenderDoc reads and renders the markdown backing the given key.

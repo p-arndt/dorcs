@@ -8,8 +8,8 @@ import (
 	"strings"
 	"sync"
 
-	"dorcs-v2/internal/config"
-	"dorcs-v2/internal/site"
+	"github.com/p-arndt/dorcs/internal/config"
+	"github.com/p-arndt/dorcs/internal/site"
 )
 
 // Config contains runtime configuration for the HTTP app.

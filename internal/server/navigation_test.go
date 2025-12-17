@@ -4,7 +4,7 @@ import (
 	"sync"
 	"testing"
 
-	"dorcs-v2/internal/site"
+	"github.com/p-arndt/dorcs/internal/site"
 )
 
 func TestBuildNavItemsWithSite(t *testing.T) {

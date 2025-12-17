@@ -13,9 +13,9 @@ import (
 	"path/filepath"
 	"strings"
 
-	"dorcs-v2/internal/config"
-	"dorcs-v2/internal/server"
-	"dorcs-v2/internal/site"
+	"github.com/p-arndt/dorcs/internal/config"
+	"github.com/p-arndt/dorcs/internal/server"
+	"github.com/p-arndt/dorcs/internal/site"
 )
 
 // Builder generates a static HTML site from markdown documents.

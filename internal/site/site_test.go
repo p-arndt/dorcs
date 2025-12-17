@@ -1,10 +1,11 @@
 package site
 
 import (
-	"dorcs-v2/internal/markdown"
 	"os"
 	"path/filepath"
 	"testing"
+
+	"github.com/p-arndt/dorcs/internal/markdown"
 )
 
 func TestKeyFromRel(t *testing.T) {

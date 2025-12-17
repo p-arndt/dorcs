@@ -1,4 +1,4 @@
-module dorcs-v2
+module github.com/p-arndt/dorcs
 
 go 1.25
 

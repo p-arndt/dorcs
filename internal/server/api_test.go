@@ -10,7 +10,7 @@ import (
 	"strings"
 	"testing"
 
-	"dorcs-v2/internal/site"
+	"github.com/p-arndt/dorcs/internal/site"
 )
 
 func setupTestSite(t *testing.T) (*site.Site, *Handler) {

@@ -5,7 +5,7 @@ import (
 	"os"
 	"strings"
 
-	"dorcs-v2/internal/markdown"
+	"github.com/p-arndt/dorcs/internal/markdown"
 )
 
 // BrokenLink represents a broken link found in a document.

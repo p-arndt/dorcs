@@ -5,7 +5,7 @@ import (
 	"sort"
 	"strings"
 
-	"dorcs-v2/internal/markdown"
+	"github.com/p-arndt/dorcs/internal/markdown"
 
 	"github.com/yuin/goldmark"
 	"github.com/yuin/goldmark/parser"
