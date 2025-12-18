@@ -2,6 +2,7 @@
 package build
 
 import (
+	"context"
 	"embed"
 	"fmt"
 	"html/template"
@@ -11,7 +12,10 @@ import (
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
+
+	"golang.org/x/sync/errgroup"
 
 	"github.com/p-arndt/dorcs/internal/config"
 	"github.com/p-arndt/dorcs/internal/server"
@@ -29,6 +33,7 @@ type Builder struct {
 	template    *template.Template
 	staticFS    embed.FS
 	templatesFS embed.FS
+	parallelism int
 }
 
 // Config holds configuration for the builder.
@@ -42,10 +47,16 @@ type Config struct {
 	DocumentTmpl *template.Template
 	StaticFS     embed.FS
 	TemplatesFS  embed.FS
+	// Parallelism limits concurrent page renders. 0 = auto (NumCPU).
+	Parallelism int
 }
 
 // New creates a new builder.
 func New(cfg Config) *Builder {
+	p := cfg.Parallelism
+	if p == 0 {
+		p = runtime.NumCPU()
+	}
 	return &Builder{
 		docsDir:     cfg.DocsDir,
 		rootDir:     cfg.RootDir,
@@ -56,6 +67,7 @@ func New(cfg Config) *Builder {
 		template:    cfg.DocumentTmpl,
 		staticFS:    cfg.StaticFS,
 		templatesFS: cfg.TemplatesFS,
+		parallelism: p,
 	}
 }
 
@@ -168,10 +180,24 @@ func (b *Builder) buildLanguage(langCodeForSite string, isDefault bool, langCode
 		Version:      "static",
 	})
 
-	// Render each document
-	for _, doc := range docs {
-		if err := b.renderDocumentForLanguage(handler, doc, langCodeForURL, isDefault, langOutputDir); err != nil {
-			return fmt.Errorf("render document %s: %w", doc.Key, err)
+	// Render each document concurrently using a limited worker pool.
+	// This significantly speeds up static generation on multi-core machines.
+	if len(docs) > 0 {
+		g, _ := errgroup.WithContext(context.Background())
+		sem := make(chan struct{}, b.parallelism)
+		for _, doc := range docs {
+			d := doc // capture
+			sem <- struct{}{}
+			g.Go(func() error {
+				defer func() { <-sem }()
+				if err := b.renderDocumentForLanguage(handler, d, langCodeForURL, isDefault, langOutputDir); err != nil {
+					return fmt.Errorf("render document %s: %w", d.Key, err)
+				}
+				return nil
+			})
+		}
+		if err := g.Wait(); err != nil {
+			return err
 		}
 	}
 

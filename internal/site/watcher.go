@@ -61,6 +61,15 @@ func (s *Site) StartWatcher(broadcaster *ReloadBroadcaster, configReload ConfigR
 	go func() {
 		defer close(doneChan)
 		defer watcher.Close()
+		// Ensure debounce timers are stopped when the goroutine exits to avoid races
+		defer func() {
+			if debounceTimer != nil {
+				debounceTimer.Stop()
+			}
+			if configDebounceTimer != nil {
+				configDebounceTimer.Stop()
+			}
+		}()
 
 		for {
 			select {
@@ -143,12 +152,6 @@ func (s *Site) StartWatcher(broadcaster *ReloadBroadcaster, configReload ConfigR
 	// Return cleanup function
 	cleanup := func() {
 		close(stopChan)
-		if debounceTimer != nil {
-			debounceTimer.Stop()
-		}
-		if configDebounceTimer != nil {
-			configDebounceTimer.Stop()
-		}
 		<-doneChan // Wait for goroutine to finish
 	}
 
