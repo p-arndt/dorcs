@@ -180,6 +180,17 @@ func main() {
 		themeMode  = flag.String("theme-mode", "", "Theme mode: light, dark, auto")
 		watch      = flag.Bool("watch", false, "Watch for file changes and automatically reload")
 	)
+
+	// Set custom usage to mention build subcommand
+	flag.Usage = func() {
+		fmt.Fprintf(os.Stderr, "Usage of %s:\n", os.Args[0])
+		fmt.Fprintf(os.Stderr, "\nCommands:\n")
+		fmt.Fprintf(os.Stderr, "  build    Build a static site from markdown documents\n")
+		fmt.Fprintf(os.Stderr, "           Use '%s build --help' for build command options\n", os.Args[0])
+		fmt.Fprintf(os.Stderr, "\nServer Options:\n")
+		flag.PrintDefaults()
+	}
+
 	flag.Parse()
 
 	// Get root directory (where dorcs is running) for static assets like logo/favicon
