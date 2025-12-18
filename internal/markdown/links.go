@@ -184,15 +184,21 @@ func ResolveLinkToDocKey(href string, currentDirKey string) (string, bool) {
 	if strings.Contains(lower, "://") || strings.HasPrefix(lower, "mailto:") {
 		return "", false
 	}
-	// Skip anchors
+	// Skip anchors (standalone anchors)
 	if strings.HasPrefix(href, "#") {
 		return "", false
+	}
+	// Extract anchor if present (e.g., "file.md#anchor" -> "file.md" and "#anchor")
+	if anchorIdx := strings.Index(href, "#"); anchorIdx != -1 {
+		href = href[:anchorIdx]
+		lower = strings.ToLower(href)
 	}
 	// Handle root-absolute links (strip leading / and treat as relative to root)
 	isRootAbsolute := strings.HasPrefix(href, "/")
 	if isRootAbsolute {
 		href = strings.TrimPrefix(href, "/")
 		currentDirKey = "" // Root-absolute links are always relative to root
+		lower = strings.ToLower(href)
 	}
 	// Skip query-ish links
 	if strings.Contains(href, "?") || strings.Contains(href, "&") {
@@ -278,17 +284,36 @@ func RewriteExtensionlessDocLinks(md string, currentDirKey string, basePath stri
 		if strings.Contains(lower, "://") || strings.HasPrefix(lower, "mailto:") {
 			return m
 		}
-		// Skip anchors
+		// Skip anchors (standalone anchors)
 		if strings.HasPrefix(href, "#") {
 			return m
 		}
-		// Skip root-absolute links
+		// Handle root-absolute links (strip .md extension and anchor if present)
 		if strings.HasPrefix(href, "/") {
-			return m
+			// Extract anchor if present
+			var anchor string
+			if anchorIdx := strings.Index(href, "#"); anchorIdx != -1 {
+				anchor = href[anchorIdx:]
+				href = href[:anchorIdx]
+			}
+			// Strip .md extension if present
+			lower := strings.ToLower(href)
+			if strings.HasSuffix(lower, ".md") {
+				href = href[:len(href)-3]
+			}
+			return "[" + text + "](" + href + anchor + ")"
 		}
 		// Skip query-ish links (keep conservative)
 		if strings.Contains(href, "?") || strings.Contains(href, "&") {
 			return m
+		}
+
+		// Extract anchor if present (e.g., "file.md#anchor" -> "file.md" and "#anchor")
+		var anchor string
+		if anchorIdx := strings.Index(href, "#"); anchorIdx != -1 {
+			anchor = href[anchorIdx:]
+			href = href[:anchorIdx]
+			lower = strings.ToLower(href)
 		}
 
 		// Handle .md extension: strip it and continue
@@ -334,7 +359,7 @@ func RewriteExtensionlessDocLinks(md string, currentDirKey string, basePath stri
 			if basePath != "" {
 				newHref = basePath + newHref
 			}
-			return "[" + text + "](" + newHref + ")"
+			return "[" + text + "](" + newHref + anchor + ")"
 		}
 		if strings.HasSuffix(clean, "/index") {
 			clean = strings.TrimSuffix(clean, "/index")
@@ -343,19 +368,19 @@ func RewriteExtensionlessDocLinks(md string, currentDirKey string, basePath stri
 				if basePath != "" {
 					newHref = basePath + newHref
 				}
-				return "[" + text + "](" + newHref + ")"
+				return "[" + text + "](" + newHref + anchor + ")"
 			}
 			newHref := langPrefix + "/" + clean
 			if basePath != "" {
 				newHref = basePath + newHref
 			}
-			return "[" + text + "](" + newHref + ")"
+			return "[" + text + "](" + newHref + anchor + ")"
 		}
 
 		newHref := langPrefix + "/" + clean
 		if basePath != "" {
 			newHref = basePath + newHref
 		}
-		return "[" + text + "](" + newHref + ")"
+		return "[" + text + "](" + newHref + anchor + ")"
 	})
 }
