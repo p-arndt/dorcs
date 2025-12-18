@@ -15,64 +15,112 @@ Get your documentation site running in under 5 minutes.
 
 Get your documentation site running in under 5 minutes. Choose your preferred method:
 
-### Option 1: Docker Compose (Recommended)
+## Download 
 
-```bash
-git clone https://github.com/p-arndt/dorcs.git
-cd dorcs
-docker-compose up
+<div style="display: flex; flex-wrap: wrap; justify-content: center; gap: 1.5em; margin: 2em 0;">
+  <a href="https://github.com/p-arndt/dorcs/releases/latest/download/dorcs-windows-amd64.exe"
+     style="
+       display: inline-flex;
+       align-items: center;
+       background: linear-gradient(90deg, #3292df 0%, #0078d7 100%);
+       color: #fff;
+       font-weight: 600;
+       font-size: 1.15em;
+       padding: 0.8em 2.2em;
+       border: none;
+       border-radius: 50px;
+       text-decoration: none;
+       box-shadow: 0 2px 12px 0 rgba(50,146,223,0.12);
+       transition: background 0.3s, box-shadow 0.3s;
+       margin: 0.5em 0;
+       width: 260px;
+       justify-content: center;
+     "
+     download
+  >
+    <svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 0 24 24" width="24" style="margin-right: 0.65em; flex: none;">
+      <rect fill="#F25022" x="1" y="1" width="10" height="10"></rect>
+      <rect fill="#7FBA00" x="13" y="1" width="10" height="10"></rect>
+      <rect fill="#00A4EF" x="1" y="13" width="10" height="10"></rect>
+      <rect fill="#FFB900" x="13" y="13" width="10" height="10"></rect>
+    </svg>
+    Windows
+  </a>
+  <a href="https://github.com/p-arndt/dorcs/releases/latest/download/dorcs-linux-amd64.exe"
+     style="
+       display: inline-flex;
+       align-items: center;
+       background: linear-gradient(90deg, #43D46A 0%, #1E8449 100%);
+       color: #fff;
+       font-weight: 600;
+       font-size: 1.15em;
+       padding: 0.8em 2.2em;
+       border: none;
+       border-radius: 50px;
+       text-decoration: none;
+       box-shadow: 0 2px 12px 0 rgba(67,212,106,0.12);
+       transition: background 0.3s, box-shadow 0.3s;
+       margin: 0.5em 0;
+       width: 260px;
+       justify-content: center;
+     "
+     download
+  >
+    <svg xmlns="http://www.w3.org/2000/svg" height="24" width="24" viewBox="0 0 24 24" style="margin-right: 0.65em; flex: none;">
+      <g>
+        <rect fill="#43D46A" x="2" y="2" width="20" height="20" rx="4"></rect>
+        <path fill="#fff" d="M12 6c.512 0 .936.386.993.883l.007.117v4.586l1.793-1.793a1 1 0 0 1 1.497 1.32l-.083.094-3.5 3.5a1 1 0 0 1-1.32.083l-.094-.083-3.5-3.5a1 1 0 0 1 1.32-1.497l.094.083L11 11.586V7c0-.552.448-1 1-1z"></path>
+      </g>
+    </svg>
+    Linux
+  </a>
+</div>
+
+After downloading:
+
+**Windows:**
+```pwsh
+.\dorcs-windows-amd64.exe 
 ```
 
-### Option 2: Pre-built Binary
-
-1. Download the latest release from the [releases page](https://github.com/p-arndt/dorcs/releases)
-2. Make it executable (Linux/macOS): `chmod +x dorcs`
-3. Run: `./dorcs --dir ./docs`
-
-### Option 3: Build from Source
-
+**Linux:**
 ```bash
-git clone https://github.com/p-arndt/dorcs.git
-cd dorcs
-go build -o dorcs ./cmd/dorcs
-./dorcs --dir ./docs
+# Make it executable
+chmod +x dorcs-linux-amd64.exe
+
+# Run dorcs
+./dorcs-linux-amd64.exe 
 ```
 
-Visit `http://localhost:8080` to see your documentation!
+Visit [http://localhost:8080](http://localhost:8080) to see your documentation!
+
 
 ## Your First Documentation
+
+The easiest way to get started is using the `init` command, which sets up everything for you:
+
+### 1. **Initialize your documentation site**:
+
+```bash
+./dorcs init
+```
+
+Also see the [Commands](./07_commands.md#init-command) page for more information.
+
+### 2. **Start the development server**:
 
 > [!TIP]
 > Enable watch mode (`--watch`) for live reload during development
 
-1. **Create your docs directory** (or use the existing `./docs` folder)
-
-2. **Add your first markdown file**:
-
 ```bash
-cat > docs/index.md << 'EOF'
----
-title: "Welcome"
-description: "My documentation site"
----
-
-# Welcome
-
-This is my documentation site powered by dorcs!
-EOF
+./dorcs --watch
 ```
 
-3. **Start the server**:
+### 3. **Open your browser**
 
-```bash
-# With Docker Compose
-docker-compose up
+Navigate to [http://localhost:8080](http://localhost:8080)
 
-# Or with binary
-./dorcs --dir ./docs
-```
-
-4. **Open your browser**: Navigate to `http://localhost:8080`
+You'll see your new documentation site with a welcome page! Edit `docs/index.md` to customize your homepage.
 
 ## File Structure
 
@@ -88,102 +136,3 @@ dorcs uses **extensionless URLs** that map directly to your file structure:
 | `docs/guide/index.md`        | `/guide`              |
 | `docs/guide/installation.md` | `/guide/installation` |
 
-## Front Matter
-
-Add metadata to your markdown files using YAML front matter:
-
-```yaml
----
-title: "Getting Started"
-description: "Learn how to get started"
-date: 2025-12-13
-tags: [tutorial, beginner]
-draft: false
----
-# Getting Started
-
-Your content here...
-```
-
-**Available fields:**
-
-- `title` - Page title (used in navigation and browser tab)
-- `description` - Meta description for SEO
-- `date` - Publication date (YYYY-MM-DD)
-- `tags` - List of tags for categorization
-- `draft` - Set to `true` to hide from navigation (when using `--no-drafts`)
-- `order` - Numeric value for sorting pages in navigation (lower numbers appear first)
-- `author` - Author name (displayed with [[AUTHOR]] placeholder)
-- `after` - Key of item this should appear after in navigation (use `"index"` to place after index.md)
-
-See [Metadata](./usage/metadata.md) for detailed documentation on all front matter fields, including navigation ordering with `after` and `order`.
-
-## Watch Mode
-
-When using the `--watch` flag, dorcs will watch for changes in your docs directory and automatically reload the page.
-
-**With binary:**
-
-```bash
-./dorcs --dir ./docs --watch
-```
-
-**With Docker Compose:**
-
-> [!IMPORTANT]
-> File watching through Docker volumes may not work reliably on Windows/Mac. For best results, run dorcs directly on your host: `./dorcs --dir ./docs --watch`
-
-Uncomment the `command` line in `docker-compose.yml`:
-
-```yaml
-command: ["/app/dorcs", "--dir", "/docs", "--addr", "0.0.0.0:8080", "--watch"]
-```
-
-## Common Commands
-
-**Binary:**
-
-```bash
-./dorcs --dir ./docs                    # Basic usage
-./dorcs --dir ./docs --addr :3000       # Custom port
-./dorcs --dir ./docs --watch            # Development mode
-./dorcs --dir ./docs --theme midnight   # Custom theme
-```
-
-## Edit Mode (Optional)
-
-Enable online editing to manage your documentation directly from the browser:
-
-1. **Enable in configuration** (`dorcs.yaml`):
-```yaml
-auth:
-  enabled: true
-  username: "admin"
-  password: "your-secure-password"
-```
-
-2. **Restart the server** and click **Login** in the footer
-3. **Click Edit** in the header to open the edit mode panel
-4. **Browse, edit, create, and delete files** directly in your browser
-
-See [Configuration](./03_configuration.md#authentication--edit-mode) for more details.
-
-## Next Steps
-
-- ⚙️ [Configuration](./03_configuration.md) - Customize your site with `dorcs.yaml`
-- 🎨 [Themes](./05_themes.md) - Choose from built-in themes
-- 🚀 [Deployment](./04_deployment.md) - Deploy to production
-
-## Troubleshooting
-
-**Port already in use?**
-
-```bash
-./dorcs --dir ./docs --addr :8081
-```
-
-**Files not showing up?**
-
-- Ensure files have `.md` or `.markdown` extension
-- Check that files aren't marked as `draft: true` (unless using `--no-drafts=false`)
-- Verify the `--dir` path is correct
