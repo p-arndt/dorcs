@@ -60,7 +60,7 @@ func (s *Site) RenderDoc(key string) (*RenderedDoc, error) {
 	merged := s.reconcileMetadata(doc, meta, hash, modTime)
 
 	// Convert markdown to HTML
-	htmlOutput, err := s.convertMarkdownToHTML(rawStr)
+	htmlOutput, err := s.convertMarkdownToHTML(rawStr, doc)
 	if err != nil {
 		return nil, err
 	}

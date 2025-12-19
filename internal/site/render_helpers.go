@@ -7,12 +7,15 @@ import (
 	"time"
 
 	"github.com/p-arndt/dorcs/internal/markdown"
+	markdownext "github.com/p-arndt/dorcs/internal/markdown/extensions"
 )
 
 // preprocessMarkdown prepares markdown for rendering by:
 // - Stripping YAML front matter from body
 // - Rewriting extensionless doc links
 // - Converting GitHub-style alert blocks
+// - Converting accordion blocks
+// - Running plugin preprocessing hooks
 func (s *Site) preprocessMarkdown(raw string, doc *Doc) string {
 	// Strip YAML front matter from the markdown body so metadata is not rendered as page content.
 	raw = markdown.StripYAMLFrontMatter(raw)
@@ -45,7 +48,10 @@ func (s *Site) preprocessMarkdown(raw string, doc *Doc) string {
 	raw = markdown.RewriteRelativeImagePaths(raw, docDir, s.BasePath, languageForURL, s.Version, defaultVersion, defaultLanguage)
 
 	// Convert GitHub-style alert blocks in markdown (pre-process for goldmark)
-	raw = markdown.ConvertAlertBlocksInMarkdown(raw)
+	raw = markdownext.ConvertAlertBlocksInMarkdown(raw)
+
+	// Convert accordion blocks in markdown (pre-process for goldmark)
+	raw = markdownext.ConvertAccordionBlocksInMarkdown(raw)
 
 	return raw
 }
@@ -82,8 +88,8 @@ func (s *Site) reconcileMetadata(doc *Doc, meta markdown.FrontMatter, hash strin
 	return &merged
 }
 
-// convertMarkdownToHTML converts markdown to HTML and processes alert blocks.
-func (s *Site) convertMarkdownToHTML(raw string) (string, error) {
+// convertMarkdownToHTML converts markdown to HTML and processes alert blocks, accordion blocks, and plugin post-processing.
+func (s *Site) convertMarkdownToHTML(raw string, doc *Doc) (string, error) {
 	var buf bytes.Buffer
 	if err := s.md.Convert([]byte(raw), &buf); err != nil {
 		return "", fmt.Errorf("render markdown: %w", err)
@@ -92,7 +98,10 @@ func (s *Site) convertMarkdownToHTML(raw string) (string, error) {
 	htmlOutput := buf.String()
 
 	// Convert GitHub-style alert blocks in the HTML output
-	htmlOutput = markdown.ConvertAlertBlocksInHTML(htmlOutput)
+	htmlOutput = markdownext.ConvertAlertBlocksInHTML(htmlOutput)
+
+	// Convert accordion blocks in the HTML output
+	htmlOutput = markdownext.ConvertAccordionBlocksInHTML(htmlOutput)
 
 	return htmlOutput, nil
 }
