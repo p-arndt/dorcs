@@ -51,13 +51,9 @@ func TestIsStaticAsset(t *testing.T) {
 func TestTryServeStaticAsset(t *testing.T) {
 	tmpDir := t.TempDir()
 	docsDir := filepath.Join(tmpDir, "docs")
-	rootDir := filepath.Join(tmpDir, "root")
 
 	if err := os.MkdirAll(docsDir, 0755); err != nil {
 		t.Fatalf("failed to create docs dir: %v", err)
-	}
-	if err := os.MkdirAll(rootDir, 0755); err != nil {
-		t.Fatalf("failed to create root dir: %v", err)
 	}
 
 	// Create test files
@@ -65,13 +61,10 @@ func TestTryServeStaticAsset(t *testing.T) {
 	if err := os.WriteFile(filepath.Join(docsDir, "test.png"), testContent, 0644); err != nil {
 		t.Fatalf("failed to write test file: %v", err)
 	}
-	if err := os.WriteFile(filepath.Join(rootDir, "logo.png"), testContent, 0644); err != nil {
-		t.Fatalf("failed to write root file: %v", err)
-	}
 
 	handler := New(Config{
 		DocsDir: docsDir,
-		RootDir: rootDir,
+		RootDir: "",
 	})
 
 	tests := []struct {
@@ -81,7 +74,6 @@ func TestTryServeStaticAsset(t *testing.T) {
 		wantStatus int
 	}{
 		{"serve from docs dir", "test.png", true, http.StatusOK},
-		{"serve from root dir", "logo.png", true, http.StatusOK},
 		{"non-existent file", "missing.png", false, http.StatusNotFound},
 		{"not a static asset", "readme.md", false, http.StatusNotFound},
 		{"path traversal attempt", "../etc/passwd", false, http.StatusNotFound},

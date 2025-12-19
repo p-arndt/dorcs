@@ -36,7 +36,7 @@
   {{- end }}
   <link rel="icon" href="{{ $favicon }}" type="image/x-icon" />
   {{- else }}
-  <link rel="icon" href="{{ .BasePath }}/static/favicon.ico" type="image/x-icon" />
+  <link rel="icon" href="{{ .BasePath }}/favicon.ico" type="image/x-icon" />
   {{- end }}
   <link rel="stylesheet" href="{{ .BasePath }}/static/style.css" />
   <link rel="stylesheet" href="{{ .BasePath }}/static/layout.css" />
@@ -61,6 +61,40 @@
       } catch (e) {
         // Ignore localStorage errors (e.g., in private browsing)
       }
+    })();
+  </script>
+
+  <script>
+    (function() {
+      'use strict';
+      // KaTeX auto-render is loaded via deferred scripts; run it once everything is ready.
+      function tryRenderMath() {
+        try {
+          if (typeof window.renderMathInElement === 'function') {
+            window.renderMathInElement(document.body);
+            return true;
+          }
+        } catch (e) {
+          // Ignore
+        }
+        return false;
+      }
+
+      window.addEventListener('load', function() {
+        if (tryRenderMath()) {
+          return;
+        }
+
+        // Fallback: retry a few times in case scripts load late.
+        var attempts = 0;
+        var maxAttempts = 20;
+        var interval = setInterval(function() {
+          attempts++;
+          if (tryRenderMath() || attempts >= maxAttempts) {
+            clearInterval(interval);
+          }
+        }, 100);
+      });
     })();
   </script>
 

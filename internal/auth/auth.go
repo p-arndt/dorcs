@@ -245,25 +245,27 @@ func GetSessionFromRequest(r *http.Request, store *SessionStore) (*Session, bool
 }
 
 // SetSessionCookie sets the session cookie on the response.
-func SetSessionCookie(w http.ResponseWriter, sessionID string) {
+func SetSessionCookie(w http.ResponseWriter, sessionID string, secure bool) {
 	http.SetCookie(w, &http.Cookie{
 		Name:     sessionCookieName,
 		Value:    sessionID,
 		Path:     "/",
 		HttpOnly: true,
-		Secure:   false, // Set to true in production with HTTPS
+		Secure:   secure,
 		SameSite: http.SameSiteStrictMode,
 		MaxAge:   int(sessionDuration.Seconds()),
 	})
 }
 
 // ClearSessionCookie clears the session cookie.
-func ClearSessionCookie(w http.ResponseWriter) {
+func ClearSessionCookie(w http.ResponseWriter, secure bool) {
 	http.SetCookie(w, &http.Cookie{
 		Name:     sessionCookieName,
 		Value:    "",
 		Path:     "/",
 		HttpOnly: true,
+		Secure:   secure,
+		SameSite: http.SameSiteStrictMode,
 		MaxAge:   -1,
 	})
 }

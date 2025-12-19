@@ -4,6 +4,7 @@ package server
 import (
 	"html/template"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/p-arndt/dorcs/internal/site"
@@ -85,6 +86,10 @@ func (h *Handler) handleDocByKeyWithSite(w http.ResponseWriter, r *http.Request,
 	m.BasePath = basePath
 	m.CurrentLanguage = currentLang
 
+	// Security headers for public-internet deployments.
+	setCommonSecurityHeaders(w)
+	setCSPHeaders(w, r)
+
 	m.Meta.Title = rendered.Doc.Title
 	m.Meta.Description = rendered.Doc.Description
 	m.Meta.Date = formatDate(rendered.Doc.Date)
@@ -112,4 +117,37 @@ func (h *Handler) handleDocByKeyWithSite(w http.ResponseWriter, r *http.Request,
 			http.Error(w, "template error: "+err.Error(), http.StatusInternalServerError)
 		}
 	}
+}
+
+func setCommonSecurityHeaders(w http.ResponseWriter) {
+	w.Header().Set("X-Content-Type-Options", "nosniff")
+	w.Header().Set("Referrer-Policy", "strict-origin-when-cross-origin")
+	w.Header().Set("Permissions-Policy", "geolocation=(), camera=(), microphone=()")
+	// If you need framing, remove this and adjust CSP frame-ancestors.
+	w.Header().Set("X-Frame-Options", "DENY")
+}
+
+func setCSPHeaders(w http.ResponseWriter, r *http.Request) {
+	// Determine if the request is effectively HTTPS (direct or behind a proxy).
+	secure := r.TLS != nil
+	if !secure {
+		if xfproto := strings.TrimSpace(r.Header.Get("X-Forwarded-Proto")); strings.EqualFold(xfproto, "https") {
+			secure = true
+		}
+	}
+
+	// Allow our own scripts, required CDN scripts (KaTeX / mermaid), and inline scripts.
+	csp := "default-src 'self'; " +
+		"base-uri 'self'; " +
+		"object-src 'none'; " +
+		"frame-ancestors 'none'; " +
+		"img-src 'self' data: https:; " +
+		"font-src 'self' data:; " +
+		"connect-src 'self'; " +
+		"style-src 'self' 'unsafe-inline'; " +
+		"script-src 'self' https://cdn.jsdelivr.net 'unsafe-inline'"
+	if secure {
+		csp += "; upgrade-insecure-requests"
+	}
+	w.Header().Set("Content-Security-Policy", csp)
 }

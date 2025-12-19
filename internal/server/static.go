@@ -57,7 +57,7 @@ func isStaticAsset(filePath string) bool {
 }
 
 // tryServeStaticAsset attempts to serve a static asset.
-// First checks the root directory (where dorcs is running), then falls back to docs directory.
+// Serves only from the docs directory.
 // Returns true if the file was found and served, false otherwise.
 func (h *Handler) tryServeStaticAsset(w http.ResponseWriter, _ *http.Request, relPath string) bool {
 	// Only serve files that look like static assets
@@ -66,58 +66,25 @@ func (h *Handler) tryServeStaticAsset(w http.ResponseWriter, _ *http.Request, re
 	}
 
 	h.mu.RLock()
-	rootDir := h.cfg.RootDir
 	docsDir := h.cfg.DocsDir
 	h.mu.RUnlock()
 
 	// Clean the relative path to prevent directory traversal
 	cleanRelPath := filepath.Clean(filepath.FromSlash(relPath))
-	if strings.HasPrefix(cleanRelPath, "..") || filepath.IsAbs(cleanRelPath) {
+	if _, err := sanitizeRelPath(cleanRelPath); err != nil {
 		return false
 	}
 
-	// Try root directory first (for logo, favicon, etc.)
-	var filePath string
-	var absBaseDir string
-	var err error
-
-	if rootDir != "" {
-		filePath = filepath.Join(rootDir, cleanRelPath)
-		absBaseDir, err = filepath.Abs(rootDir)
-		if err == nil {
-			absFilePath, err := filepath.Abs(filePath)
-			if err == nil {
-				// Security: ensure the file is within the root directory
-				if strings.HasPrefix(absFilePath, absBaseDir+string(filepath.Separator)) || absFilePath == absBaseDir {
-					if file, err := os.Open(filePath); err == nil {
-						defer file.Close()
-						if stat, err := file.Stat(); err == nil && !stat.IsDir() {
-							// Found in root directory, serve it
-							return h.serveStaticFile(w, file, stat, cleanRelPath)
-						}
-					}
-				}
-			}
-		}
-	}
-
-	// Fall back to docs directory
-	filePath = filepath.Join(docsDir, cleanRelPath)
-	absDocsDir, err := filepath.Abs(docsDir)
+	_, resolved, err := resolveExistingPathWithin(docsDir, cleanRelPath)
 	if err != nil {
-		return false
-	}
-	absFilePath, err := filepath.Abs(filePath)
-	if err != nil {
-		return false
-	}
-	// Security: ensure the file is within the docs directory
-	if !strings.HasPrefix(absFilePath, absDocsDir+string(filepath.Separator)) && absFilePath != absDocsDir {
 		return false
 	}
 
 	// Check if file exists
-	file, err := os.Open(filePath)
+	if fi, err := os.Lstat(resolved); err != nil || fi.Mode()&os.ModeSymlink != 0 {
+		return false
+	}
+	file, err := os.Open(resolved)
 	if err != nil {
 		return false
 	}

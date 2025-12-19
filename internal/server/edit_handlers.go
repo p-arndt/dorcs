@@ -64,7 +64,8 @@ func (h *EditHandlers) HandleLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	auth.SetSessionCookie(w, session.ID)
+	secure := isSecureRequest(r)
+	auth.SetSessionCookie(w, session.ID, secure)
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(LoginResponse{
@@ -84,12 +85,23 @@ func (h *EditHandlers) HandleLogout(w http.ResponseWriter, r *http.Request) {
 		h.authManager.Logout(session.ID)
 	}
 
-	auth.ClearSessionCookie(w)
+	auth.ClearSessionCookie(w, isSecureRequest(r))
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(LoginResponse{
 		Success: true,
 	})
+}
+
+func isSecureRequest(r *http.Request) bool {
+	if r.TLS != nil {
+		return true
+	}
+	// Common reverse-proxy header.
+	if xfproto := strings.TrimSpace(r.Header.Get("X-Forwarded-Proto")); strings.EqualFold(xfproto, "https") {
+		return true
+	}
+	return false
 }
 
 // HandleCheckAuth checks if the user is authenticated.
@@ -125,29 +137,21 @@ func (h *EditHandlers) HandleListFiles(w http.ResponseWriter, r *http.Request) {
 		pathParam = "."
 	}
 
-	// Clean and validate path
-	relPath := filepath.Clean(pathParam)
-	if strings.HasPrefix(relPath, "..") || strings.HasPrefix(relPath, "/") {
+	relPath, fullPath, err := resolveExistingPathWithin(h.docsDir, pathParam)
+	if err != nil {
 		http.Error(w, "invalid path", http.StatusBadRequest)
 		return
 	}
 
-	fullPath := filepath.Join(h.docsDir, relPath)
-
-	// Ensure path is within docs directory
-	absDocsDir, err := filepath.Abs(h.docsDir)
-	if err != nil {
-		http.Error(w, "internal error", http.StatusInternalServerError)
+	// Ensure the resolved target is a directory and not a symlink/junction.
+	if fi, err := os.Lstat(fullPath); err != nil {
+		http.Error(w, "not found", http.StatusNotFound)
 		return
-	}
-	absFilePath, err := filepath.Abs(fullPath)
-	if err != nil {
-		http.Error(w, "internal error", http.StatusInternalServerError)
-		return
-	}
-	if !strings.HasPrefix(absFilePath, absDocsDir+string(filepath.Separator)) && absFilePath != absDocsDir {
-		http.Error(w, "invalid path", http.StatusBadRequest)
-		return
+	} else {
+		if fi.Mode()&os.ModeSymlink != 0 || !fi.IsDir() {
+			http.Error(w, "invalid path", http.StatusBadRequest)
+			return
+		}
 	}
 
 	// Read directory
@@ -210,29 +214,19 @@ func (h *EditHandlers) HandleReadFile(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Clean and validate path
-	relPath := filepath.Clean(pathParam)
-	if strings.HasPrefix(relPath, "..") || strings.HasPrefix(relPath, "/") {
+	relPath, fullPath, err := resolveExistingPathWithin(h.docsDir, pathParam)
+	if err != nil {
 		http.Error(w, "invalid path", http.StatusBadRequest)
 		return
 	}
-
-	fullPath := filepath.Join(h.docsDir, relPath)
-
-	// Ensure path is within docs directory
-	absDocsDir, err := filepath.Abs(h.docsDir)
-	if err != nil {
-		http.Error(w, "internal error", http.StatusInternalServerError)
+	if fi, err := os.Lstat(fullPath); err != nil {
+		http.Error(w, "not found", http.StatusNotFound)
 		return
-	}
-	absFilePath, err := filepath.Abs(fullPath)
-	if err != nil {
-		http.Error(w, "internal error", http.StatusInternalServerError)
-		return
-	}
-	if !strings.HasPrefix(absFilePath, absDocsDir+string(filepath.Separator)) && absFilePath != absDocsDir {
-		http.Error(w, "invalid path", http.StatusBadRequest)
-		return
+	} else {
+		if fi.Mode()&os.ModeSymlink != 0 || fi.IsDir() {
+			http.Error(w, "invalid path", http.StatusBadRequest)
+			return
+		}
 	}
 
 	// Read file
@@ -272,27 +266,8 @@ func (h *EditHandlers) HandleSaveFile(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Clean and validate path
-	relPath := filepath.Clean(req.Path)
-	if strings.HasPrefix(relPath, "..") || strings.HasPrefix(relPath, "/") {
-		http.Error(w, "invalid path", http.StatusBadRequest)
-		return
-	}
-
-	fullPath := filepath.Join(h.docsDir, relPath)
-
-	// Ensure path is within docs directory
-	absDocsDir, err := filepath.Abs(h.docsDir)
+	relPath, fullPath, err := resolvePathForCreateWithin(h.docsDir, req.Path)
 	if err != nil {
-		http.Error(w, "internal error", http.StatusInternalServerError)
-		return
-	}
-	absFilePath, err := filepath.Abs(fullPath)
-	if err != nil {
-		http.Error(w, "internal error", http.StatusInternalServerError)
-		return
-	}
-	if !strings.HasPrefix(absFilePath, absDocsDir+string(filepath.Separator)) && absFilePath != absDocsDir {
 		http.Error(w, "invalid path", http.StatusBadRequest)
 		return
 	}
@@ -302,6 +277,16 @@ func (h *EditHandlers) HandleSaveFile(w http.ResponseWriter, r *http.Request) {
 	if err := os.MkdirAll(dir, 0755); err != nil {
 		http.Error(w, "failed to create directory", http.StatusInternalServerError)
 		return
+	}
+	// Re-check that the created directory doesn't escape via symlink/junction.
+	if _, dirReal, err := resolveExistingPathWithin(h.docsDir, filepath.ToSlash(filepath.Dir(relPath))); err != nil {
+		http.Error(w, "invalid path", http.StatusBadRequest)
+		return
+	} else {
+		if fi, err := os.Lstat(dirReal); err != nil || fi.Mode()&os.ModeSymlink != 0 {
+			http.Error(w, "invalid path", http.StatusBadRequest)
+			return
+		}
 	}
 
 	// Write file
@@ -337,27 +322,8 @@ func (h *EditHandlers) HandleCreateFile(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	// Clean and validate path
-	relPath := filepath.Clean(req.Path)
-	if strings.HasPrefix(relPath, "..") || strings.HasPrefix(relPath, "/") {
-		http.Error(w, "invalid path", http.StatusBadRequest)
-		return
-	}
-
-	fullPath := filepath.Join(h.docsDir, relPath)
-
-	// Ensure path is within docs directory
-	absDocsDir, err := filepath.Abs(h.docsDir)
+	relPath, fullPath, err := resolvePathForCreateWithin(h.docsDir, req.Path)
 	if err != nil {
-		http.Error(w, "internal error", http.StatusInternalServerError)
-		return
-	}
-	absFilePath, err := filepath.Abs(fullPath)
-	if err != nil {
-		http.Error(w, "internal error", http.StatusInternalServerError)
-		return
-	}
-	if !strings.HasPrefix(absFilePath, absDocsDir+string(filepath.Separator)) && absFilePath != absDocsDir {
 		http.Error(w, "invalid path", http.StatusBadRequest)
 		return
 	}
@@ -373,6 +339,16 @@ func (h *EditHandlers) HandleCreateFile(w http.ResponseWriter, r *http.Request) 
 		if err := os.MkdirAll(fullPath, 0755); err != nil {
 			http.Error(w, "failed to create directory", http.StatusInternalServerError)
 			return
+		}
+		// Ensure the created directory doesn't escape via symlink/junction.
+		if _, fullReal, err := resolveExistingPathWithin(h.docsDir, filepath.ToSlash(relPath)); err != nil {
+			http.Error(w, "invalid path", http.StatusBadRequest)
+			return
+		} else {
+			if fi, err := os.Lstat(fullReal); err != nil || fi.Mode()&os.ModeSymlink != 0 {
+				http.Error(w, "invalid path", http.StatusBadRequest)
+				return
+			}
 		}
 	} else {
 		// Ensure parent directory exists
@@ -418,35 +394,23 @@ func (h *EditHandlers) HandleDeleteFile(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	// Clean and validate path
-	relPath := filepath.Clean(req.Path)
-	if strings.HasPrefix(relPath, "..") || strings.HasPrefix(relPath, "/") {
-		http.Error(w, "invalid path", http.StatusBadRequest)
-		return
-	}
-
-	fullPath := filepath.Join(h.docsDir, relPath)
-
-	// Ensure path is within docs directory
-	absDocsDir, err := filepath.Abs(h.docsDir)
+	relPath, fullPath, err := resolveExistingPathWithin(h.docsDir, req.Path)
 	if err != nil {
-		http.Error(w, "internal error", http.StatusInternalServerError)
-		return
-	}
-	absFilePath, err := filepath.Abs(fullPath)
-	if err != nil {
-		http.Error(w, "internal error", http.StatusInternalServerError)
-		return
-	}
-	if !strings.HasPrefix(absFilePath, absDocsDir+string(filepath.Separator)) && absFilePath != absDocsDir {
 		http.Error(w, "invalid path", http.StatusBadRequest)
 		return
 	}
 
 	// Prevent deleting the root docs directory
-	if absFilePath == absDocsDir {
+	if relPath == "." {
 		http.Error(w, "cannot delete root directory", http.StatusBadRequest)
 		return
+	}
+	// Never delete symlinks/junctions (prevents RemoveAll following reparse points).
+	if fi, err := os.Lstat(fullPath); err == nil {
+		if fi.Mode()&os.ModeSymlink != 0 {
+			http.Error(w, "invalid path", http.StatusBadRequest)
+			return
+		}
 	}
 
 	// Delete file or directory
