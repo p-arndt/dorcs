@@ -551,3 +551,114 @@ Final content.
 		}
 	})
 }
+
+func TestPreprocessMarkdownGitHubRelativePaths(t *testing.T) {
+	tests := []struct {
+		name        string
+		markdown    string
+		doc         *Doc
+		basePath    string
+		language    string
+		version     string
+		expected    string
+		description string
+	}{
+		{
+			name:        "GitHub root index with relative image path",
+			markdown:    "![Logo](../logo.png)",
+			doc:         &Doc{Key: "", RelPath: "index.md", DirKey: "", IsGitHub: true, GitHubPath: "docs/index.md"},
+			basePath:    "",
+			language:    "",
+			version:     "",
+			expected:    "![Logo](/logo.png)",
+			description: "Image at parent of docs/ should resolve to /logo.png",
+		},
+		{
+			name:        "GitHub nested index with relative image path",
+			markdown:    "![Guide](../images/guide.png)",
+			doc:         &Doc{Key: "guide", RelPath: "guide/index.md", DirKey: "guide", IsGitHub: true, GitHubPath: "docs/guide/index.md"},
+			basePath:    "",
+			language:    "",
+			version:     "",
+			expected:    "![Guide](/images/guide.png)",
+			description: "Image at sibling directory should resolve correctly",
+		},
+		{
+			name:        "GitHub document with local relative image path",
+			markdown:    "![Screenshot](./screenshot.png)",
+			doc:         &Doc{Key: "guide/intro", RelPath: "guide/intro.md", DirKey: "guide", IsGitHub: true, GitHubPath: "docs/guide/intro.md"},
+			basePath:    "",
+			language:    "",
+			version:     "",
+			expected:    "![Screenshot](/docs/guide/screenshot.png)",
+			description: "Local image in same directory should resolve to GitHub path",
+		},
+		{
+			name:        "GitHub document with parent directory reference",
+			markdown:    "![Parent](../../assets/logo.png)",
+			doc:         &Doc{Key: "api/v2/endpoints", RelPath: "api/v2/endpoints.md", DirKey: "api/v2", IsGitHub: true, GitHubPath: "docs/api/v2/endpoints.md"},
+			basePath:    "",
+			language:    "",
+			version:     "",
+			expected:    "![Parent](/docs/assets/logo.png)",
+			description: "Going up two levels from docs/api/v2 should resolve correctly in GitHub path",
+		},
+		{
+			name:        "GitHub doc with basePath set",
+			markdown:    "![Logo](../logo.png)",
+			doc:         &Doc{Key: "", RelPath: "index.md", DirKey: "", IsGitHub: true, GitHubPath: "docs/index.md"},
+			basePath:    "/myapp",
+			language:    "",
+			version:     "",
+			expected:    "![Logo](/myapp/logo.png)",
+			description: "Image paths should include basePath",
+		},
+		{
+			name:        "GitHub doc with absolute URL unchanged",
+			markdown:    "![External](https://example.com/logo.png)",
+			doc:         &Doc{Key: "", RelPath: "index.md", DirKey: "", IsGitHub: true, GitHubPath: "docs/index.md"},
+			basePath:    "",
+			language:    "",
+			version:     "",
+			expected:    "![External](https://example.com/logo.png)",
+			description: "Absolute URLs should not be modified",
+		},
+		{
+			name:        "GitHub doc with already absolute path",
+			markdown:    "![Logo](/logo.png)",
+			doc:         &Doc{Key: "", RelPath: "index.md", DirKey: "", IsGitHub: true, GitHubPath: "docs/index.md"},
+			basePath:    "",
+			language:    "",
+			version:     "",
+			expected:    "![Logo](/logo.png)",
+			description: "Already absolute paths should not be modified",
+		},
+		{
+			name:        "Local (non-GitHub) document uses mapped key",
+			markdown:    "![Logo](../logo.png)",
+			doc:         &Doc{Key: "guide/intro", RelPath: "guide/intro.md", DirKey: "guide", IsGitHub: false, GitHubPath: ""},
+			basePath:    "",
+			language:    "",
+			version:     "",
+			expected:    "![Logo](/logo.png)",
+			description: "Local docs should use their mapped key, not GitHubPath",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			s := &Site{
+				BasePath:        tt.basePath,
+				Language:        tt.language,
+				Version:         tt.version,
+				DefaultVersion:  tt.version,
+				DefaultLanguage: tt.language,
+			}
+			result := s.preprocessMarkdown(tt.markdown, tt.doc)
+			if result != tt.expected {
+				t.Errorf("%s\npreprocessMarkdown(%q, %+v) = %q\nwant %q",
+					tt.description, tt.markdown, tt.doc, result, tt.expected)
+			}
+		})
+	}
+}
