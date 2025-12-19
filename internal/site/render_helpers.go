@@ -30,6 +30,14 @@ func (s *Site) preprocessMarkdown(raw string, doc *Doc) string {
 		// This is an index.md file, so the document's directory is its Key
 		docDir = doc.Key
 	}
+
+	// For GitHub documents, use the directory of the GitHub file path for relative path resolution
+	if doc.IsGitHub && doc.GitHubPath != "" {
+		githubDir := dirKeyFromKey(keyFromRel(doc.GitHubPath))
+		// Use GitHub path directory for relative resolution
+		docDir = githubDir
+	}
+
 	defaultVersion := s.DefaultVersion
 	if defaultVersion == "" {
 		// If DefaultVersion is not set, assume current version is default (backward compatibility)
