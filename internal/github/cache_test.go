@@ -42,9 +42,25 @@ func TestNewCache(t *testing.T) {
 	})
 
 	t.Run("fallback to in-memory on invalid dir", func(t *testing.T) {
-		// Use a path that cannot be created (on Windows, this might be a device name)
-		invalidPath := "CON" // Reserved name on Windows
-		cache := NewCache(invalidPath)
+		// Use a path that cannot be created on both Windows and Linux
+		// Create a temporary file and use its path as directory - this should fail
+		// because you cannot create a directory where a file already exists
+		tmpDir := t.TempDir()
+		tmpFile := filepath.Join(tmpDir, "existing-file.txt")
+		if err := os.WriteFile(tmpFile, []byte("test"), 0644); err != nil {
+			t.Fatalf("failed to create temp file: %v", err)
+		}
+		// Verify the file exists and is a file (not a directory)
+		info, err := os.Stat(tmpFile)
+		if err != nil {
+			t.Fatalf("failed to stat temp file: %v", err)
+		}
+		if info.IsDir() {
+			t.Fatal("expected tmpFile to be a file, not a directory")
+		}
+		// Try to use the file path as a directory - os.MkdirAll should fail
+		// because a file already exists at that path
+		cache := NewCache(tmpFile)
 		if cache == nil {
 			t.Fatal("NewCache() returned nil")
 		}
