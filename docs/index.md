@@ -85,6 +85,7 @@ Or if you ready to get started now, download the latest release for your platfor
 - 🚀 [Getting Started](./01_getting-started.md) - Complete quick start guide
 - 📦 [Installation](./02_installation.md) - Detailed installation instructions
 - ⚙️ [Configuration](./03_configuration.md) - Customize your site with `dorcs.yaml`
+- 🔗 [External Content](./external-content/index.md) - Serve content from external sources (GitHub, etc.)
 - 🚢 [Deployment](./04_deployment.md) - Deploy to production
 - 🎨 [Themes](./05_themes.md) - Browse all available themes
 - 📝 [Markdown Features](./06_markdown/index.md) - Complete guide to markdown features
@@ -93,6 +94,7 @@ Or if you ready to get started now, download the latest release for your platfor
 
 - **Single binary** – no runtime dependencies, statically linkable
 - **Extensionless URLs** – `/guide/getting-started` serves `docs/guide/getting-started.md`
+- **External Content Sources** – serve markdown files directly from GitHub repositories with automatic caching
 - **Multi-lingual support** – serve documentation in multiple languages with automatic language switching
 - **YAML front matter** – metadata support (title, description, date, tags, draft)
 - **Table of Contents** – auto-generated from headings with scrollspy

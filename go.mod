@@ -18,6 +18,7 @@ require (
 require (
 	github.com/bluele/gcache v0.0.2 // indirect
 	github.com/dlclark/regexp2 v1.11.5 // indirect
+	github.com/joho/godotenv v1.5.1 // indirect
 	github.com/lithdew/quickjs v0.0.0-20200714182134-aaa42285c9d2 // indirect
 	golang.org/x/sys v0.39.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect

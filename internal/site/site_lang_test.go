@@ -104,9 +104,16 @@ title: Erste Schritte
 	})
 
 	t.Run("non-existent language folder", func(t *testing.T) {
-		_, err := New(tmpDir, "github", "", "fr")
-		if err == nil {
-			t.Error("expected error for non-existent language folder")
+		// When language folder doesn't exist, New() should still succeed
+		// This allows GitHub-only mode where language directories might not exist locally
+		s, err := New(tmpDir, "github", "", "fr")
+		if err != nil {
+			t.Errorf("New() should not error for non-existent language folder (GitHub mode support): %v", err)
+			return
+		}
+		// Should use base directory as RootDir when language folder doesn't exist
+		if s.RootDir != tmpDir {
+			t.Errorf("expected RootDir to be base directory %q when language folder doesn't exist, got %q", tmpDir, s.RootDir)
 		}
 	})
 }

@@ -29,6 +29,16 @@ type Site struct {
 
 	// syntaxCSS holds the generated Chroma CSS for syntax highlighting.
 	syntaxCSS string
+
+	// GitHub client and configuration (optional, for GitHub integration)
+	githubClient interface {
+		DiscoverMarkdownFiles(owner, repo, branch, rootPath string) ([]string, error)
+		FetchMarkdown(owner, repo, branch, filePath string) ([]byte, error)
+	}
+	githubOwner  string
+	githubRepo   string
+	githubBranch string
+	githubPath   string
 }
 
 // Doc represents a single markdown document on disk.
@@ -64,6 +74,15 @@ type Doc struct {
 
 	// ContentHash is a hash of the file contents for caching/invalidation.
 	ContentHash string
+
+	// IsGitHub indicates if this document is sourced from GitHub.
+	IsGitHub bool
+
+	// GitHubPath is the path to the file in the GitHub repository (for GitHub-sourced docs).
+	GitHubPath string
+
+	// GitHubCacheKey is the cache key for GitHub content (owner/repo/branch/path).
+	GitHubCacheKey string
 }
 
 // NavNode is a directory tree node for sidebar navigation.

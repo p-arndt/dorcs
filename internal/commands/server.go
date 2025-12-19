@@ -17,6 +17,7 @@ import (
 
 	"github.com/p-arndt/dorcs/internal/auth"
 	"github.com/p-arndt/dorcs/internal/config"
+	"github.com/p-arndt/dorcs/internal/github"
 	"github.com/p-arndt/dorcs/internal/server"
 	"github.com/p-arndt/dorcs/internal/site"
 	"github.com/p-arndt/dorcs/internal/templates"
@@ -111,6 +112,60 @@ func RunServer(templatesFS, staticFS embed.FS, version string) {
 	// Build site index
 	codeTheme := cfg.GetCodeTheme()
 
+	// Set up GitHub integration if enabled
+	var ghClient *github.Client
+	var ghCache *github.Cache
+	var repoInfo *github.RepositoryInfo
+	if cfg.GitHub.Enabled && cfg.GitHub.Repository != "" {
+		// Parse cache TTL
+		cacheTTL := time.Hour // default
+		if cfg.GitHub.CacheTTL != "" {
+			if parsed, err := time.ParseDuration(cfg.GitHub.CacheTTL); err == nil {
+				cacheTTL = parsed
+			} else {
+				log.Printf("dorcs: warning: invalid cache_ttl '%s', using default 1h", cfg.GitHub.CacheTTL)
+			}
+		}
+
+		// Parse repository URL
+		var err error
+		repoInfo, err = github.ParseRepositoryURL(cfg.GitHub.Repository)
+		if err != nil {
+			log.Fatalf("parse GitHub repository URL: %v", err)
+		}
+
+		// Create cache directory in working directory
+		cacheDir := filepath.Join(rootDir, ".cache", "github")
+		if err := os.MkdirAll(cacheDir, 0755); err != nil {
+			log.Printf("dorcs: warning: failed to create cache directory %s: %v (using in-memory cache only)", cacheDir, err)
+			cacheDir = "" // Fall back to in-memory only
+		}
+
+		// Get default branch if not specified
+		if repoInfo.Branch == "" {
+			ghCache = github.NewCache(cacheDir)
+			tempClient := github.NewClient(cfg.GitHub.Token, ghCache, cacheTTL)
+			defaultBranch, err := tempClient.GetDefaultBranch(repoInfo.Owner, repoInfo.Repo)
+			if err != nil {
+				log.Fatalf("get default branch: %v", err)
+			}
+			repoInfo.Branch = defaultBranch
+		}
+
+		// Create cache and client
+		if ghCache == nil {
+			ghCache = github.NewCache(cacheDir)
+		}
+		ghClient = github.NewClient(cfg.GitHub.Token, ghCache, cacheTTL)
+
+		if cacheDir != "" {
+			log.Printf("dorcs: using persistent cache at %s", cacheDir)
+		}
+
+		log.Printf("dorcs: GitHub integration enabled: %s/%s@%s/%s", repoInfo.Owner, repoInfo.Repo, repoInfo.Branch, repoInfo.Path)
+		log.Printf("dorcs: note: local docs directory will be ignored when GitHub integration is enabled")
+	}
+
 	// Create sites for each language if multi-lingual is enabled
 	var defaultSite *site.Site
 	sites := make(map[string]*site.Site)
@@ -127,10 +182,44 @@ func RunServer(templatesFS, staticFS embed.FS, version string) {
 
 			langSite, err := site.New(absDir, codeTheme, prefix, langCodeForSite)
 			if err != nil {
-				// Language folder doesn't exist, skip it
-				log.Printf("dorcs: warning: language folder for %s not found, skipping", lang.Code)
-				continue
+				// If GitHub is enabled, we can still create the site (local dir not required)
+				if ghClient == nil {
+					// Language folder doesn't exist and GitHub is not enabled, skip it
+					log.Printf("dorcs: warning: language folder for %s not found, skipping", lang.Code)
+					continue
+				}
+				// GitHub enabled: try with empty language code (use base dir)
+				// The Language field will be set correctly by Site.New based on langCodeForSite
+				langSite, err = site.New(absDir, codeTheme, prefix, langCodeForSite)
+				if err != nil {
+					// Last resort: use base directory
+					langSite, err = site.New(absDir, codeTheme, prefix, "")
+					if err != nil {
+						log.Fatalf("init site for language %s: %v", lang.Code, err)
+					}
+					// Manually set the language since we used empty string
+					langSite.SetLanguage(langCodeForSite)
+				}
 			}
+
+			// Set GitHub config if enabled
+			if ghClient != nil && repoInfo != nil {
+				// Adjust GitHub path based on language
+				// Default language: use repoInfo.Path as-is (e.g., "docs")
+				// Other languages: use repoInfo.Path + "/__lang__/" + langCode (e.g., "docs/__lang__/de")
+				githubPath := repoInfo.Path
+				if lang.Code != defaultLang {
+					// Non-default language: add __lang__/{lang} to path
+					if githubPath != "" {
+						githubPath = githubPath + "/__lang__/" + lang.Code
+					} else {
+						githubPath = "__lang__/" + lang.Code
+					}
+				}
+				langSite.SetGitHubConfig(ghClient, repoInfo.Owner, repoInfo.Repo, repoInfo.Branch, githubPath)
+				log.Printf("dorcs: language %s using GitHub path: %s", lang.Code, githubPath)
+			}
+
 			if err := langSite.BuildIndex(); err != nil {
 				log.Fatalf("build index for language %s: %v", lang.Code, err)
 			}
@@ -156,6 +245,12 @@ func RunServer(templatesFS, staticFS embed.FS, version string) {
 		if err != nil {
 			log.Fatalf("init site: %v", err)
 		}
+
+		// Set GitHub config if enabled
+		if ghClient != nil && repoInfo != nil {
+			singleSite.SetGitHubConfig(ghClient, repoInfo.Owner, repoInfo.Repo, repoInfo.Branch, repoInfo.Path)
+		}
+
 		if err := singleSite.BuildIndex(); err != nil {
 			log.Fatalf("build index: %v", err)
 		}
@@ -200,8 +295,8 @@ func RunServer(templatesFS, staticFS embed.FS, version string) {
 		Version:           version,
 	})
 
-	// Set up watcher if watch mode is enabled
-	if *watch {
+	// Set up watcher if watch mode is enabled (skip if GitHub is enabled)
+	if *watch && !cfg.GitHub.Enabled {
 		// Determine config file path
 		var configPath string
 		if *configFile != "" {

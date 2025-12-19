@@ -198,6 +198,21 @@ auth:
 > [!WARNING]
 > Only enable edit mode on trusted networks or behind proper authentication. The edit mode allows full file system access to your docs directory.
 
+### GitHub (External Content)
+
+Serve markdown files directly from a GitHub repository instead of local files. When enabled, local files in the docs directory are ignored and only GitHub files are served.
+
+```yaml
+github:
+  enabled: true                                    # Enable GitHub content source
+  repository: "https://github.com/owner/repo/tree/main/docs"  # Repository tree URL
+  token: "${GITHUB_TOKEN}"                         # Optional: GitHub token (recommended)
+  cache_ttl: "1h"                                 # Optional: Cache TTL (default: 1h)
+```
+
+> [!TIP]
+> For detailed documentation on using GitHub as a content source, including setup instructions, troubleshooting, and best practices, see the [GitHub guide](./external-content/github.md).
+
 ## Command-Line Flags
 
 All configuration options can be overridden via command-line flags:
@@ -279,6 +294,16 @@ auth:
   enabled: true
   username: "admin"
   password: "secure-password-here"
+
+github:
+  enabled: true
+  repository: "https://github.com/owner/repo/tree/main/docs"
+  token: "${GITHUB_TOKEN}"  # Recommended: use token to avoid rate limiting
+  cache_ttl: "1h"
+```
+
+> [!NOTE]
+> See the [GitHub guide](./external-content/github.md) for detailed setup and usage instructions.
 ```
 
 ## Next Steps

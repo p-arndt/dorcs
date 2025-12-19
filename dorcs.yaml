@@ -131,3 +131,21 @@ auth:
 #
 #   # Sessions file path (default: .dorcs_sessions.json in docs directory)
 #   # sessions_path: ".dorcs_sessions.json"
+
+# GitHub integration configuration
+github:
+  # Enable GitHub integration to fetch and serve markdown files from a GitHub repository
+  enabled: false 
+
+  # Repository tree URL (e.g., "https://github.com/p-arndt/dorcs/tree/main/docs")
+  # Supports formats:
+  # - https://github.com/owner/repo/tree/branch/path
+  # - https://github.com/owner/repo (uses default branch, root directory)
+  repository: "https://github.com/p-arndt/dorcs/tree/main/docs"
+
+  # GitHub token for private repositories (optional, supports ${ENV_VAR} expansion)
+  token: ${GITHUB_TOKEN}
+
+  # Cache time-to-live for GitHub content (optional, default: 1h)
+  # Examples: "1h", "30m", "24h"
+  # cache_ttl: "1h"

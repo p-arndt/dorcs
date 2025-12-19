@@ -7,12 +7,14 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
+	"time"
 
 	"github.com/p-arndt/dorcs/internal/markdown"
 )
 
 // BuildIndex scans the RootDir recursively for ".md" files and builds an in-memory index.
 // It reads front matter for metadata and uses the filename as a fallback title.
+// If GitHub integration is enabled, local files are skipped and only GitHub files are indexed.
 func (s *Site) BuildIndex() error {
 	type found struct {
 		key string
@@ -21,79 +23,175 @@ func (s *Site) BuildIndex() error {
 
 	var docs []found
 
-	err := filepath.WalkDir(s.RootDir, func(path string, d fs.DirEntry, walkErr error) error {
-		if walkErr != nil {
-			return walkErr
-		}
-		if d.IsDir() {
-			// Skip common folders that shouldn't be indexed.
-			name := d.Name()
-			if name == ".git" || name == "node_modules" || name == ".idea" || name == ".vscode" || name == "__lang__" {
-				return filepath.SkipDir
+	// Skip local file indexing if GitHub is enabled
+	s.mu.RLock()
+	githubEnabled := s.githubClient != nil
+	s.mu.RUnlock()
+
+	// Only walk local directory if GitHub is not enabled
+	if !githubEnabled {
+		err := filepath.WalkDir(s.RootDir, func(path string, d fs.DirEntry, walkErr error) error {
+			if walkErr != nil {
+				return walkErr
 			}
+			if d.IsDir() {
+				// Skip common folders that shouldn't be indexed.
+				name := d.Name()
+				if name == ".git" || name == "node_modules" || name == ".idea" || name == ".vscode" || name == "__lang__" {
+					return filepath.SkipDir
+				}
+				return nil
+			}
+			if !strings.HasSuffix(strings.ToLower(d.Name()), ".md") {
+				return nil
+			}
+
+			rel, err := filepath.Rel(s.RootDir, path)
+			if err != nil {
+				return err
+			}
+			rel = filepath.ToSlash(rel)
+
+			key := keyFromRel(rel) // drops .md, applies index.md rules (root index -> "")
+			stat, err := os.Stat(path)
+			if err != nil {
+				return err
+			}
+
+			// Parse front matter (best effort); do not fail the whole index if a file has bad metadata.
+			meta, contentHash, pmErr := markdown.ReadFrontMatterAndHash(path)
+			if pmErr != nil {
+				// Keep file indexed with fallbacks; include hash if possible.
+				meta = markdown.FrontMatter{}
+			}
+
+			doc := &Doc{
+				Key:         key,
+				FilePath:    path,
+				RelPath:     rel,
+				DirKey:      dirKeyFromKey(key),
+				Title:       strings.TrimSpace(meta.Title),
+				Description: strings.TrimSpace(meta.Description),
+				Tags:        append([]string(nil), meta.Tags...),
+				Draft:       meta.Draft,
+				Order:       meta.Order,
+				Author:      strings.TrimSpace(meta.Author),
+				After:       strings.TrimSpace(meta.After),
+				UpdatedAt:   stat.ModTime(),
+				ContentHash: contentHash,
+			}
+
+			// Parse date (optional).
+			if ds := strings.TrimSpace(meta.Date); ds != "" {
+				if t, ok := parseDate(ds); ok {
+					doc.Date = t
+				}
+			}
+
+			// Title fallback:
+			// - index pages should show the folder (or site) title, not "index"
+			if doc.Title == "" {
+				if isIndexRel(rel) {
+					doc.Title = titleFromIndexRel(rel)
+				} else {
+					doc.Title = titleFromKey(doc.Key)
+				}
+			}
+
+			docs = append(docs, found{key: key, doc: doc})
 			return nil
-		}
-		if !strings.HasSuffix(strings.ToLower(d.Name()), ".md") {
-			return nil
-		}
-
-		rel, err := filepath.Rel(s.RootDir, path)
+		})
 		if err != nil {
-			return err
+			return fmt.Errorf("walk root: %w", err)
 		}
-		rel = filepath.ToSlash(rel)
+	}
 
-		key := keyFromRel(rel) // drops .md, applies index.md rules (root index -> "")
-		stat, err := os.Stat(path)
+	// Index GitHub files if configured
+	if s.githubClient != nil {
+		githubFiles, err := s.githubClient.DiscoverMarkdownFiles(s.githubOwner, s.githubRepo, s.githubBranch, s.githubPath)
 		if err != nil {
-			return err
+			// If GitHub is enabled, we must have GitHub files - fail if we can't get them
+			return fmt.Errorf("failed to discover GitHub files from %s/%s@%s/%s: %w", s.githubOwner, s.githubRepo, s.githubBranch, s.githubPath, err)
 		}
+		if len(githubFiles) > 0 {
+			fmt.Printf("dorcs: discovered %d markdown files from GitHub\n", len(githubFiles))
+			for _, filePath := range githubFiles {
+				// Skip __lang__ folders - they should not appear in navigation
+				if strings.HasPrefix(filePath, "__lang__/") || strings.Contains(filePath, "/__lang__/") {
+					continue
+				}
 
-		// Parse front matter (best effort); do not fail the whole index if a file has bad metadata.
-		meta, contentHash, pmErr := markdown.ReadFrontMatterAndHash(path)
-		if pmErr != nil {
-			// Keep file indexed with fallbacks; include hash if possible.
-			meta = markdown.FrontMatter{}
-		}
+				// Generate key from relative path (keyFromRel expects .md extension)
+				key := keyFromRel(filePath)
 
-		doc := &Doc{
-			Key:         key,
-			FilePath:    path,
-			RelPath:     rel,
-			DirKey:      dirKeyFromKey(key),
-			Title:       strings.TrimSpace(meta.Title),
-			Description: strings.TrimSpace(meta.Description),
-			Tags:        append([]string(nil), meta.Tags...),
-			Draft:       meta.Draft,
-			Order:       meta.Order,
-			Author:      strings.TrimSpace(meta.Author),
-			After:       strings.TrimSpace(meta.After),
-			UpdatedAt:   stat.ModTime(),
-			ContentHash: contentHash,
-		}
+				// Create a relative path without .md extension for RelPath field
+				relPath := filePath
+				if strings.HasSuffix(strings.ToLower(relPath), ".md") {
+					relPath = relPath[:len(relPath)-3]
+				}
 
-		// Parse date (optional).
-		if ds := strings.TrimSpace(meta.Date); ds != "" {
-			if t, ok := parseDate(ds); ok {
-				doc.Date = t
+				// Create cache key for GitHub content
+				fullGitHubPath := filePath
+				if s.githubPath != "" {
+					fullGitHubPath = s.githubPath + "/" + filePath
+				}
+				cacheKey := fmt.Sprintf("%s/%s/%s/%s", s.githubOwner, s.githubRepo, s.githubBranch, fullGitHubPath)
+
+				// Create virtual Doc entry
+				doc := &Doc{
+					Key:            key,
+					FilePath:       "", // No local file path for GitHub docs
+					RelPath:        relPath + ".md",
+					DirKey:         dirKeyFromKey(key),
+					Title:          titleFromKey(key),
+					IsGitHub:       true,
+					GitHubPath:     fullGitHubPath,
+					GitHubCacheKey: cacheKey,
+					UpdatedAt:      time.Now(), // Use current time as fallback
+				}
+
+				// Try to fetch and parse front matter for metadata
+				// This is best effort - if it fails, we still index the file with fallback title
+				content, err := s.githubClient.FetchMarkdown(s.githubOwner, s.githubRepo, s.githubBranch, fullGitHubPath)
+				if err != nil {
+					// Log warning but continue - file will be indexed with fallback metadata
+					fmt.Printf("dorcs: warning: failed to fetch GitHub file %s for metadata: %v\n", fullGitHubPath, err)
+				} else {
+					// Parse front matter from content
+					meta, _, parseErr := markdown.ParseFrontMatterFromContent(content)
+					if parseErr != nil {
+						// Log but continue - front matter parsing is best effort
+						fmt.Printf("dorcs: warning: failed to parse front matter for %s: %v\n", fullGitHubPath, parseErr)
+					} else if meta != nil {
+						doc.Title = strings.TrimSpace(meta.Title)
+						doc.Description = strings.TrimSpace(meta.Description)
+						doc.Tags = append([]string(nil), meta.Tags...)
+						doc.Draft = meta.Draft
+						doc.Order = meta.Order
+						doc.Author = strings.TrimSpace(meta.Author)
+						doc.After = strings.TrimSpace(meta.After)
+
+						// Parse date
+						if ds := strings.TrimSpace(meta.Date); ds != "" {
+							if t, ok := parseDate(ds); ok {
+								doc.Date = t
+							}
+						}
+					}
+				}
+
+				// Title fallback
+				if doc.Title == "" {
+					if isIndexRel(relPath + ".md") {
+						doc.Title = titleFromIndexRel(relPath + ".md")
+					} else {
+						doc.Title = titleFromKey(doc.Key)
+					}
+				}
+
+				docs = append(docs, found{key: key, doc: doc})
 			}
 		}
-
-		// Title fallback:
-		// - index pages should show the folder (or site) title, not "index"
-		if doc.Title == "" {
-			if isIndexRel(rel) {
-				doc.Title = titleFromIndexRel(rel)
-			} else {
-				doc.Title = titleFromKey(doc.Key)
-			}
-		}
-
-		docs = append(docs, found{key: key, doc: doc})
-		return nil
-	})
-	if err != nil {
-		return fmt.Errorf("walk root: %w", err)
 	}
 
 	// Atomic swap of index + nav tree.

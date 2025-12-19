@@ -5,7 +5,10 @@ import (
 	"encoding/json"
 	"os"
 	"path/filepath"
+	"regexp"
+	"strings"
 
+	"github.com/joho/godotenv"
 	"gopkg.in/yaml.v3"
 )
 
@@ -31,6 +34,9 @@ type Config struct {
 
 	// Languages configuration for multi-lingual support
 	Languages LanguagesConfig `json:"languages" yaml:"languages"`
+
+	// GitHub integration configuration
+	GitHub GitHubConfig `json:"github" yaml:"github"`
 }
 
 // SiteConfig holds site-level metadata.
@@ -187,6 +193,21 @@ type Language struct {
 	Name string `json:"name" yaml:"name"`
 }
 
+// GitHubConfig holds GitHub integration configuration.
+type GitHubConfig struct {
+	// Enabled enables/disables GitHub integration
+	Enabled bool `json:"enabled" yaml:"enabled"`
+
+	// Repository is the GitHub repository tree URL (e.g., "https://github.com/p-arndt/dorcs/tree/main/docs")
+	Repository string `json:"repository" yaml:"repository"`
+
+	// Token is the GitHub token for private repos (supports ${ENV_VAR} expansion)
+	Token string `json:"token" yaml:"token"`
+
+	// CacheTTL is the cache time-to-live (default: 1h)
+	CacheTTL string `json:"cache_ttl" yaml:"cache_ttl"`
+}
+
 // Default returns the default configuration.
 func Default() *Config {
 	showSearch := true
@@ -216,6 +237,9 @@ func Default() *Config {
 // It looks for dorcs.yaml, dorcs.yml, or dorcs.json in order.
 // Returns default config if no config file is found.
 func Load(docsDir string) (*Config, error) {
+	// Load .env file first if it exists
+	loadEnvFile()
+
 	cfg := Default()
 
 	// Get current working directory
@@ -247,6 +271,7 @@ func Load(docsDir string) (*Config, error) {
 					return nil, err
 				}
 				applyDefaults(cfg)
+				expandEnvVars(cfg)
 				return cfg, nil
 			}
 		}
@@ -258,6 +283,7 @@ func Load(docsDir string) (*Config, error) {
 				return nil, err
 			}
 			applyDefaults(cfg)
+			expandEnvVars(cfg)
 			return cfg, nil
 		}
 	}
@@ -267,6 +293,9 @@ func Load(docsDir string) (*Config, error) {
 
 // LoadFromFile reads configuration from a specific file path.
 func LoadFromFile(path string) (*Config, error) {
+	// Load .env file first if it exists
+	loadEnvFile()
+
 	cfg := Default()
 
 	data, err := os.ReadFile(path)
@@ -294,7 +323,47 @@ func LoadFromFile(path string) (*Config, error) {
 	}
 
 	applyDefaults(cfg)
+	expandEnvVars(cfg)
 	return cfg, nil
+}
+
+// loadEnvFile loads environment variables from a .env file if it exists.
+// Uses godotenv library for proper .env file parsing.
+func loadEnvFile() {
+	// Try to load .env file (ignore errors if file doesn't exist)
+	_ = godotenv.Load()
+}
+
+// expandEnvVars expands environment variables in config strings.
+// Supports ${VAR} and ${VAR:-default} syntax.
+func expandEnvVars(cfg *Config) {
+	cfg.GitHub.Token = expandEnvVar(cfg.GitHub.Token)
+}
+
+var envVarRegex = regexp.MustCompile(`\$\{([^}]+)\}`)
+
+// expandEnvVar expands environment variables in a string.
+func expandEnvVar(s string) string {
+	return envVarRegex.ReplaceAllStringFunc(s, func(match string) string {
+		// Remove ${ and }
+		varName := match[2 : len(match)-1]
+
+		// Check for default value syntax: ${VAR:-default}
+		if idx := strings.Index(varName, ":-"); idx != -1 {
+			envVar := varName[:idx]
+			defaultVal := varName[idx+2:]
+			if val := os.Getenv(envVar); val != "" {
+				return val
+			}
+			return defaultVal
+		}
+
+		// Simple ${VAR} syntax
+		if val := os.Getenv(varName); val != "" {
+			return val
+		}
+		return match // Return original if not found
+	})
 }
 
 // FindConfigFile looks for a config file in the current working directory first,

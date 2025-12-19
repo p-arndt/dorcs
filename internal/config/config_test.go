@@ -321,3 +321,60 @@ func containsHelper(s, substr string) bool {
 	}
 	return false
 }
+
+func TestLoadEnvFile(t *testing.T) {
+	tmpDir := t.TempDir()
+	originalWd, _ := os.Getwd()
+	defer os.Chdir(originalWd)
+
+	// Change to temp directory
+	if err := os.Chdir(tmpDir); err != nil {
+		t.Fatalf("failed to change directory: %v", err)
+	}
+
+	// Create .env file
+	envContent := `GITHUB_TOKEN=test-token-from-env
+OTHER_VAR=test-value
+# This is a comment
+EMPTY_VAR=
+QUOTED_VAR="quoted value"
+`
+	if err := os.WriteFile(".env", []byte(envContent), 0644); err != nil {
+		t.Fatalf("failed to write .env file: %v", err)
+	}
+
+	// Clear any existing env vars
+	os.Unsetenv("GITHUB_TOKEN")
+	os.Unsetenv("OTHER_VAR")
+
+	// Load config (which should load .env file)
+	cfg, err := Load(tmpDir)
+	if err != nil {
+		t.Fatalf("Load failed: %v", err)
+	}
+
+	// Verify that environment variable was loaded
+	if os.Getenv("GITHUB_TOKEN") != "test-token-from-env" {
+		t.Errorf("expected GITHUB_TOKEN to be loaded from .env, got %q", os.Getenv("GITHUB_TOKEN"))
+	}
+
+	// Test that config can use the env var
+	yamlContent := `
+github:
+  enabled: true
+  repository: "https://github.com/owner/repo/tree/main/docs"
+  token: "${GITHUB_TOKEN}"
+`
+	if err := os.WriteFile("dorcs.yaml", []byte(yamlContent), 0644); err != nil {
+		t.Fatalf("failed to write config file: %v", err)
+	}
+
+	cfg, err = Load(tmpDir)
+	if err != nil {
+		t.Fatalf("Load failed: %v", err)
+	}
+
+	if cfg.GitHub.Token != "test-token-from-env" {
+		t.Errorf("expected token to be expanded from .env, got %q", cfg.GitHub.Token)
+	}
+}

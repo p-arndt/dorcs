@@ -31,19 +31,22 @@ func New(rootDir string, codeTheme string, basePath string, language string) (*S
 	// For non-default languages, use __lang__/{language} folder structure
 	actualRootDir := abs
 	if language != "" {
-		actualRootDir = filepath.Join(abs, "__lang__", language)
+		langDir := filepath.Join(abs, "__lang__", language)
+		// Check if language directory exists
+		if stat, err := os.Stat(langDir); err == nil && stat.IsDir() {
+			actualRootDir = langDir
+		}
+		// If it doesn't exist, we'll use the base directory
+		// This allows GitHub-only mode where language directories might not exist locally
 	}
 
-	stat, err := os.Stat(actualRootDir)
+	// Validate the base rootDir exists
+	stat, err := os.Stat(abs)
 	if err != nil {
-		// If language folder doesn't exist, return error
-		if language != "" {
-			return nil, fmt.Errorf("language directory does not exist: %s", actualRootDir)
-		}
 		return nil, fmt.Errorf("stat rootDir: %w", err)
 	}
 	if !stat.IsDir() {
-		return nil, fmt.Errorf("rootDir is not a directory: %s", actualRootDir)
+		return nil, fmt.Errorf("rootDir is not a directory: %s", abs)
 	}
 
 	// Generate syntax highlighting CSS
@@ -64,4 +67,27 @@ func New(rootDir string, codeTheme string, basePath string, language string) (*S
 // This should be served as a static CSS file or embedded in the page.
 func (s *Site) SyntaxCSS() string {
 	return s.syntaxCSS
+}
+
+// SetGitHubConfig configures GitHub integration for this site.
+// client is the GitHub client, and owner, repo, branch, path specify the repository location.
+func (s *Site) SetGitHubConfig(client interface {
+	DiscoverMarkdownFiles(owner, repo, branch, rootPath string) ([]string, error)
+	FetchMarkdown(owner, repo, branch, filePath string) ([]byte, error)
+}, owner, repo, branch, repoPath string) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.githubClient = client
+	s.githubOwner = owner
+	s.githubRepo = repo
+	s.githubBranch = branch
+	s.githubPath = repoPath
+}
+
+// SetLanguage sets the language code for this site.
+// This is useful when creating a site with GitHub integration where the local directory structure doesn't match.
+func (s *Site) SetLanguage(language string) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.Language = language
 }
