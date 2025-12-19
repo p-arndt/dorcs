@@ -349,11 +349,6 @@ func (c *Client) DiscoverMarkdownFiles(owner, repo, branch, rootPath string) ([]
 			continue
 		}
 
-		// Skip __lang__ folders - they should not be indexed directly
-		if strings.HasPrefix(relativePath, "__lang__/") {
-			continue
-		}
-
 		markdownFiles = append(markdownFiles, relativePath)
 	}
 

@@ -19,6 +19,15 @@ type Site struct {
 	// Language is the language code this site instance serves (empty for default language)
 	Language string
 
+	// Version is the version identifier this site instance serves (empty for default version)
+	Version string
+
+	// DefaultVersion is the default version identifier (used for link rewriting)
+	DefaultVersion string
+
+	// DefaultLanguage is the default language code (used for link rewriting - no prefix for default)
+	DefaultLanguage string
+
 	md goldmark.Markdown
 
 	mu    sync.RWMutex

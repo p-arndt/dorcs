@@ -205,7 +205,7 @@ func TestRewriteExtensionlessDocLinks(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result := RewriteExtensionlessDocLinks(tt.input, tt.currentDirKey, tt.basePath, "")
+			result := RewriteExtensionlessDocLinks(tt.input, tt.currentDirKey, tt.basePath, "", "", "", "")
 			if result != tt.expected {
 				t.Errorf("RewriteExtensionlessDocLinks(%q, %q, %q) = %q; want %q",
 					tt.input, tt.currentDirKey, tt.basePath, result, tt.expected)

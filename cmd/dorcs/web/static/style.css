@@ -1291,15 +1291,17 @@ footer.site-footer .footer-version {
 }
 
 /* =====================
-   Language Switcher
+   Version & Language Switchers
    ===================== */
 
+.version-switcher,
 .lang-switcher {
     margin-left: 12px;
     display: flex;
     align-items: center;
 }
 
+.version-switcher select,
 .lang-switcher select {
     background: var(--bg);
     color: var(--fg);
@@ -1317,11 +1319,13 @@ footer.site-footer .footer-version {
     transition: border-color 0.2s, background-color 0.2s;
 }
 
+.version-switcher select:hover,
 .lang-switcher select:hover {
     border-color: var(--link);
     background-color: color-mix(in srgb, var(--link) 5%, var(--bg));
 }
 
+.version-switcher select:focus,
 .lang-switcher select:focus {
     outline: none;
     border-color: var(--link);
@@ -1329,10 +1333,12 @@ footer.site-footer .footer-version {
 }
 
 @media (max-width: 768px) {
+    .version-switcher,
     .lang-switcher {
         margin-left: 8px;
     }
     
+    .version-switcher select,
     .lang-switcher select {
         font-size: 0.8rem;
         padding: 5px 8px;

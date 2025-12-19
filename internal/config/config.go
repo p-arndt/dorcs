@@ -35,6 +35,9 @@ type Config struct {
 	// Languages configuration for multi-lingual support
 	Languages LanguagesConfig `json:"languages" yaml:"languages"`
 
+	// Versions configuration for versioning support
+	Versions VersionsConfig `json:"versions" yaml:"versions"`
+
 	// GitHub integration configuration
 	GitHub GitHubConfig `json:"github" yaml:"github"`
 }
@@ -180,7 +183,7 @@ type LanguagesConfig struct {
 	// Default language code (e.g., "en")
 	Default string `json:"default" yaml:"default"`
 
-	// Enabled languages list
+	// Enabled languages list (explicit configuration required)
 	Enabled []Language `json:"enabled" yaml:"enabled"`
 }
 
@@ -190,6 +193,27 @@ type Language struct {
 	Code string `json:"code" yaml:"code"`
 
 	// Name is the display name (e.g., "English", "Deutsch", "Français")
+	Name string `json:"name" yaml:"name"`
+}
+
+// VersionsConfig holds versioning configuration.
+type VersionsConfig struct {
+	// Default version identifier (served at root URL, no prefix)
+	Default string `json:"default" yaml:"default"`
+
+	// Enabled versions list (explicit configuration required)
+	Enabled []Version `json:"enabled" yaml:"enabled"`
+
+	// FolderPattern is deprecated - no longer used (MkDocs-style structure uses direct folders)
+	FolderPattern string `json:"folder_pattern,omitempty" yaml:"folder_pattern,omitempty"`
+}
+
+// Version represents a single version configuration.
+type Version struct {
+	// ID is the version identifier (e.g., "v1", "v2", "1.0.0")
+	ID string `json:"id" yaml:"id"`
+
+	// Name is the display name (e.g., "Version 1.0", "v2.0.0")
 	Name string `json:"name" yaml:"name"`
 }
 
@@ -236,6 +260,7 @@ func Default() *Config {
 // It first looks in the current working directory, then in the given docs directory.
 // It looks for dorcs.yaml, dorcs.yml, or dorcs.json in order.
 // Returns default config if no config file is found.
+// Languages and versions must be explicitly configured in the config file.
 func Load(docsDir string) (*Config, error) {
 	// Load .env file first if it exists
 	loadEnvFile()
@@ -288,10 +313,13 @@ func Load(docsDir string) (*Config, error) {
 		}
 	}
 
+	// No config file found - return defaults (languages/versions must be explicitly configured)
+
 	return cfg, nil
 }
 
 // LoadFromFile reads configuration from a specific file path.
+// Languages and versions must be explicitly configured in the config file.
 func LoadFromFile(path string) (*Config, error) {
 	// Load .env file first if it exists
 	loadEnvFile()
@@ -430,6 +458,11 @@ func applyDefaults(cfg *Config) {
 	// Languages defaults - if default is set but no enabled list, add default to enabled
 	if cfg.Languages.Default != "" && len(cfg.Languages.Enabled) == 0 {
 		cfg.Languages.Enabled = []Language{{Code: cfg.Languages.Default, Name: cfg.Languages.Default}}
+	}
+	// Versions defaults - folder pattern is no longer used (removed in favor of MkDocs-style structure)
+	// Versions defaults - if default is set but no enabled list, add default to enabled
+	if cfg.Versions.Default != "" && len(cfg.Versions.Enabled) == 0 {
+		cfg.Versions.Enabled = []Version{{ID: cfg.Versions.Default, Name: cfg.Versions.Default}}
 	}
 }
 
@@ -720,6 +753,38 @@ func (c *Config) GetDefaultLanguage() string {
 	// If no default set but languages are enabled, use first one
 	if len(c.Languages.Enabled) > 0 {
 		return c.Languages.Enabled[0].Code
+	}
+	return ""
+}
+
+// IsMultiVersion returns true if multiple versions are enabled.
+func (c *Config) IsMultiVersion() bool {
+	return len(c.Versions.Enabled) > 1
+}
+
+// GetVersion returns the Version config for a given ID, or nil if not found.
+func (c *Config) GetVersion(id string) *Version {
+	for _, ver := range c.Versions.Enabled {
+		if ver.ID == id {
+			return &ver
+		}
+	}
+	return nil
+}
+
+// IsVersionEnabled returns true if the given version ID is enabled.
+func (c *Config) IsVersionEnabled(id string) bool {
+	return c.GetVersion(id) != nil
+}
+
+// GetDefaultVersion returns the default version ID, or empty string if not configured.
+func (c *Config) GetDefaultVersion() string {
+	if c.Versions.Default != "" {
+		return c.Versions.Default
+	}
+	// If no default set but versions are enabled, use first one
+	if len(c.Versions.Enabled) > 0 {
+		return c.Versions.Enabled[0].ID
 	}
 	return ""
 }

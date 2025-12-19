@@ -31,10 +31,7 @@ func BuildBreadcrumbs(ctx PlaceholderContext) template.HTML {
 	b.WriteString(`<ol class="breadcrumb-list" itemscope itemtype="https://schema.org/BreadcrumbList">`)
 
 	// Home link
-	homeURL := "/"
-	if ctx.BasePath != "" {
-		homeURL = ctx.BasePath + "/"
-	}
+	homeURL := buildDocURL("", ctx.BasePath, ctx.Site)
 	b.WriteString(`<li class="breadcrumb-item" itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">`)
 	b.WriteString(`<a href="`)
 	b.WriteString(html.EscapeString(homeURL))
@@ -60,11 +57,8 @@ func BuildBreadcrumbs(ctx PlaceholderContext) template.HTML {
 			displayName = doc.Title
 		}
 
-		// Build URL
-		urlPath := "/" + escapePathForTOC(currentPath)
-		if ctx.BasePath != "" {
-			urlPath = ctx.BasePath + urlPath
-		}
+		// Build URL with version and language prefixes
+		urlPath := buildDocURL(currentPath, ctx.BasePath, ctx.Site)
 
 		// Add separator before each item (except first)
 		b.WriteString(`<li class="breadcrumb-separator" aria-hidden="true">`)
@@ -224,7 +218,7 @@ func BuildChildren(ctx PlaceholderContext) template.HTML {
 		}
 
 		// Build URL
-		childURL := buildDocURL(child.Key, ctx.BasePath)
+		childURL := buildDocURL(child.Key, ctx.BasePath, ctx.Site)
 
 		// Get display name
 		childName := child.Name
@@ -347,7 +341,7 @@ func BuildSiblings(ctx PlaceholderContext) template.HTML {
 			continue // Skip current page
 		}
 
-		siblingURL := buildDocURL(sibling.Key, ctx.BasePath)
+		siblingURL := buildDocURL(sibling.Key, ctx.BasePath, ctx.Site)
 		siblingTitle := sibling.Name
 		if sibling.Page != nil && sibling.Page.Title != "" {
 			siblingTitle = sibling.Page.Title
@@ -433,7 +427,7 @@ func BuildRelated(ctx PlaceholderContext) template.HTML {
 	b.WriteString(`<ul class="related-list">`)
 
 	for _, item := range scored {
-		docURL := buildDocURL(item.doc.Key, ctx.BasePath)
+		docURL := buildDocURL(item.doc.Key, ctx.BasePath, ctx.Site)
 		docTitle := item.doc.Title
 		if docTitle == "" {
 			docTitle = item.doc.Key
@@ -485,7 +479,7 @@ func BuildRecent(ctx PlaceholderContext) template.HTML {
 	b.WriteString(`<ul class="recent-list">`)
 
 	for _, doc := range sorted {
-		docURL := buildDocURL(doc.Key, ctx.BasePath)
+		docURL := buildDocURL(doc.Key, ctx.BasePath, ctx.Site)
 		docTitle := doc.Title
 		if docTitle == "" {
 			docTitle = doc.Key
@@ -527,7 +521,7 @@ func BuildTags(ctx PlaceholderContext) template.HTML {
 		b.WriteString(`<li class="tag-item">`)
 		b.WriteString(`<a href="`)
 		// Link to tag page (could be enhanced to create tag index pages)
-		tagURL := buildDocURL("", ctx.BasePath) + "?tag=" + url.QueryEscape(tag)
+		tagURL := buildDocURL("", ctx.BasePath, ctx.Site) + "?tag=" + url.QueryEscape(tag)
 		b.WriteString(html.EscapeString(tagURL))
 		b.WriteString(`" class="tag-link">`)
 		b.WriteString(html.EscapeString(tag))
@@ -578,7 +572,7 @@ func BuildIndex(ctx PlaceholderContext) template.HTML {
 			})
 
 			for _, doc := range dirDocs {
-				docURL := buildDocURL(doc.Key, ctx.BasePath)
+				docURL := buildDocURL(doc.Key, ctx.BasePath, ctx.Site)
 				docTitle := doc.Title
 				if docTitle == "" {
 					docTitle = doc.Key
@@ -712,7 +706,7 @@ func BuildPagesByTag(ctx PlaceholderContext) template.HTML {
 		b.WriteString(`<ul class="tag-section-list">`)
 
 		for _, doc := range docs {
-			docURL := buildDocURL(doc.Key, ctx.BasePath)
+			docURL := buildDocURL(doc.Key, ctx.BasePath, ctx.Site)
 			docTitle := doc.Title
 			if docTitle == "" {
 				docTitle = doc.Key
@@ -737,19 +731,28 @@ func BuildPagesByTag(ctx PlaceholderContext) template.HTML {
 
 // Helper functions
 
-func buildDocURL(key string, basePath string) string {
-	if key == "" {
-		urlPath := "/"
-		if basePath != "" {
-			urlPath = basePath + "/"
-		}
-		return urlPath
-	}
-	urlPath := "/" + escapePathForTOC(key)
+func buildDocURL(key string, basePath string, site *Site) string {
+	var urlPathBuilder strings.Builder
 	if basePath != "" {
-		urlPath = basePath + urlPath
+		urlPathBuilder.WriteString(basePath)
 	}
-	return urlPath
+	// Add language prefix if not default (language-first structure)
+	if site != nil && site.Language != "" && site.Language != site.DefaultLanguage {
+		urlPathBuilder.WriteByte('/')
+		urlPathBuilder.WriteString(site.Language)
+	}
+	// Add version prefix if not default
+	if site != nil && site.Version != "" && site.Version != site.DefaultVersion {
+		urlPathBuilder.WriteByte('/')
+		urlPathBuilder.WriteString(site.Version)
+	}
+	if key == "" {
+		urlPathBuilder.WriteByte('/')
+	} else {
+		urlPathBuilder.WriteByte('/')
+		urlPathBuilder.WriteString(escapePathForTOC(key))
+	}
+	return urlPathBuilder.String()
 }
 
 func formatDate(t time.Time) string {

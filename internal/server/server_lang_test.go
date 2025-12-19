@@ -16,12 +16,12 @@ import (
 func TestLanguageDetection(t *testing.T) {
 	tmpDir := t.TempDir()
 
-	// Create default language files
+	// Create default language files (new MkDocs-style structure)
 	files := map[string]string{
-		"index.md":                       `# Home`,
-		"getting-started.md":             `# Getting Started`,
-		"__lang__/de/index.md":           `# Startseite`,
-		"__lang__/de/getting-started.md": `# Erste Schritte`,
+		"index.md":             `# Home`,
+		"getting-started.md":   `# Getting Started`,
+		"de/index.md":          `# Startseite`,
+		"de/getting-started.md": `# Erste Schritte`,
 	}
 
 	for relPath, content := range files {
@@ -236,10 +236,10 @@ func TestConvertNavNodesWithLang(t *testing.T) {
 func TestDocPathExtraction(t *testing.T) {
 	tmpDir := t.TempDir()
 
-	// Create minimal files
+	// Create minimal files (new MkDocs-style structure)
 	files := map[string]string{
-		"index.md":             `# Home`,
-		"__lang__/de/index.md": `# Startseite`,
+		"index.md":    `# Home`,
+		"de/index.md": `# Startseite`,
 	}
 
 	for relPath, content := range files {

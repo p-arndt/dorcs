@@ -101,21 +101,70 @@ footer:
   #     url: "/terms"
 
 # Multi-lingual support configuration
-languages:
-  # Default language code (served at root URL, no prefix)
-  default: "en"
+# languages:
+#   # Default language code (served at root URL, no prefix)
+#   default: "en"
+#
+#   # Enabled languages list (explicit configuration required)
+#   enabled:
+#     - code: "en"
+#       name: "English"
+#     - code: "de"
+#       name: "Deutsch"
+#   # Add more languages as needed:
+#   #   - code: "fr"
+#   #     name: "Français"
+#   #   - code: "es"
+#   #     name: "Español"
 
-  # Enabled languages list
-  enabled:
-    - code: "en"
-      name: "English"
-    - code: "de"
-      name: "Deutsch"
-  # Add more languages as needed:
-  #   - code: "fr"
-  #     name: "Français"
-  #   - code: "es"
-  #     name: "Español"
+# Versioning configuration
+# Allows you to maintain multiple versions of your documentation (e.g., v1, v2, latest)
+# Uses MkDocs-style structure: versions are in direct folders (docs/v1/, docs/latest/)
+# Default version is served at root URL, other versions at /v1/, /v2/, etc.
+# versions:
+#   # Default version identifier (served at root URL, no prefix)
+#   default: "v1"
+#
+#   # Enabled versions list (explicit configuration required)
+#   enabled:
+#     - id: "v0"
+#       name: "V0"
+#     - id: "v1"
+#       name: "V1"
+
+# File structure examples with MkDocs-style structure:
+#
+# Versioning only (no languages):
+# docs/
+#   index.md                    # Default version (v1) - served at /
+#   getting-started.md
+#   v0/
+#     index.md                  # Version 0 - served at /v0/
+#     getting-started.md
+#   v1/
+#     index.md                  # Version 1 (same as root) - served at /v1/
+#     getting-started.md
+#
+# Both versioning and languages (language-first):
+# docs/
+#   index.md                    # en, v1 (default) - served at /
+#   en/
+#     index.md                  # en, v1 (default) - served at /en/
+#     v0/
+#       index.md                # en, v0 - served at /en/v0/
+#     v1/
+#       index.md                # en, v1 - served at /en/v1/
+#   de/
+#     index.md                  # de, v1 (default) - served at /de/
+#     v0/
+#       index.md                # de, v0 - served at /de/v0/
+#     v1/
+#       index.md                # de, v1 - served at /de/v1/
+#
+# URL examples:
+# - Default version: /getting-started → docs/getting-started.md (or docs/en/getting-started.md)
+# - Versioned: /v1/getting-started → docs/v1/getting-started.md
+# - With language: /en/v1/getting-started → docs/en/v1/getting-started.md
 
 # Authentication and Edit Mode configuration
 auth:

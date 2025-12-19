@@ -1,5 +1,154 @@
 // Main application JavaScript for dorcs documentation site
 
+// Define switcher functions immediately (before IIFE) so they're available for inline handlers
+window.dorcsVersionSwitcher = {
+  // Save version preference to localStorage
+  saveVersionPreference: function(versionID) {
+    try {
+      localStorage.setItem('dorcs-version', versionID || '');
+    } catch (e) {
+      // Ignore localStorage errors (e.g., in private browsing)
+    }
+  },
+  
+  // Get saved version preference from localStorage
+  getVersionPreference: function() {
+    try {
+      return localStorage.getItem('dorcs-version') || '';
+    } catch (e) {
+      return '';
+    }
+  },
+  
+  switchVersion: function(versionID, defaultVersion) {
+    const basePath = document.body.dataset.basePath || '';
+    // Use DocPath from server (already calculated correctly, without version/language prefix)
+    let docPath = document.body.dataset.docPath || '/';
+    
+    // Ensure docPath starts with /
+    if (!docPath.startsWith('/')) {
+      docPath = '/' + docPath;
+    }
+    
+    // Get current language (if any)
+    const currentLang = document.body.dataset.currentLanguage || '';
+    const langSelect = document.getElementById('lang-select');
+    const defaultLang = langSelect ? langSelect.dataset.defaultLang : '';
+    
+    // Build new path with the selected version (language-first structure)
+    let newPath = '';
+    if (versionID === defaultVersion || versionID === '') {
+      // Default version - no version prefix
+      if (currentLang && currentLang !== defaultLang) {
+        // Has language, add language prefix only
+        if (docPath === '/') {
+          newPath = '/' + currentLang + '/';
+        } else {
+          newPath = '/' + currentLang + docPath;
+        }
+      } else {
+        // No language or default language
+        newPath = docPath;
+      }
+    } else {
+      // Non-default version - add version prefix (after language if present)
+      if (currentLang && currentLang !== defaultLang) {
+        // Has language: /en/v1/... (language-first)
+        if (docPath === '/') {
+          newPath = '/' + currentLang + '/' + versionID + '/';
+        } else {
+          newPath = '/' + currentLang + '/' + versionID + docPath;
+        }
+      } else {
+        // No language or default language: /v1/...
+        if (docPath === '/') {
+          newPath = '/' + versionID + '/';
+        } else {
+          newPath = '/' + versionID + docPath;
+        }
+      }
+    }
+    
+    // Save preference and navigate
+    this.saveVersionPreference(versionID);
+    window.location.href = basePath + newPath;
+  }
+};
+
+window.dorcsLangSwitcher = {
+  // Save language preference to localStorage
+  saveLanguagePreference: function(langCode) {
+    try {
+      localStorage.setItem('dorcs-language', langCode || '');
+    } catch (e) {
+      // Ignore localStorage errors (e.g., in private browsing)
+    }
+  },
+  
+  // Get saved language preference from localStorage
+  getLanguagePreference: function() {
+    try {
+      return localStorage.getItem('dorcs-language') || '';
+    } catch (e) {
+      return '';
+    }
+  },
+  
+  switchLanguage: function(langCode, defaultLang) {
+    const basePath = document.body.dataset.basePath || '';
+    // Use DocPath from server (already calculated correctly, without version/language prefix)
+    let docPath = document.body.dataset.docPath || '/';
+    
+    // Ensure docPath starts with /
+    if (!docPath.startsWith('/')) {
+      docPath = '/' + docPath;
+    }
+    
+    // Get current version (if any)
+    const currentVersion = document.body.dataset.currentVersion || '';
+    const versionSelect = document.getElementById('version-select');
+    const defaultVersion = versionSelect ? versionSelect.dataset.defaultVersion : '';
+    
+    // Build new path with the selected language (language-first structure)
+    let newPath = '';
+    if (langCode === defaultLang || langCode === '') {
+      // Default language - no language prefix
+      if (currentVersion && currentVersion !== defaultVersion) {
+        // Has version: /v1/...
+        if (docPath === '/') {
+          newPath = '/' + currentVersion + '/';
+        } else {
+          newPath = '/' + currentVersion + docPath;
+        }
+      } else {
+        // No version or default version
+        newPath = docPath;
+      }
+    } else {
+      // Other language - add language prefix (before version if present)
+      if (currentVersion && currentVersion !== defaultVersion) {
+        // Has version: /en/v1/... (language-first)
+        if (docPath === '/') {
+          newPath = '/' + langCode + '/' + currentVersion + '/';
+        } else {
+          newPath = '/' + langCode + '/' + currentVersion + docPath;
+        }
+      } else {
+        // No version or default version: /en/...
+        if (docPath === '/') {
+          newPath = '/' + langCode + '/';
+        } else {
+          newPath = '/' + langCode + docPath;
+        }
+      }
+    }
+    
+    // Save preference and navigate
+    this.saveLanguagePreference(langCode);
+    window.location.href = basePath + newPath;
+  }
+};
+
 (function() {
   // =====================
   // Mobile Menu Toggle
@@ -671,58 +820,7 @@ updateActiveSection();
     });
   })();
 
-  // =====================
-  // Language Switcher
-  // =====================
-  window.dorcsLangSwitcher = {
-    // Save language preference to localStorage
-    saveLanguagePreference: function(langCode) {
-      try {
-        localStorage.setItem('dorcs-language', langCode || '');
-      } catch (e) {
-        // Ignore localStorage errors (e.g., in private browsing)
-      }
-    },
-    
-    // Get saved language preference from localStorage
-    getLanguagePreference: function() {
-      try {
-        return localStorage.getItem('dorcs-language') || '';
-      } catch (e) {
-        return '';
-      }
-    },
-    
-    switchLanguage: function(langCode, defaultLang) {
-      const basePath = document.body.dataset.basePath || '';
-      // Use DocPath from server (already calculated correctly, without language prefix)
-      let docPath = document.body.dataset.docPath || '/';
-      
-      // Ensure docPath starts with /
-      if (!docPath.startsWith('/')) {
-        docPath = '/' + docPath;
-      }
-      
-      // Build new path with the selected language
-      let newPath = '';
-      if (langCode === defaultLang || langCode === '') {
-        // Default language - no prefix, use docPath as-is
-        newPath = docPath;
-      } else {
-        // Other language - add prefix
-        if (docPath === '/') {
-          newPath = '/' + langCode + '/';
-        } else {
-          // Ensure docPath starts with /, then add language prefix
-          newPath = '/' + langCode + docPath;
-        }
-      }
-      
-      // Save preference and navigate
-      this.saveLanguagePreference(langCode);
-      window.location.href = basePath + newPath;
-    }
-  };
+  // Version and Language Switchers are now defined before the IIFE
   
   // On page load, check if we should redirect to saved language preference
   (function() {

@@ -27,7 +27,22 @@ func (s *Site) preprocessMarkdown(raw string, doc *Doc) string {
 		// This is an index.md file, so the document's directory is its Key
 		docDir = doc.Key
 	}
-	raw = markdown.RewriteExtensionlessDocLinks(raw, docDir, s.BasePath, s.Language)
+	defaultVersion := s.DefaultVersion
+	if defaultVersion == "" {
+		// If DefaultVersion is not set, assume current version is default (backward compatibility)
+		defaultVersion = s.Version
+	}
+	defaultLanguage := s.DefaultLanguage
+	// For link rewriting, use empty string for language if it's the default (so URLs don't have /en/ prefix)
+	languageForURL := s.Language
+	if languageForURL == defaultLanguage {
+		languageForURL = ""
+	}
+	raw = markdown.RewriteExtensionlessDocLinks(raw, docDir, s.BasePath, languageForURL, s.Version, defaultVersion, defaultLanguage)
+
+	// Rewrite relative image paths to absolute paths
+	// This ensures images work correctly when default language uses its folder but URL has no prefix
+	raw = markdown.RewriteRelativeImagePaths(raw, docDir, s.BasePath, languageForURL, s.Version, defaultVersion, defaultLanguage)
 
 	// Convert GitHub-style alert blocks in markdown (pre-process for goldmark)
 	raw = markdown.ConvertAlertBlocksInMarkdown(raw)

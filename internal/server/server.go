@@ -31,6 +31,11 @@ type Config struct {
 	// If nil or empty, only the default Site is used
 	Sites map[string]*site.Site
 
+	// VersionSites is a map of version+language key to Site instance (for versioning support)
+	// Key format: "{version}:{language}" or "{version}:" for default language, or ":{language}" for default version
+	// If nil or empty, only the default Sites are used
+	VersionSites map[string]*site.Site
+
 	// ReloadBroadcaster enables live reload in watch mode
 	ReloadBroadcaster *site.ReloadBroadcaster
 
@@ -120,6 +125,9 @@ type DocPageModel struct {
 
 	// CurrentLanguage is the language code for the current page
 	CurrentLanguage string
+
+	// CurrentVersion is the version identifier for the current page
+	CurrentVersion string
 }
 
 // ServeHTTP routes requests:
@@ -149,26 +157,54 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	// Detect language from URL path
+	// Detect version and language from URL path (MkDocs-style: language-first)
+	// Priority: language first, then version
+	// Examples: /en/..., /en/v1/..., /v1/... (version-only, no language), /... (default)
+	var currentVersion string
 	var currentLang string
 	var docPath string
 	if reqPath == "/" {
 		docPath = "/"
 	} else {
-		// Extract first path segment as potential language code
+		// Extract path segments
 		parts := strings.Split(strings.TrimPrefix(reqPath, "/"), "/")
 		if len(parts) > 0 && parts[0] != "" {
-			// Check if first segment is a valid language code
+			// Check if first segment is a language code (language-first)
 			if siteConfig != nil && siteConfig.IsLanguageEnabled(parts[0]) {
 				currentLang = parts[0]
-				// Remove language prefix from path
+				// Check if second segment is a version ID
+				if len(parts) > 1 && parts[1] != "" {
+					if siteConfig.IsVersionEnabled(parts[1]) {
+						currentVersion = parts[1]
+						// Remove language and version prefix from path
+						if len(parts) > 2 {
+							docPath = "/" + strings.Join(parts[2:], "/")
+						} else {
+							docPath = "/"
+						}
+					} else {
+						// Language but no version, remove only language prefix
+						if len(parts) > 1 {
+							docPath = "/" + strings.Join(parts[1:], "/")
+						} else {
+							docPath = "/"
+						}
+					}
+				} else {
+					// Language only, no version
+					docPath = "/"
+				}
+			} else if siteConfig != nil && siteConfig.IsVersionEnabled(parts[0]) {
+				// Not a language, check if it's a version ID (version-only mode, no languages)
+				currentVersion = parts[0]
+				// Remove version prefix from path
 				if len(parts) > 1 {
 					docPath = "/" + strings.Join(parts[1:], "/")
 				} else {
 					docPath = "/"
 				}
 			} else {
-				// Not a language code, treat as document path
+				// Not a language or version code, treat as document path
 				docPath = reqPath
 			}
 		} else {
@@ -176,10 +212,29 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	// Get the appropriate Site instance for this language
+	// Get the appropriate Site instance for this version and language
 	var targetSite *site.Site
 	h.mu.RLock()
-	if len(h.cfg.Sites) > 0 {
+	// If versioning is enabled, we need to handle default version
+	if siteConfig != nil && siteConfig.IsMultiVersion() {
+		// If no version specified in URL, use default version
+		if currentVersion == "" {
+			currentVersion = siteConfig.GetDefaultVersion()
+		}
+		// First, try version-specific sites
+		if len(h.cfg.VersionSites) > 0 {
+			// Build key: "{version}:{language}" or "{version}:" for default language
+			siteKey := currentVersion + ":"
+			if currentLang != "" {
+				siteKey = currentVersion + ":" + currentLang
+			}
+			if verSite, ok := h.cfg.VersionSites[siteKey]; ok {
+				targetSite = verSite
+			}
+		}
+	}
+	// If no version-specific site found, try language-only sites (for backward compatibility)
+	if targetSite == nil && len(h.cfg.Sites) > 0 {
 		// Default language uses empty key in Sites map
 		siteKey := currentLang
 		if currentLang == "" {
@@ -189,16 +244,26 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			targetSite = langSite
 		}
 	}
-	// Fall back to default site if no language-specific site found
+	// Fall back to default site if no version/language-specific site found
 	if targetSite == nil {
 		targetSite = h.cfg.Site
-		currentLang = "" // Use default language
+		// Reset to defaults if we couldn't find a specific site
+		if siteConfig != nil && siteConfig.IsMultiVersion() {
+			currentVersion = siteConfig.GetDefaultVersion()
+		} else {
+			currentVersion = ""
+		}
+		if siteConfig != nil && siteConfig.IsMultiLingual() {
+			currentLang = siteConfig.GetDefaultLanguage()
+		} else {
+			currentLang = ""
+		}
 	}
 	h.mu.RUnlock()
 
 	// Root -> docs/index.md
 	if docPath == "/" {
-		h.handleDocByKeyWithSite(w, r, "", targetSite, currentLang, docPath)
+		h.handleDocByKeyWithSite(w, r, "", targetSite, currentLang, currentVersion, docPath)
 		return
 	}
 
@@ -212,21 +277,21 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	// Support folder index: /guide -> docs/guide/index.md
 	if strings.HasSuffix(docPath, "/") {
-		h.handleDocByKeyWithSite(w, r, path.Clean(rel), targetSite, currentLang, docPath)
+		h.handleDocByKeyWithSite(w, r, path.Clean(rel), targetSite, currentLang, currentVersion, docPath)
 		return
 	}
 
 	// Check if this is a static asset (image, etc.) before trying markdown
-	if h.tryServeStaticAsset(w, r, rel) {
+	if h.tryServeStaticAsset(w, r, rel, targetSite) {
 		return
 	}
 
 	// First: try docs/<rel>.md
-	if h.tryServeDocWithSite(w, r, rel, targetSite, currentLang) {
+	if h.tryServeDocWithSite(w, r, rel, targetSite, currentLang, currentVersion) {
 		return
 	}
 	// Second: try docs/<rel>/index.md (folder index)
-	if h.tryServeDocWithSite(w, r, path.Clean(rel), targetSite, currentLang) {
+	if h.tryServeDocWithSite(w, r, path.Clean(rel), targetSite, currentLang, currentVersion) {
 		return
 	}
 

@@ -9,7 +9,7 @@ draft: false
 # Dorcs
 
 <div style="display: flex; justify-content: center; align-items: center;">
-<img src="./logo.png" alt="Dorcs Logo" width="200" height="200" style="border: none;" />
+<img src="../logo.png" alt="Dorcs Logo" width="200" height="200" style="border: none;" />
 </div>
 
 Dorcs is a single-binary static documentation server for Markdown files. It is a simple and easy to use documentation server that allows you to create and host your documentation site in minutes.
@@ -85,6 +85,7 @@ Or if you ready to get started now, download the latest release for your platfor
 - 🚀 [Getting Started](./01_getting-started.md) - Complete quick start guide
 - 📦 [Installation](./02_installation.md) - Detailed installation instructions
 - ⚙️ [Configuration](./03_configuration.md) - Customize your site with `dorcs.yaml`
+- 📁 [File Structure](./usage/file-structure.md) - Organize docs with languages and versions
 - 🔗 [External Content](./external-content/index.md) - Serve content from external sources (GitHub, etc.)
 - 🚢 [Deployment](./04_deployment.md) - Deploy to production
 - 🎨 [Themes](./05_themes.md) - Browse all available themes
@@ -125,10 +126,32 @@ When multiple languages are configured, non-default languages use a language pre
 
 | File Path                       | URL                      |
 | ------------------------------- | ------------------------ |
+| `docs/en/index.md`              | `/` or `/en/`            |
 | `docs/de/index.md`              | `/de/`                   |
 | `docs/de/getting-started.md`    | `/de/getting-started`    |
 | `docs/fr/guide/installation.md` | `/fr/guide/installation` |
 
 The default language is served at the root URL (no prefix), while other languages use `/{lang}/` prefixes.
+
+**Versioned URLs:**
+
+When versioning is configured, non-default versions use a version prefix:
+
+| File Path                       | URL                      |
+| ------------------------------- | ------------------------ |
+| `docs/v1/index.md`              | `/v1/`                   |
+| `docs/v1/getting-started.md`    | `/v1/getting-started`    |
+| `docs/en/v1/getting-started.md` | `/en/v1/getting-started` |
+
+**Combined (Languages + Versions):**
+
+When both are configured, URLs use language-first structure:
+
+| File Path                       | URL                      |
+| ------------------------------- | ------------------------ |
+| `docs/en/v1/getting-started.md` | `/en/v1/getting-started` |
+| `docs/de/v1/getting-started.md` | `/de/v1/getting-started` |
+
+See [File Structure & Organization](./usage/file-structure.md) for complete details.
 
 It will also automatically build navigation from your structure and generate a sidebar and a table of contents for each page.

@@ -12,6 +12,7 @@ import (
 	"os"
 	"os/signal"
 	"path/filepath"
+	"strings"
 	"syscall"
 	"time"
 
@@ -169,78 +170,203 @@ func RunServer(templatesFS, staticFS embed.FS, version string) {
 	// Create sites for each language if multi-lingual is enabled
 	var defaultSite *site.Site
 	sites := make(map[string]*site.Site)
+	versionSites := make(map[string]*site.Site)
+
+	// MkDocs-style structure: language-first approach
+	// Structure: docs/{lang}/{version}/ or docs/{version}/ (version-only) or docs/ (default)
+	defaultVersion := ""
+	defaultLang := ""
+	if cfg.IsMultiVersion() {
+		defaultVersion = cfg.GetDefaultVersion()
+	}
+	if cfg.IsMultiLingual() {
+		defaultLang = cfg.GetDefaultLanguage()
+	}
+
+	// Create sites: language-first iteration
+	// When using multiple languages OR versions, markdown files in root docs/ are ignored
+	// Only static assets (images, etc.) in root are served as shared assets
+	usingMultiLangOrVersion := cfg.IsMultiLingual() || cfg.IsMultiVersion()
+	if usingMultiLangOrVersion {
+		rootHasMarkdown := hasMarkdownFilesInDir(absDir)
+		if rootHasMarkdown {
+			msg := "when using multiple languages or versions, markdown files in root docs/ folder are ignored"
+			if cfg.IsMultiLingual() && cfg.IsMultiVersion() {
+				msg += ". Please move all markdown files to language/version folders (docs/en/v1/, docs/de/v1/, etc.)"
+			} else if cfg.IsMultiLingual() {
+				msg += ". Please move all markdown files to language-specific folders (docs/en/, docs/de/, etc.)"
+			} else {
+				msg += ". Please move all markdown files to version folders (docs/v1/, docs/v2/, etc.)"
+			}
+			msg += ". Static assets (images, etc.) in root are served as shared assets."
+			log.Printf("dorcs: warning: %s Found markdown files in %s.", msg, absDir)
+		}
+	}
 
 	if cfg.IsMultiLingual() {
-		defaultLang := cfg.GetDefaultLanguage()
-		for _, lang := range cfg.Languages.Enabled {
-			// Default language uses empty string (root docs folder)
-			// Other languages use their code (docs/__lang__/{lang}/ folder)
-			langCodeForSite := ""
-			if lang.Code != defaultLang {
-				langCodeForSite = lang.Code
-			}
 
-			langSite, err := site.New(absDir, codeTheme, prefix, langCodeForSite)
-			if err != nil {
-				// If GitHub is enabled, we can still create the site (local dir not required)
-				if ghClient == nil {
-					// Language folder doesn't exist and GitHub is not enabled, skip it
-					log.Printf("dorcs: warning: language folder for %s not found, skipping", lang.Code)
-					continue
+		// Multi-language: iterate languages first, then versions inside each language
+		for _, lang := range cfg.Languages.Enabled {
+			// For default language: always use language folder (markdown files must be in language folders)
+			langCodeForSite := lang.Code
+
+			if cfg.IsMultiVersion() {
+				// Both languages and versions: docs/{lang}/{version}/
+				for _, ver := range cfg.Versions.Enabled {
+					versionID := ""
+					if ver.ID != defaultVersion {
+						versionID = ver.ID
+					}
+
+					// Create site: language-first structure
+					verLangSite, err := site.NewWithVersionPath(absDir, codeTheme, prefix, langCodeForSite, versionID, "")
+					if err != nil {
+						if ghClient == nil {
+							log.Printf("dorcs: warning: language %s version %s folder not found, skipping", lang.Code, ver.ID)
+							continue
+						}
+						// GitHub enabled: create site anyway
+						verLangSite, err = site.NewWithVersionPath(absDir, codeTheme, prefix, langCodeForSite, versionID, "")
+						if err != nil {
+							log.Fatalf("init site for language %s version %s: %v", lang.Code, ver.ID, err)
+						}
+					}
+
+					// Set GitHub config if enabled
+					if ghClient != nil && repoInfo != nil {
+						githubPath := repoInfo.Path
+						// Build path: {lang}/{version} (MkDocs-style)
+						// If langCodeForSite is set (even for default language when root has no files), use it
+						if langCodeForSite != "" {
+							if githubPath != "" {
+								githubPath = githubPath + "/" + langCodeForSite
+							} else {
+								githubPath = langCodeForSite
+							}
+						}
+						if ver.ID != defaultVersion {
+							if githubPath != "" {
+								githubPath = githubPath + "/" + ver.ID
+							} else {
+								githubPath = ver.ID
+							}
+						}
+						verLangSite.SetGitHubConfig(ghClient, repoInfo.Owner, repoInfo.Repo, repoInfo.Branch, githubPath)
+					}
+
+					verLangSite.SetDefaultVersion(defaultVersion)
+					if cfg.IsMultiLingual() {
+						verLangSite.SetDefaultLanguage(defaultLang)
+					}
+
+					if err := verLangSite.BuildIndex(); err != nil {
+						log.Fatalf("build index for language %s version %s: %v", lang.Code, ver.ID, err)
+					}
+
+					// Store in versionSites map: key format "{version}:{language}" or "{version}:" for default language
+					// Default language uses empty language in key (even if it uses its folder)
+					siteKey := ver.ID + ":"
+					if lang.Code != defaultLang {
+						siteKey = ver.ID + ":" + lang.Code
+					}
+					versionSites[siteKey] = verLangSite
+					// Also store with explicit language code for /en/v1/ access when default uses folder
+					if lang.Code == defaultLang && langCodeForSite != "" {
+						versionSites[ver.ID+":"+lang.Code] = verLangSite
+					}
 				}
-				// GitHub enabled: try with empty language code (use base dir)
-				// The Language field will be set correctly by Site.New based on langCodeForSite
-				langSite, err = site.New(absDir, codeTheme, prefix, langCodeForSite)
+			} else {
+				// Languages only: docs/{lang}/
+				langSite, err := site.New(absDir, codeTheme, prefix, langCodeForSite)
 				if err != nil {
-					// Last resort: use base directory
-					langSite, err = site.New(absDir, codeTheme, prefix, "")
+					if ghClient == nil {
+						log.Printf("dorcs: warning: language %s folder not found, skipping", lang.Code)
+						continue
+					}
+					langSite, err = site.New(absDir, codeTheme, prefix, langCodeForSite)
 					if err != nil {
 						log.Fatalf("init site for language %s: %v", lang.Code, err)
 					}
-					// Manually set the language since we used empty string
-					langSite.SetLanguage(langCodeForSite)
+				}
+
+				// Set GitHub config if enabled
+				if ghClient != nil && repoInfo != nil {
+					githubPath := repoInfo.Path
+					// If langCodeForSite is set (even for default language when root has no files), use it
+					if langCodeForSite != "" {
+						if githubPath != "" {
+							githubPath = githubPath + "/" + langCodeForSite
+						} else {
+							githubPath = langCodeForSite
+						}
+					}
+					langSite.SetGitHubConfig(ghClient, repoInfo.Owner, repoInfo.Repo, repoInfo.Branch, githubPath)
+				}
+
+				langSite.SetDefaultLanguage(defaultLang)
+
+				if err := langSite.BuildIndex(); err != nil {
+					log.Fatalf("build index for language %s: %v", lang.Code, err)
+				}
+
+				// Store in sites map: default language uses empty key (even if it uses its folder),
+				// others use their code. This ensures / routes to default language correctly.
+				if lang.Code == defaultLang {
+					sites[""] = langSite
+					defaultSite = langSite
+					// Also store with language code for explicit /en/ access
+					if langCodeForSite != "" {
+						sites[lang.Code] = langSite
+					}
+				} else {
+					sites[lang.Code] = langSite
+				}
+			}
+		}
+	} else if cfg.IsMultiVersion() {
+		// Versions only: docs/{version}/
+		for _, ver := range cfg.Versions.Enabled {
+			versionID := ""
+			if ver.ID != defaultVersion {
+				versionID = ver.ID
+			}
+
+			verSite, err := site.NewWithVersionPath(absDir, codeTheme, prefix, "", versionID, "")
+			if err != nil {
+				if ghClient == nil {
+					log.Printf("dorcs: warning: version %s folder not found, skipping", ver.ID)
+					continue
+				}
+				verSite, err = site.NewWithVersionPath(absDir, codeTheme, prefix, "", versionID, "")
+				if err != nil {
+					log.Fatalf("init site for version %s: %v", ver.ID, err)
 				}
 			}
 
 			// Set GitHub config if enabled
 			if ghClient != nil && repoInfo != nil {
-				// Adjust GitHub path based on language
-				// Default language: use repoInfo.Path as-is (e.g., "docs")
-				// Other languages: use repoInfo.Path + "/__lang__/" + langCode (e.g., "docs/__lang__/de")
 				githubPath := repoInfo.Path
-				if lang.Code != defaultLang {
-					// Non-default language: add __lang__/{lang} to path
+				if ver.ID != defaultVersion {
 					if githubPath != "" {
-						githubPath = githubPath + "/__lang__/" + lang.Code
+						githubPath = githubPath + "/" + ver.ID
 					} else {
-						githubPath = "__lang__/" + lang.Code
+						githubPath = ver.ID
 					}
 				}
-				langSite.SetGitHubConfig(ghClient, repoInfo.Owner, repoInfo.Repo, repoInfo.Branch, githubPath)
-				log.Printf("dorcs: language %s using GitHub path: %s", lang.Code, githubPath)
+				verSite.SetGitHubConfig(ghClient, repoInfo.Owner, repoInfo.Repo, repoInfo.Branch, githubPath)
 			}
 
-			if err := langSite.BuildIndex(); err != nil {
-				log.Fatalf("build index for language %s: %v", lang.Code, err)
+			verSite.SetDefaultVersion(defaultVersion)
+
+			if err := verSite.BuildIndex(); err != nil {
+				log.Fatalf("build index for version %s: %v", ver.ID, err)
 			}
 
-			// Store in sites map: default language uses empty key, others use their code
-			if lang.Code == defaultLang {
-				sites[""] = langSite
-				defaultSite = langSite
-			} else {
-				sites[lang.Code] = langSite
-			}
-		}
-		// If no default site was set, use first available
-		if defaultSite == nil && len(sites) > 0 {
-			for _, s := range sites {
-				defaultSite = s
-				break
-			}
+			// Store in versionSites map: key format "{version}:"
+			versionSites[ver.ID+":"] = verSite
 		}
 	} else {
-		// Single language mode (backward compatible)
+		// Simple mode: no versioning, no languages - docs/ directly
 		singleSite, err := site.New(absDir, codeTheme, prefix, "")
 		if err != nil {
 			log.Fatalf("init site: %v", err)
@@ -255,6 +381,34 @@ func RunServer(templatesFS, staticFS embed.FS, version string) {
 			log.Fatalf("build index: %v", err)
 		}
 		defaultSite = singleSite
+	}
+
+	// Set default site if not already set
+	if defaultSite == nil {
+		if len(versionSites) > 0 {
+			// Find default version site
+			defaultVerKey := defaultVersion + ":"
+			if s, ok := versionSites[defaultVerKey]; ok {
+				defaultSite = s
+			} else {
+				// Use first available
+				for _, s := range versionSites {
+					defaultSite = s
+					break
+				}
+			}
+		} else if len(sites) > 0 {
+			// Use default language site
+			if s, ok := sites[""]; ok {
+				defaultSite = s
+			} else {
+				// Use first available
+				for _, s := range sites {
+					defaultSite = s
+					break
+				}
+			}
+		}
 	}
 
 	if defaultSite == nil {
@@ -289,6 +443,7 @@ func RunServer(templatesFS, staticFS embed.FS, version string) {
 		HideDraft:         *noDrafts,
 		Site:              s,
 		Sites:             sites,
+		VersionSites:      versionSites,
 		DocumentTmpl:      tmplDoc,
 		SiteConfig:        cfg,
 		ReloadBroadcaster: reloadBroadcaster,
@@ -514,4 +669,21 @@ func RunServer(templatesFS, staticFS embed.FS, version string) {
 	if err := srv.Serve(ln); err != nil && err != http.ErrServerClosed {
 		log.Fatalf("serve: %v", err)
 	}
+}
+
+// hasMarkdownFilesInDir checks if a directory contains any markdown files.
+func hasMarkdownFilesInDir(dir string) bool {
+	entries, err := os.ReadDir(dir)
+	if err != nil {
+		return false
+	}
+	for _, entry := range entries {
+		if !entry.IsDir() {
+			name := entry.Name()
+			if strings.HasSuffix(strings.ToLower(name), ".md") {
+				return true
+			}
+		}
+	}
+	return false
 }

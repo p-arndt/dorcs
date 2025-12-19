@@ -7,6 +7,8 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/p-arndt/dorcs/internal/site"
 )
 
 func TestIsStaticAsset(t *testing.T) {
@@ -67,6 +69,12 @@ func TestTryServeStaticAsset(t *testing.T) {
 		RootDir: "",
 	})
 
+	// Create a mock site for testing
+	mockSite, err := site.New(docsDir, "github", "", "")
+	if err != nil {
+		t.Fatalf("failed to create mock site: %v", err)
+	}
+
 	tests := []struct {
 		name       string
 		relPath    string
@@ -85,7 +93,7 @@ func TestTryServeStaticAsset(t *testing.T) {
 			req := httptest.NewRequest("GET", "/"+tt.relPath, nil)
 			w := httptest.NewRecorder()
 
-			served := handler.tryServeStaticAsset(w, req, tt.relPath)
+			served := handler.tryServeStaticAsset(w, req, tt.relPath, mockSite)
 
 			if served != tt.wantServed {
 				t.Errorf("tryServeStaticAsset() served = %v, want %v", served, tt.wantServed)

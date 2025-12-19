@@ -9,6 +9,8 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+
+	"github.com/p-arndt/dorcs/internal/site"
 )
 
 var (
@@ -57,17 +59,16 @@ func isStaticAsset(filePath string) bool {
 }
 
 // tryServeStaticAsset attempts to serve a static asset.
-// Serves only from the docs directory.
+// Serves from the site's root directory (which may be a language/version subdirectory).
 // Returns true if the file was found and served, false otherwise.
-func (h *Handler) tryServeStaticAsset(w http.ResponseWriter, _ *http.Request, relPath string) bool {
+func (h *Handler) tryServeStaticAsset(w http.ResponseWriter, _ *http.Request, relPath string, targetSite *site.Site) bool {
 	// Only serve files that look like static assets
 	if !isStaticAsset(relPath) {
 		return false
 	}
 
-	h.mu.RLock()
-	docsDir := h.cfg.DocsDir
-	h.mu.RUnlock()
+	// Use the site's actual root directory (e.g., docs/en/ for default language using its folder)
+	siteRootDir := targetSite.RootDir
 
 	// Clean the relative path to prevent directory traversal
 	cleanRelPath := filepath.Clean(filepath.FromSlash(relPath))
@@ -75,9 +76,17 @@ func (h *Handler) tryServeStaticAsset(w http.ResponseWriter, _ *http.Request, re
 		return false
 	}
 
-	_, resolved, err := resolveExistingPathWithin(docsDir, cleanRelPath)
+	// First try in the site's root directory (e.g., docs/en/logo.png)
+	_, resolved, err := resolveExistingPathWithin(siteRootDir, cleanRelPath)
 	if err != nil {
-		return false
+		// If not found in site root, fall back to base docs directory (for shared assets)
+		h.mu.RLock()
+		docsDir := h.cfg.DocsDir
+		h.mu.RUnlock()
+		_, resolved, err = resolveExistingPathWithin(docsDir, cleanRelPath)
+		if err != nil {
+			return false
+		}
 	}
 
 	// Check if file exists

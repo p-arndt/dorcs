@@ -30,6 +30,20 @@
         {{- else }}
         <a class="brand" href="{{ .BasePath }}/">{{ .SiteTitle }}</a>
         {{- end }}
+        {{- if and .Config (gt (len .Config.Versions.Enabled) 0) }}
+        <div class="version-switcher">
+          <select id="version-select" data-default-version="{{ .Config.Versions.Default }}" onchange="window.dorcsVersionSwitcher.switchVersion(this.value, this.dataset.defaultVersion)">
+            {{- $currentVersion := .CurrentVersion }}
+            {{- $defaultVersion := .Config.Versions.Default }}
+            {{- if eq $currentVersion "" }}
+              {{- $currentVersion = $defaultVersion }}
+            {{- end }}
+            {{- range .Config.Versions.Enabled }}
+            <option value="{{ .ID }}"{{ if eq .ID $currentVersion }} selected{{ end }}>{{ .Name }}</option>
+            {{- end }}
+          </select>
+        </div>
+        {{- end }}
       </div>
       <div class="header-right">
         <button class="dark-mode-toggle" id="dark-mode-toggle" aria-label="Toggle dark mode">

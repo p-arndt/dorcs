@@ -7,8 +7,21 @@
     <ul class="nav-tree" id="nav-tree">
       <li>
         {{- $rootPath := "/" }}
+        {{- if and .Config .Config.IsMultiVersion .CurrentVersion }}
+          {{- $defaultVersion := .Config.Versions.Default }}
+          {{- if ne .CurrentVersion $defaultVersion }}
+            {{- $rootPath = printf "/%s/" .CurrentVersion }}
+          {{- end }}
+        {{- end }}
         {{- if .CurrentLanguage }}
+          {{- $defaultLang := .Config.Languages.Default }}
+          {{- if ne .CurrentLanguage $defaultLang }}
+            {{- if eq $rootPath "/" }}
           {{- $rootPath = printf "/%s/" .CurrentLanguage }}
+            {{- else }}
+              {{- $rootPath = printf "/%s/%s/" .CurrentVersion .CurrentLanguage }}
+            {{- end }}
+          {{- end }}
         {{- end }}
         {{- $fullRootPath := printf "%s%s" .BasePath $rootPath }}
         <a class="node{{ if eq .CurrentPath $fullRootPath }} active{{ end }}" href="{{ $fullRootPath }}" data-title="{{ if .RootTitle }}{{ .RootTitle }}{{ else }}Home{{ end }}">
@@ -16,7 +29,7 @@
         </a>
       </li>
       {{- if .Nav }}
-        {{- template "nav_tree_collapsible" (dict "Nodes" .Nav.Nodes "CurrentPath" .CurrentPath "BasePath" .BasePath) -}}
+        {{- template "nav_tree_collapsible" (dict "Nodes" .Nav.Nodes "CurrentPath" .CurrentPath "BasePath" .BasePath "CurrentVersion" .CurrentVersion "CurrentLanguage" .CurrentLanguage "Config" .Config) -}}
       {{- end }}
     </ul>
   </div>

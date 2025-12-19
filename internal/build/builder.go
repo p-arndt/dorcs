@@ -96,24 +96,51 @@ func (b *Builder) Build(includeDrafts bool) error {
 		return fmt.Errorf("copy custom CSS: %w", err)
 	}
 
-	// Check if multi-lingual is enabled
+	// Check if versioning is enabled
+	// MkDocs-style structure: language-first approach
+	defaultVersion := ""
+	defaultLang := ""
+	if b.config != nil && b.config.IsMultiVersion() {
+		defaultVersion = b.config.GetDefaultVersion()
+	}
 	if b.config != nil && b.config.IsMultiLingual() {
-		// Build each language
-		defaultLang := b.config.GetDefaultLanguage()
+		defaultLang = b.config.GetDefaultLanguage()
+	}
+
+	if b.config != nil && b.config.IsMultiLingual() {
+		// Multi-language: iterate languages first, then versions inside each language
 		for _, lang := range b.config.Languages.Enabled {
-			isDefault := lang.Code == defaultLang
-			// Default language uses empty string (root docs folder)
-			// Other languages use their code (docs/__lang__/{lang}/ folder)
+			isDefaultLang := lang.Code == defaultLang
 			langCodeForSite := ""
-			if !isDefault {
+			if !isDefaultLang {
 				langCodeForSite = lang.Code
 			}
-			if err := b.buildLanguage(langCodeForSite, isDefault, lang.Code, includeDrafts); err != nil {
+
+			if b.config.IsMultiVersion() {
+				// Both languages and versions: docs/{lang}/{version}/
+				for _, ver := range b.config.Versions.Enabled {
+					isDefaultVersion := ver.ID == defaultVersion
+					if err := b.buildVersionLanguage(ver.ID, "", isDefaultVersion, langCodeForSite, isDefaultLang, lang.Code, includeDrafts); err != nil {
+						return fmt.Errorf("build version %s language %s: %w", ver.ID, lang.Code, err)
+					}
+				}
+			} else {
+				// Languages only: docs/{lang}/
+				if err := b.buildLanguage(langCodeForSite, isDefaultLang, lang.Code, includeDrafts); err != nil {
 				return fmt.Errorf("build language %s: %w", lang.Code, err)
+				}
+			}
+		}
+	} else if b.config != nil && b.config.IsMultiVersion() {
+		// Versions only: docs/{version}/
+		for _, ver := range b.config.Versions.Enabled {
+			isDefaultVersion := ver.ID == defaultVersion
+			if err := b.buildVersionLanguage(ver.ID, "", isDefaultVersion, "", true, "", includeDrafts); err != nil {
+				return fmt.Errorf("build version %s: %w", ver.ID, err)
 			}
 		}
 	} else {
-		// Single language build (backward compatible)
+		// Simple mode: no versioning, no languages - docs/ directly
 		if err := b.buildLanguage("", true, "", includeDrafts); err != nil {
 			return fmt.Errorf("build site: %w", err)
 		}
@@ -206,6 +233,263 @@ func (b *Builder) buildLanguage(langCodeForSite string, isDefault bool, langCode
 		return fmt.Errorf("generate sitemap: %w", err)
 	}
 
+	return nil
+}
+
+// buildVersionLanguage builds the static site for a specific version and language.
+// versionID is the version identifier (e.g., "v1", "v2")
+// versionPath is the path to the version folder (empty for default version)
+// isDefaultVersion indicates if this is the default version
+// langCodeForSite is the language code to pass to site.New (empty for default)
+// isDefaultLang indicates if this is the default language
+// langCodeForURL is the language code for URLs (used in output paths)
+func (b *Builder) buildVersionLanguage(versionID string, versionPath string, isDefaultVersion bool, langCodeForSite string, isDefaultLang bool, langCodeForURL string, includeDrafts bool) error {
+	// Create site instance for this version and language
+	codeTheme := b.config.GetCodeTheme()
+	verLangSite, err := site.NewWithVersionPath(b.docsDir, codeTheme, b.basePath, langCodeForSite, versionID, versionPath)
+	if err != nil {
+		// If version/language folder doesn't exist, skip it
+		return nil
+	}
+	if err := verLangSite.BuildIndex(); err != nil {
+		return fmt.Errorf("build index for version %s language %s: %w", versionID, langCodeForURL, err)
+	}
+
+	// Get all documents for this version and language
+	docs := verLangSite.ListDocs(includeDrafts)
+
+	// Determine output directory for this version and language (language-first structure)
+	var outputDir string
+	if isDefaultLang {
+		// Default language: output to root or version subdirectory
+		if isDefaultVersion {
+			outputDir = b.outputDir
+		} else {
+			outputDir = filepath.Join(b.outputDir, versionID)
+		}
+	} else {
+		// Non-default language: output to language subdirectory, then version if needed
+		if isDefaultVersion {
+			outputDir = filepath.Join(b.outputDir, langCodeForURL)
+		} else {
+			outputDir = filepath.Join(b.outputDir, langCodeForURL, versionID)
+		}
+	}
+	if err := os.MkdirAll(outputDir, 0755); err != nil {
+		return fmt.Errorf("create output dir: %w", err)
+	}
+
+	// Create sites map for handler
+	sites := make(map[string]*site.Site)
+	versionSites := make(map[string]*site.Site)
+	if isDefaultLang {
+		sites[""] = verLangSite
+		versionSites[versionID+":"] = verLangSite
+	} else {
+		sites[langCodeForURL] = verLangSite
+		versionSites[versionID+":"+langCodeForURL] = verLangSite
+	}
+
+	// Create a handler for rendering pages
+	handler := server.New(server.Config{
+		DocsDir:      b.docsDir,
+		RootDir:      b.rootDir,
+		SiteTitle:    b.getSiteTitle(),
+		BasePath:     b.basePath,
+		Cache:        false, // Not needed for static build
+		HideDraft:    !includeDrafts,
+		Site:         verLangSite,
+		Sites:        sites,
+		VersionSites: versionSites,
+		DocumentTmpl: b.template,
+		SiteConfig:   b.config,
+		Version:      "static",
+	})
+
+	// Render each document concurrently using a limited worker pool.
+	if len(docs) > 0 {
+		g, _ := errgroup.WithContext(context.Background())
+		sem := make(chan struct{}, b.parallelism)
+		for _, doc := range docs {
+			d := doc // capture
+			sem <- struct{}{}
+			g.Go(func() error {
+				defer func() { <-sem }()
+				if err := b.renderDocumentForVersionLanguage(handler, d, versionID, isDefaultVersion, langCodeForURL, isDefaultLang, outputDir); err != nil {
+					return fmt.Errorf("render document %s: %w", d.Key, err)
+				}
+				return nil
+			})
+		}
+		if err := g.Wait(); err != nil {
+			return err
+		}
+	}
+
+	// Generate sitemap for this version and language
+	if err := b.generateSitemapForVersionLanguage(docs, versionID, isDefaultVersion, langCodeForURL, isDefaultLang, outputDir); err != nil {
+		return fmt.Errorf("generate sitemap: %w", err)
+	}
+
+	return nil
+}
+
+// renderDocumentForVersionLanguage renders a single document for a specific version and language.
+func (b *Builder) renderDocumentForVersionLanguage(handler *server.Handler, doc *site.Doc, versionID string, isDefaultVersion bool, langCode string, isDefaultLang bool, outputDir string) error {
+	// Build the URL path for this document (language-first structure)
+	var urlPath string
+	if doc.Key == "" {
+		urlPath = "/"
+	} else {
+		urlPath = "/" + doc.Key
+	}
+
+	// Add language prefix if not default (language-first)
+	if !isDefaultLang && langCode != "" {
+		if urlPath == "/" {
+			urlPath = "/" + langCode + "/"
+		} else {
+			urlPath = "/" + langCode + urlPath
+		}
+	}
+
+	// Add version prefix if not default (after language)
+	if !isDefaultVersion {
+		if urlPath == "/" {
+			urlPath = "/" + versionID + "/"
+		} else if !isDefaultLang && langCode != "" {
+			// Language already in path: /en/... -> /en/v1/...
+			urlPath = strings.Replace(urlPath, "/"+langCode+"/", "/"+langCode+"/"+versionID+"/", 1)
+			if !strings.HasSuffix(urlPath, "/") && doc.Key == "" {
+				urlPath += "/"
+			}
+		} else {
+			// No language: /... -> /v1/...
+			urlPath = "/" + versionID + urlPath
+		}
+	}
+
+	// Add base path if configured
+	if b.basePath != "" {
+		urlPath = b.basePath + urlPath
+	}
+
+	// Determine output file path
+	var outputPath string
+	if doc.Key == "" {
+		// Root index -> index.html
+		outputPath = filepath.Join(outputDir, "index.html")
+	} else {
+		// Regular page -> create directory and index.html
+		outputPath = filepath.Join(outputDir, doc.Key, "index.html")
+	}
+
+	// Create directory if needed
+	if err := os.MkdirAll(filepath.Dir(outputPath), 0755); err != nil {
+		return fmt.Errorf("create output dir: %w", err)
+	}
+
+	// Create file
+	file, err := os.Create(outputPath)
+	if err != nil {
+		return fmt.Errorf("create file: %w", err)
+	}
+	defer file.Close()
+
+	// Create HTTP request
+	req := httptest.NewRequest("GET", urlPath, nil)
+
+	// Create response recorder that writes to file
+	recorder := httptest.NewRecorder()
+
+	// Render the document
+	handler.ServeHTTP(recorder, req)
+
+	// Check status code
+	if recorder.Code != http.StatusOK {
+		return fmt.Errorf("unexpected status code: %d", recorder.Code)
+	}
+
+	// Write response body to file
+	if _, err := file.Write(recorder.Body.Bytes()); err != nil {
+		return fmt.Errorf("write file: %w", err)
+	}
+
+	return nil
+}
+
+// generateSitemapForVersionLanguage generates a sitemap.xml file for a specific version and language.
+func (b *Builder) generateSitemapForVersionLanguage(docs []*site.Doc, versionID string, isDefaultVersion bool, langCode string, isDefaultLang bool, outputDir string) error {
+	sitemapPath := filepath.Join(outputDir, "sitemap.xml")
+	file, err := os.Create(sitemapPath)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	// Write XML header
+	file.WriteString(`<?xml version="1.0" encoding="UTF-8"?>` + "\n")
+	file.WriteString(`<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">` + "\n")
+
+	// Base URL (empty for relative URLs, or can be configured)
+	baseURL := b.basePath
+	if baseURL != "" && !strings.HasSuffix(baseURL, "/") {
+		baseURL += "/"
+	}
+
+	for _, doc := range docs {
+		// Build URL path (language-first structure)
+		urlPath := baseURL
+		if !isDefaultLang && langCode != "" {
+			urlPath += langCode + "/"
+		}
+		if !isDefaultVersion {
+			urlPath += versionID + "/"
+		}
+		if doc.Key == "" {
+			if !strings.HasSuffix(urlPath, "/") {
+				urlPath += "/"
+			}
+		} else {
+			if !strings.HasSuffix(urlPath, "/") {
+				urlPath += "/"
+			}
+			// URL-encode path segments
+			parts := strings.Split(doc.Key, "/")
+			encodedParts := make([]string, len(parts))
+			for i, part := range parts {
+				encodedParts[i] = escapeXML(part)
+			}
+			urlPath += strings.Join(encodedParts, "/")
+		}
+
+		// Format last modified date
+		lastmod := doc.UpdatedAt.UTC().Format("2006-01-02T15:04:05Z")
+
+		// Determine priority
+		priority := "0.7"
+		if doc.Key == "" {
+			priority = "1.0"
+		} else if !strings.Contains(doc.Key, "/") {
+			priority = "0.9"
+		}
+
+		// Determine changefreq
+		changefreq := "monthly"
+		if doc.Key == "" {
+			changefreq = "weekly"
+		}
+
+		// Write URL entry
+		file.WriteString("  <url>\n")
+		fmt.Fprintf(file, "    <loc>%s</loc>\n", urlPath)
+		fmt.Fprintf(file, "    <lastmod>%s</lastmod>\n", lastmod)
+		fmt.Fprintf(file, "    <changefreq>%s</changefreq>\n", changefreq)
+		fmt.Fprintf(file, "    <priority>%s</priority>\n", priority)
+		file.WriteString("  </url>\n")
+	}
+
+	file.WriteString("</urlset>\n")
 	return nil
 }
 
@@ -385,10 +669,6 @@ func (b *Builder) copyDocsStaticAssets() error {
 		}
 
 		if d.IsDir() {
-			// Skip __lang__ folder and its contents
-			if d.Name() == "__lang__" {
-				return filepath.SkipDir
-			}
 			return nil
 		}
 

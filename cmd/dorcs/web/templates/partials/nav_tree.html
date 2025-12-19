@@ -2,6 +2,9 @@
 {{ define "nav_tree_collapsible" }}
 {{- $current := .CurrentPath -}}
 {{- $base := .BasePath -}}
+{{- $currentVersion := .CurrentVersion -}}
+{{- $currentLanguage := .CurrentLanguage -}}
+{{- $config := .Config -}}
 {{- range .Nodes }}
   {{- if .IsDir }}
     {{- if .Children }}
@@ -19,7 +22,7 @@
           </span>
         {{- end }}
         <ul class="children">
-          {{- template "nav_tree_collapsible" (dict "Nodes" .Children "CurrentPath" $current "BasePath" $base) -}}
+          {{- template "nav_tree_collapsible" (dict "Nodes" .Children "CurrentPath" $current "BasePath" $base "CurrentVersion" $currentVersion "CurrentLanguage" $currentLanguage "Config" $config) -}}
         </ul>
       </li>
     {{- else }}

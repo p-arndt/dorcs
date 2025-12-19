@@ -37,7 +37,7 @@ func (s *Site) BuildIndex() error {
 			if d.IsDir() {
 				// Skip common folders that shouldn't be indexed.
 				name := d.Name()
-				if name == ".git" || name == "node_modules" || name == ".idea" || name == ".vscode" || name == "__lang__" {
+				if name == ".git" || name == "node_modules" || name == ".idea" || name == ".vscode" {
 					return filepath.SkipDir
 				}
 				return nil
@@ -116,10 +116,6 @@ func (s *Site) BuildIndex() error {
 		if len(githubFiles) > 0 {
 			fmt.Printf("dorcs: discovered %d markdown files from GitHub\n", len(githubFiles))
 			for _, filePath := range githubFiles {
-				// Skip __lang__ folders - they should not appear in navigation
-				if strings.HasPrefix(filePath, "__lang__/") || strings.Contains(filePath, "/__lang__/") {
-					continue
-				}
 
 				// Generate key from relative path (keyFromRel expects .md extension)
 				key := keyFromRel(filePath)

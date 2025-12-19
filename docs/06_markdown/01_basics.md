@@ -125,6 +125,23 @@ ___bold and italic___
 <https://example.com>
 <email@example.com>
 
+#### Relative Links to Documentation Pages
+
+Relative links to other markdown files are automatically rewritten to extensionless URLs:
+
+- **Extensionless**: `[Getting Started](getting-started.md)` → `/getting-started`
+- **Relative paths**: `[Installation](../guide/installation.md)` → `/guide/installation`
+- **Auto-prefixing**: Links automatically include language/version prefixes when needed
+- **Default language**: Works correctly even when default language uses its folder
+
+**Example:**
+- Current file: `docs/en/guide/index.md` (served at `/guide`)
+- Target file: `docs/en/getting-started.md` (served at `/getting-started`)
+- Markdown: `[Getting Started](../getting-started.md)`
+- **Result**: Automatically rewritten to `/getting-started` ✅
+
+**Note:** Links to external URLs, anchors, and non-markdown files are left unchanged.
+
 ### Images
 
 ```markdown
@@ -136,6 +153,27 @@ ___bold and italic___
 **Result:**
 
 ![Alt text](../logo.png)
+
+#### Relative Image Paths
+
+When using multi-language or versioned documentation, relative image paths are automatically handled:
+
+- **Relative paths**: `./logo.png` or `../images/logo.png` work correctly
+- **Automatic rewriting**: Paths are rewritten to absolute URLs when needed
+- **Default language**: Works even when default language uses its folder (e.g., `docs/en/`) but URL has no prefix
+
+**Example:**
+- File: `docs/en/index.md` (served at `/`)
+- Image: `docs/en/logo.png`
+- Markdown: `![Logo](./logo.png)`
+- **Result**: Automatically resolves to `/logo.png` ✅
+
+**Best practices:**
+- Use relative paths: `./logo.png` or `../images/screenshot.png`
+- Keep images in the same directory structure as your markdown files
+- Absolute paths also work: `/logo.png` (from any page)
+
+See [File Structure & Organization](../usage/file-structure.md#relative-paths--images) for more details.
 
 ### Blockquotes
 

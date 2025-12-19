@@ -10,7 +10,7 @@ import (
 	"github.com/p-arndt/dorcs/internal/site"
 )
 
-func (h *Handler) tryServeDocWithSite(w http.ResponseWriter, r *http.Request, key string, targetSite *site.Site, currentLang string) bool {
+func (h *Handler) tryServeDocWithSite(w http.ResponseWriter, r *http.Request, key string, targetSite *site.Site, currentLang string, currentVersion string) bool {
 	if targetSite == nil {
 		return false
 	}
@@ -23,13 +23,13 @@ func (h *Handler) tryServeDocWithSite(w http.ResponseWriter, r *http.Request, ke
 		} else {
 			docPathForCall = "/" + key
 		}
-		h.handleDocByKeyWithSite(w, r, key, targetSite, currentLang, docPathForCall)
+		h.handleDocByKeyWithSite(w, r, key, targetSite, currentLang, currentVersion, docPathForCall)
 		return true
 	}
 	return false
 }
 
-func (h *Handler) handleDocByKeyWithSite(w http.ResponseWriter, r *http.Request, key string, targetSite *site.Site, currentLang string, docPath string) {
+func (h *Handler) handleDocByKeyWithSite(w http.ResponseWriter, r *http.Request, key string, targetSite *site.Site, currentLang string, currentVersion string, docPath string) {
 	h.mu.RLock()
 	documentTmpl := h.cfg.DocumentTmpl
 	basePath := h.cfg.BasePath
@@ -71,20 +71,14 @@ func (h *Handler) handleDocByKeyWithSite(w http.ResponseWriter, r *http.Request,
 	m.LastModified = rendered.Doc.UpdatedAt.UTC().Format(time.RFC3339)
 	m.Nav.Nodes = nav
 	m.RootTitle = rootTitle
-	// Set current path - for root index, use "/" for default language or "/{lang}/" for others
-	if key == "" {
-		if currentLang != "" {
-			m.CurrentPath = basePath + "/" + currentLang + "/"
-		} else {
-			m.CurrentPath = basePath + "/"
-		}
-	} else {
-		m.CurrentPath = r.URL.Path
-	}
-	// DocPath is the document path without language prefix (used for building language links)
+	// Set current path - use the actual request path for consistency
+	// This ensures CurrentPath matches the URL structure (language-first)
+	m.CurrentPath = r.URL.Path
+	// DocPath is the document path without version/language prefix (used for building version/language links)
 	m.DocPath = docPath
 	m.BasePath = basePath
 	m.CurrentLanguage = currentLang
+	m.CurrentVersion = currentVersion
 
 	// Security headers for public-internet deployments.
 	setCommonSecurityHeaders(w)

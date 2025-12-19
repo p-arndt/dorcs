@@ -378,3 +378,37 @@ github:
 		t.Errorf("expected token to be expanded from .env, got %q", cfg.GitHub.Token)
 	}
 }
+
+func TestExplicitConfigurationRequired(t *testing.T) {
+	tmpDir := t.TempDir()
+	docsDir := filepath.Join(tmpDir, "docs")
+	if err := os.MkdirAll(docsDir, 0755); err != nil {
+		t.Fatalf("failed to create docs dir: %v", err)
+	}
+
+	// Create language and version folders
+	os.MkdirAll(filepath.Join(docsDir, "en"), 0755)
+	os.MkdirAll(filepath.Join(docsDir, "de"), 0755)
+	os.MkdirAll(filepath.Join(docsDir, "v1"), 0755)
+	os.MkdirAll(filepath.Join(docsDir, "v2"), 0755)
+
+	// Create a markdown file in each folder
+	os.WriteFile(filepath.Join(docsDir, "en", "index.md"), []byte("# English"), 0644)
+	os.WriteFile(filepath.Join(docsDir, "de", "index.md"), []byte("# Deutsch"), 0644)
+	os.WriteFile(filepath.Join(docsDir, "v1", "index.md"), []byte("# V1"), 0644)
+	os.WriteFile(filepath.Join(docsDir, "v2", "index.md"), []byte("# V2"), 0644)
+
+	// Load config - no auto-detection, explicit configuration required
+	cfg, err := Load(docsDir)
+	if err != nil {
+		t.Fatalf("Load failed: %v", err)
+	}
+
+	// Should NOT auto-detect (auto-detection has been removed)
+	if len(cfg.Languages.Enabled) > 0 {
+		t.Errorf("expected no languages to be auto-detected, got %d", len(cfg.Languages.Enabled))
+	}
+	if len(cfg.Versions.Enabled) > 0 {
+		t.Errorf("expected no versions to be auto-detected, got %d", len(cfg.Versions.Enabled))
+	}
+}

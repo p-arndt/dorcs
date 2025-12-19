@@ -210,9 +210,9 @@ func TestServeHTTPLanguageDetection(t *testing.T) {
 	tmpDir := t.TempDir()
 
 	files := map[string]string{
-		"index.md":                       `# Home`,
-		"__lang__/de/index.md":           `# Startseite`,
-		"__lang__/de/getting-started.md": `# Erste Schritte`,
+		"index.md":              `# Home`,
+		"de/index.md":           `# Startseite`,
+		"de/getting-started.md": `# Erste Schritte`,
 	}
 
 	for relPath, content := range files {

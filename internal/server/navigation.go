@@ -15,16 +15,24 @@ func (h *Handler) buildNavItemsWithSite(targetSite *site.Site) []NavItem {
 	h.mu.RLock()
 	hideDraft := h.cfg.HideDraft
 	basePath := h.cfg.BasePath
+	siteConfig := h.cfg.SiteConfig
 	currentLang := ""
 	if targetSite.Language != "" {
 		currentLang = targetSite.Language
+	}
+	currentVersion := ""
+	if targetSite.Version != "" {
+		currentVersion = targetSite.Version
+	} else if siteConfig != nil && siteConfig.IsMultiVersion() {
+		// If no version set but versioning is enabled, use default version
+		currentVersion = siteConfig.GetDefaultVersion()
 	}
 	h.mu.RUnlock()
 	tree := targetSite.NavTree(!hideDraft)
 	if tree == nil {
 		return nil
 	}
-	return convertNavNodesWithLang(tree.Children, basePath, currentLang)
+	return convertNavNodesWithVersionAndLang(tree.Children, basePath, currentVersion, currentLang, siteConfig)
 }
 
 // getRootTitleWithSite extracts the title from the root index.md page of the given site.
@@ -49,7 +57,12 @@ func (h *Handler) getRootTitleWithSite(targetSite *site.Site) string {
 	return "Home"
 }
 
-func convertNavNodesWithLang(nodes []*site.NavNode, basePath string, currentLang string) []NavItem {
+func convertNavNodesWithVersionAndLang(nodes []*site.NavNode, basePath string, currentVersion string, currentLang string, siteConfig interface {
+	IsMultiVersion() bool
+	GetDefaultVersion() string
+	IsMultiLingual() bool
+	GetDefaultLanguage() string
+}) []NavItem {
 	if len(nodes) == 0 {
 		return nil
 	}
@@ -66,7 +79,7 @@ func convertNavNodesWithLang(nodes []*site.NavNode, basePath string, currentLang
 		item := NavItem{
 			Title:    title,
 			IsDir:    n.IsDir,
-			Children: convertNavNodesWithLang(n.Children, basePath, currentLang),
+			Children: convertNavNodesWithVersionAndLang(n.Children, basePath, currentVersion, currentLang, siteConfig),
 		}
 
 		// Set path - folders are only clickable if they have a landing page
@@ -74,9 +87,21 @@ func convertNavNodesWithLang(nodes []*site.NavNode, basePath string, currentLang
 		if basePath != "" {
 			pathBuilder.WriteString(basePath)
 		}
-		if currentLang != "" {
-			pathBuilder.WriteByte('/')
-			pathBuilder.WriteString(currentLang)
+		// Add version prefix if not default version
+		if currentVersion != "" && siteConfig != nil && siteConfig.IsMultiVersion() {
+			defaultVersion := siteConfig.GetDefaultVersion()
+			if currentVersion != defaultVersion {
+				pathBuilder.WriteByte('/')
+				pathBuilder.WriteString(currentVersion)
+			}
+		}
+		// Add language prefix if not default language
+		if currentLang != "" && siteConfig != nil && siteConfig.IsMultiLingual() {
+			defaultLang := siteConfig.GetDefaultLanguage()
+			if currentLang != defaultLang {
+				pathBuilder.WriteByte('/')
+				pathBuilder.WriteString(currentLang)
+			}
 		}
 		if n.IsDir {
 			if n.Page != nil {
@@ -95,3 +120,32 @@ func convertNavNodesWithLang(nodes []*site.NavNode, basePath string, currentLang
 	}
 	return items
 }
+
+// convertNavNodesWithLang is a helper function for backward compatibility in tests.
+// It wraps convertNavNodesWithVersionAndLang with empty version.
+// If siteConfig is nil, language prefixes won't be added (assumes single-language mode).
+func convertNavNodesWithLang(nodes []*site.NavNode, basePath string, currentLang string) []NavItem {
+	// Create a minimal siteConfig that treats any non-empty language as multi-lingual
+	var siteConfig interface {
+		IsMultiVersion() bool
+		GetDefaultVersion() string
+		IsMultiLingual() bool
+		GetDefaultLanguage() string
+	}
+	if currentLang != "" {
+		// If currentLang is set, assume multi-lingual mode for test compatibility
+		siteConfig = &mockSiteConfig{isMultiLingual: true, defaultLang: "en"}
+	}
+	return convertNavNodesWithVersionAndLang(nodes, basePath, "", currentLang, siteConfig)
+}
+
+// mockSiteConfig is a minimal implementation for tests
+type mockSiteConfig struct {
+	isMultiLingual bool
+	defaultLang    string
+}
+
+func (m *mockSiteConfig) IsMultiVersion() bool  { return false }
+func (m *mockSiteConfig) GetDefaultVersion() string { return "" }
+func (m *mockSiteConfig) IsMultiLingual() bool  { return m.isMultiLingual }
+func (m *mockSiteConfig) GetDefaultLanguage() string { return m.defaultLang }

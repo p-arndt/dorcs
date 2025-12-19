@@ -7,6 +7,7 @@ import (
 )
 
 var mdInlineLinkRE = regexp.MustCompile(`\[(?P<text>[^\]]+)\]\((?P<href>[^)]+)\)`)
+var mdImageRE = regexp.MustCompile(`!\[(?P<alt>[^\]]*)\]\((?P<src>[^)]+)\)`)
 
 // LinkInfo represents a markdown link with its position.
 type LinkInfo struct {
@@ -266,7 +267,10 @@ func ResolveLinkToDocKey(href string, currentDirKey string) (string, bool) {
 //
 // basePath is the URL path prefix (e.g., "/docs"). Empty string means no prefix.
 // language is the language code (e.g., "de"). Empty string means default language (no prefix).
-func RewriteExtensionlessDocLinks(md string, currentDirKey string, basePath string, language string) string {
+// version is the version identifier (e.g., "v1"). Empty string means default version (no prefix).
+// defaultVersion is the default version identifier. If version equals defaultVersion, no version prefix is added.
+// defaultLanguage is the default language code. If language equals defaultLanguage, no language prefix is added.
+func RewriteExtensionlessDocLinks(md string, currentDirKey string, basePath string, language string, version string, defaultVersion string, defaultLanguage string) string {
 	return mdInlineLinkRE.ReplaceAllStringFunc(md, func(m string) string {
 		sub := mdInlineLinkRE.FindStringSubmatch(m)
 		if len(sub) != 3 {
@@ -347,15 +351,23 @@ func RewriteExtensionlessDocLinks(md string, currentDirKey string, basePath stri
 			return m
 		}
 
-		// Build language prefix if not default
-		langPrefix := ""
-		if language != "" {
-			langPrefix = "/" + language
+		// Build version and language prefix (language-first structure)
+		// Only add language prefix if language is set and not the default
+		var prefixBuilder strings.Builder
+		if language != "" && language != defaultLanguage {
+			prefixBuilder.WriteByte('/')
+			prefixBuilder.WriteString(language)
 		}
+		// Only add version prefix if version is set and not the default
+		if version != "" && version != defaultVersion {
+			prefixBuilder.WriteByte('/')
+			prefixBuilder.WriteString(version)
+		}
+		prefix := prefixBuilder.String()
 
 		// Handle index.md references: folder/index -> /folder, index -> /
 		if clean == "index" {
-			newHref := langPrefix + "/"
+			newHref := prefix + "/"
 			if basePath != "" {
 				newHref = basePath + newHref
 			}
@@ -364,23 +376,77 @@ func RewriteExtensionlessDocLinks(md string, currentDirKey string, basePath stri
 		if strings.HasSuffix(clean, "/index") {
 			clean = strings.TrimSuffix(clean, "/index")
 			if clean == "" {
-				newHref := langPrefix + "/"
+				newHref := prefix + "/"
 				if basePath != "" {
 					newHref = basePath + newHref
 				}
 				return "[" + text + "](" + newHref + anchor + ")"
 			}
-			newHref := langPrefix + "/" + clean
+			newHref := prefix + "/" + clean
 			if basePath != "" {
 				newHref = basePath + newHref
 			}
 			return "[" + text + "](" + newHref + anchor + ")"
 		}
 
-		newHref := langPrefix + "/" + clean
+		newHref := prefix + "/" + clean
 		if basePath != "" {
 			newHref = basePath + newHref
 		}
 		return "[" + text + "](" + newHref + anchor + ")"
+	})
+}
+
+// RewriteRelativeImagePaths rewrites relative image paths to absolute paths.
+// This ensures images work correctly when default language uses its folder but URL has no prefix.
+// For example: ./logo.png in docs/en/index.md (served at /) -> /logo.png
+func RewriteRelativeImagePaths(md string, currentDirKey string, basePath string, language string, version string, defaultVersion string, defaultLanguage string) string {
+	return mdImageRE.ReplaceAllStringFunc(md, func(m string) string {
+		sub := mdImageRE.FindStringSubmatch(m)
+		if len(sub) != 3 {
+			return m
+		}
+		alt := sub[1]
+		src := strings.TrimSpace(sub[2])
+
+		if src == "" {
+			return m
+		}
+		lower := strings.ToLower(src)
+
+		// Skip absolute URLs
+		if strings.Contains(lower, "://") {
+			return m
+		}
+		// Skip if already absolute (starts with /)
+		if strings.HasPrefix(src, "/") {
+			// Add basePath if needed
+			if basePath != "" && !strings.HasPrefix(src, basePath) {
+				return "![" + alt + "](" + basePath + src + ")"
+			}
+			return m
+		}
+
+		// Resolve relative path
+		srcClean := strings.ReplaceAll(src, "\\", "/")
+		var fullPath string
+		if currentDirKey == "" {
+			fullPath = srcClean
+		} else {
+			fullPath = currentDirKey + "/" + srcClean
+		}
+		// Clean to resolve .. and . components
+		clean := path.Clean("/" + fullPath)
+		clean = strings.TrimPrefix(clean, "/")
+		if clean == "" || clean == "." || clean == ".." || strings.HasPrefix(clean, "../") || strings.Contains(clean, "/../") {
+			return m
+		}
+
+		// Build absolute path (no language/version prefix for images - they're served from site root)
+		newSrc := "/" + clean
+		if basePath != "" {
+			newSrc = basePath + newSrc
+		}
+		return "![" + alt + "](" + newSrc + ")"
 	})
 }

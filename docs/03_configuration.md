@@ -116,7 +116,7 @@ Configure multiple languages for your documentation:
 ```yaml
 languages:
   default: "en"                 # Default language code (served at root URL)
-  enabled:
+  enabled:                      # Explicit configuration (required)
     - code: "en"
       name: "English"
     - code: "de"
@@ -127,44 +127,120 @@ languages:
 
 **How it works:**
 
-- **Default language**: Served at root URL (`/`) - place docs in `docs/` folder
-- **Other languages**: Served at `/{lang}/` - place docs in `docs/__lang__/{lang}/` folders
+- **Default language**: Defined in `dorcs.yaml` - files go in `docs/{default-lang}/` folder, served at root URL (`/`)
+- **Other languages**: Served at `/{lang}/` - place docs in `docs/{lang}/` folders
 - **Language switcher**: Automatically appears in header when multiple languages are enabled
+- **Explicit configuration required**: Languages must be explicitly configured in `enabled` list
 - **URL structure**:
-  - Default: `/getting-started` → `docs/getting-started.md`
-  - German: `/de/getting-started` → `docs/__lang__/de/getting-started.md`
-  - French: `/fr/getting-started` → `docs/__lang__/fr/getting-started.md`
+  - Default (English): `/getting-started` → `docs/en/getting-started.md`
+  - German: `/de/getting-started` → `docs/de/getting-started.md`
+  - French: `/fr/getting-started` → `docs/fr/getting-started.md`
 
-**File Structure Example:**
+**File Structure Example (MkDocs-style):**
 
 ```
 docs/
-  index.md                    # Default language (English)
-  getting-started.md
-  guide/
-    installation.md
-  __lang__/                   # Language-specific folder
-    de/                       # German language folder
-      index.md
-      getting-started.md
-      guide/
-        installation.md
-    fr/                       # French language folder
-      index.md
-      getting-started.md
-      guide/
-        installation.md
+  en/                         # English (default) - served at /
+    index.md
+    getting-started.md
+    guide/
+      installation.md
+  de/                         # German - served at /de/
+    index.md
+    getting-started.md
+    guide/
+      installation.md
+  fr/                         # French - served at /fr/
+    index.md
+    getting-started.md
+    guide/
+      installation.md
 ```
 
 **Notes:**
 
+- **MkDocs-style structure**: Direct language folders
+- **Markdown files**: When using multiple languages, markdown files in root `docs/` are **ignored**. All markdown files must be in language folders
+- **Shared assets**: Static assets (images, PDFs, etc.) in root `docs/` are served as **language-independent shared assets** accessible from all languages
+- **Default language**: Defined in `dorcs.yaml` - default language files are in `docs/en/` but served at `/` (no prefix)
+- **Relative paths**: Automatically handled - images and links work correctly even when default language uses its folder
 - Each language folder should have a complete copy of your documentation structure
-- The `__lang__` folder keeps language-specific content separate and avoids conflicts with regular folders
-- The default language stays in the root `docs/` folder
-- Other languages go in `docs/__lang__/{lang}/` folders where `{lang}` is the language code
 - The language switcher preserves the current page path when switching languages
 - If only one language is configured (or none), the language switcher is hidden
 - Language codes should follow ISO 639-1 standard (e.g., "en", "de", "fr", "es", "ja")
+- See [File Structure & Organization](./usage/file-structure.md) for detailed examples
+
+> [!WARNING]
+> **Markdown files in root are ignored**: When using multiple languages, any `.md` files in the root `docs/` folder are ignored. Only static assets (images, PDFs, etc.) in root are served as shared assets accessible from all languages.
+
+### Versioning
+
+Configure multiple versions of your documentation:
+
+```yaml
+versions:
+  default: "latest"            # Default version identifier (served at root URL)
+  enabled:                     # Explicit configuration (required)
+    - id: "latest"
+      name: "Latest"
+    - id: "v1"
+      name: "Version 1"
+    - id: "v2"
+      name: "Version 2"
+```
+
+**How it works:**
+
+- **Default version**: Served at root URL (`/`) - can be in `docs/` or `docs/{version}/` folder
+- **Other versions**: Served at `/{version}/` - place docs in `docs/{version}/` folders
+- **Version switcher**: Automatically appears in header when multiple versions are enabled
+- **Explicit configuration required**: Versions must be explicitly configured in `enabled` list
+- **URL structure**:
+  - Default: `/getting-started` → `docs/getting-started.md` or `docs/latest/getting-started.md`
+  - v1: `/v1/getting-started` → `docs/v1/getting-started.md`
+  - v2: `/v2/getting-started` → `docs/v2/getting-started.md`
+
+**File Structure Example (MkDocs-style):**
+
+```
+docs/
+  index.md                    # Default version (latest) - served at /
+  getting-started.md
+  latest/                     # Latest (explicit) - served at /latest/
+    index.md
+  v1/                         # Version 1 - served at /v1/
+    index.md
+    getting-started.md
+  v2/                         # Version 2 - served at /v2/
+    index.md
+    getting-started.md
+```
+
+**Combined with Languages (Language-First):**
+
+```
+docs/
+  en/                         # English
+    index.md                  # en, latest (default) - served at /en/
+    v1/                       # en, v1 - served at /en/v1/
+      index.md
+  de/                         # German
+    index.md                  # de, latest (default) - served at /de/
+    v1/                       # de, v1 - served at /de/v1/
+      index.md
+```
+
+**URLs with both languages and versions:**
+- `/en/v1/getting-started` → `docs/en/v1/getting-started.md`
+- `/de/v1/getting-started` → `docs/de/v1/getting-started.md`
+
+**Notes:**
+
+- **MkDocs-style structure**: Direct version folders
+- **Version identifiers**: Can be any string (e.g., `v1`, `v2`, `1.0`, `latest`, `stable`)
+- **Language-first**: When using both, structure is `docs/{lang}/{version}/`
+- **Relative paths**: Automatically handled for all versions
+- See [File Structure & Organization](./usage/file-structure.md) for detailed examples
 
 ### Authentication & Edit Mode
 

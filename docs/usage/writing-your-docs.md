@@ -48,33 +48,53 @@ docs/
 
 ### Multi-lingual Documentation
 
-If you've configured multiple languages in your `dorcs.yaml`, organize your documentation like this:
+If you've configured multiple languages in your `dorcs.yaml`, **define the default language in the config** and organize your documentation using **MkDocs-style structure**:
 
 ```
 docs/
-  index.md                    # Default language (e.g., English)
-  getting-started.md
-  guide/
-    installation.md
-  __lang__/                   # Language-specific folder
-    de/                       # German language folder
-      index.md
-      getting-started.md
-      guide/
-        installation.md
-    fr/                       # French language folder
-      index.md
-      getting-started.md
-      guide/
-        installation.md
+  en/                         # English (default) - served at /
+    index.md
+    getting-started.md
+    guide/
+      installation.md
+  de/                         # German - served at /de/
+    index.md
+    getting-started.md
+    guide/
+      installation.md
+  fr/                         # French - served at /fr/
+    index.md
+    getting-started.md
+    guide/
+      installation.md
+```
+
+**Configuration:**
+
+```yaml
+languages:
+  default: "en"               # Define default language here
+  enabled:                    # Explicit configuration (required)
+    - code: "en"
+      name: "English"
+    - code: "de"
+      name: "Deutsch"
+    - code: "fr"
+      name: "Français"
 ```
 
 **Important:**
+- **Markdown files**: When using multiple languages, markdown files in root `docs/` are **ignored**. All markdown files must be in language folders
+- **Shared assets**: Static assets (images, PDFs, etc.) in root `docs/` are served as **language-independent shared assets**
+- **MkDocs-style**: Direct language folders
+- **Default language**: Defined in `dorcs.yaml` - default language files are in `docs/en/` but served at `/` (no prefix)
 - Each language folder should mirror the structure of your default language
-- The default language stays in the root `docs/` folder
-- Other languages go in `docs/__lang__/{lang}/` folders where `{lang}` is the language code
-- The `__lang__` folder keeps language-specific content separate and avoids conflicts with regular folders
+- **Relative paths**: Automatically handled - images and links work correctly
 - See [Configuration](../03_configuration.md#multi-lingual-support) for setup instructions
+- See [File Structure & Organization](./file-structure.md) for complete guide
+
+> [!WARNING]
+> **Markdown files in root are ignored**: When using multiple languages, any `.md` files in the root `docs/` folder are ignored. Only static assets in root are served as shared assets.
 
 ## YAML Front Matter
 

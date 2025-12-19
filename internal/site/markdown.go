@@ -15,8 +15,31 @@ import (
 // codeTheme specifies the Chroma syntax highlighting theme to use (e.g., "github", "dracula").
 // basePath is the URL path prefix (e.g., "/docs"). Empty string means no prefix.
 // language is the language code (e.g., "en", "de"). Empty string means default language (root docs folder).
-// For non-default languages, documents are expected in rootDir/__lang__/{language}/ folder.
+// For non-default languages, documents are expected in rootDir/{language}/ folder (MkDocs-style).
+// version is the version identifier (e.g., "v1", "v2", "latest"). Empty string means default version.
+// For non-default versions, documents are expected in rootDir/{version}/ or rootDir/{language}/{version}/ folder.
 func New(rootDir string, codeTheme string, basePath string, language string) (*Site, error) {
+	return NewWithVersion(rootDir, codeTheme, basePath, language, "")
+}
+
+// NewWithVersion creates a Site serving markdown documents from rootDir with version support.
+// codeTheme specifies the Chroma syntax highlighting theme to use (e.g., "github", "dracula").
+// basePath is the URL path prefix (e.g., "/docs"). Empty string means no prefix.
+// language is the language code (e.g., "en", "de"). Empty string means default language (root docs folder).
+// version is the version identifier (e.g., "v1", "v2", "latest"). Empty string means default version.
+// Uses MkDocs-style structure: language-first (docs/{lang}/{version}/) or version-only (docs/{version}/).
+func NewWithVersion(rootDir string, codeTheme string, basePath string, language string, version string) (*Site, error) {
+	return NewWithVersionPath(rootDir, codeTheme, basePath, language, version, "")
+}
+
+// NewWithVersionPath creates a Site serving markdown documents from rootDir with version and custom path support.
+// codeTheme specifies the Chroma syntax highlighting theme to use (e.g., "github", "dracula").
+// basePath is the URL path prefix (e.g., "/docs"). Empty string means no prefix.
+// language is the language code (e.g., "en", "de"). Empty string means default language (root docs folder).
+// version is the version identifier (e.g., "v1", "v2", "latest"). Empty string means default version.
+// versionPath is an optional custom path override for the version.
+// Uses MkDocs-style structure: language-first (docs/{lang}/{version}/) or version-only (docs/{version}/).
+func NewWithVersionPath(rootDir string, codeTheme string, basePath string, language string, version string, versionPath string) (*Site, error) {
 	if strings.TrimSpace(rootDir) == "" {
 		return nil, errors.New("rootDir is required")
 	}
@@ -28,17 +51,45 @@ func New(rootDir string, codeTheme string, basePath string, language string) (*S
 		return nil, fmt.Errorf("abs rootDir: %w", err)
 	}
 
-	// For non-default languages, use __lang__/{language} folder structure
 	actualRootDir := abs
+
+	// MkDocs-style structure: language-first approach
+	// Structure: docs/{lang}/{version}/ or docs/{version}/ (version-only) or docs/ (default)
+
+	// If language is specified, look for language folder first
 	if language != "" {
-		langDir := filepath.Join(abs, "__lang__", language)
-		// Check if language directory exists
+		langDir := filepath.Join(abs, language)
 		if stat, err := os.Stat(langDir); err == nil && stat.IsDir() {
 			actualRootDir = langDir
+
+			// If version is specified, look for version folder inside language folder
+			if version != "" {
+				versionDir := filepath.Join(langDir, version)
+				if stat, err := os.Stat(versionDir); err == nil && stat.IsDir() {
+					actualRootDir = versionDir
+				}
+				// If version folder doesn't exist, stay in language folder (default version for that language)
+			}
 		}
-		// If it doesn't exist, we'll use the base directory
+		// If language folder doesn't exist, we'll use the base directory
 		// This allows GitHub-only mode where language directories might not exist locally
+	} else if version != "" {
+		// Version-only (no language): docs/{version}/
+		if versionPath != "" {
+			// Use custom path
+			versionDir := filepath.Join(abs, versionPath)
+			if stat, err := os.Stat(versionDir); err == nil && stat.IsDir() {
+				actualRootDir = versionDir
+			}
+		} else {
+			// Direct version folder
+			versionDir := filepath.Join(abs, version)
+			if stat, err := os.Stat(versionDir); err == nil && stat.IsDir() {
+				actualRootDir = versionDir
+			}
+		}
 	}
+	// If neither language nor version specified, use root (default language, default version)
 
 	// Validate the base rootDir exists
 	stat, err := os.Stat(abs)
@@ -53,13 +104,16 @@ func New(rootDir string, codeTheme string, basePath string, language string) (*S
 	syntaxCSS := syntax.GenerateCSS(codeTheme)
 
 	return &Site{
-		RootDir:   actualRootDir, // Use actual language-specific directory
-		BasePath:  basePath,
-		Language:  language,
-		md:        markdown.NewRenderer(codeTheme),
-		index:     make(map[string]*Doc),
-		nav:       &NavNode{Name: "", Key: "", IsDir: true},
-		syntaxCSS: syntaxCSS,
+		RootDir:         actualRootDir, // Use actual version/language-specific directory
+		BasePath:        basePath,
+		Language:        language,
+		Version:         version,
+		DefaultVersion:  "", // Will be set by SetDefaultVersion if needed
+		DefaultLanguage: "", // Will be set by SetDefaultLanguage if needed
+		md:              markdown.NewRenderer(codeTheme),
+		index:           make(map[string]*Doc),
+		nav:             &NavNode{Name: "", Key: "", IsDir: true},
+		syntaxCSS:       syntaxCSS,
 	}, nil
 }
 
@@ -90,4 +144,28 @@ func (s *Site) SetLanguage(language string) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.Language = language
+}
+
+// SetVersion sets the version identifier for this site.
+// This is useful when creating a site with GitHub integration where the local directory structure doesn't match.
+func (s *Site) SetVersion(version string) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.Version = version
+}
+
+// SetDefaultVersion sets the default version identifier for this site.
+// This is used for link rewriting to determine if version prefix should be added.
+func (s *Site) SetDefaultVersion(defaultVersion string) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.DefaultVersion = defaultVersion
+}
+
+// SetDefaultLanguage sets the default language code for this site.
+// This is used for link rewriting to determine if language prefix should be added.
+func (s *Site) SetDefaultLanguage(defaultLanguage string) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.DefaultLanguage = defaultLanguage
 }
