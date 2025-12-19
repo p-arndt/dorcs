@@ -24,6 +24,9 @@ RUN CC=musl-gcc CGO_ENABLED=1 GOOS=linux GOARCH=amd64 \
 # runtime
 FROM scratch
 WORKDIR /app
+# Copy CA certificates for TLS verification (needed for GitHub API)
+COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
 COPY --from=builder /app/dorcs /app/dorcs
 EXPOSE 8080
+ENV SSL_CERT_FILE=/etc/ssl/certs/ca-certificates.crt
 CMD ["/app/dorcs"]
