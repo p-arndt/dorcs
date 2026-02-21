@@ -109,6 +109,20 @@ They may forget what you said, but they will never forget how you made them feel
 
 ---
 
+## Typography Blocks
+
+Mix `::: hero`, `::: stat`, `::: caption`, `::: label` on one slide.
+
+::: hero
+35%
+:::
+
+::: caption
+of an audience's retention rate is attributed to the visuals used.
+:::
+
+---
+
 <!-- _layout: split -->
 <!-- _align: start -->
 
@@ -176,6 +190,7 @@ Deploy and iterate.
 | Directive | Effect |
 |-----------|--------|
 | `_layout` | Structure: lead, left, right, big, quote, columns-2, columns-3, split, timeline |
+| Blocks | `::: hero`, `::: stat`, `::: caption`, `::: label`, `::: timeline` |
 | `_gap` | Spacing: tight, normal, loose |
 | `_align` | Alignment: start, center, end |
 | `_columns` | Column count: 2, 3, 4 |

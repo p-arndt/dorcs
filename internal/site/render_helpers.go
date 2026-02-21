@@ -71,6 +71,9 @@ func (s *Site) preprocessMarkdown(raw string, doc *Doc) string {
 	// Convert timeline blocks in markdown (pre-process for goldmark)
 	raw = markdownext.ConvertTimelineBlocksInMarkdown(raw)
 
+	// Convert typography text blocks in markdown (pre-process for goldmark)
+	raw = markdownext.ConvertTextBlocksInMarkdown(raw)
+
 	return raw
 }
 
@@ -126,6 +129,9 @@ func (s *Site) convertMarkdownToHTML(raw string, doc *Doc) (string, error) {
 
 	// Convert timeline blocks in the HTML output
 	htmlOutput = markdownext.ConvertTimelineBlocksInHTML(htmlOutput)
+
+	// Convert typography text blocks in the HTML output
+	htmlOutput = markdownext.ConvertTextBlocksInHTML(htmlOutput)
 
 	return htmlOutput, nil
 }

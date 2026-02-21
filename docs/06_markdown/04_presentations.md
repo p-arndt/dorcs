@@ -234,6 +234,43 @@ Paragraphs and lists flow automatically into columns.
 No manual wrapping needed.
 ```
 
+### Typography Blocks
+
+Composable blocks for different font sizes. Mix them on the same slide.
+
+| Block | Purpose |
+|-------|---------|
+| `::: hero` | Large impactful text |
+| `::: stat` | Number (first line) + caption (rest) |
+| `::: caption` | Small supporting text |
+| `::: label` | Small uppercase label |
+
+```markdown
+::: hero
+35%
+:::
+
+::: caption
+of an audience's retention rate is attributed to the visuals used.
+:::
+```
+
+```markdown
+::: stat
+35%
+of an audience's retention rate is attributed to the visuals used.
+:::
+```
+
+```markdown
+::: label
+AGENDA
+:::
+
+1. Introducing yourself
+2. Engaging the audience
+```
+
 ### Timeline Block
 
 Use the `::: timeline` block for roadmaps and process steps. Each `###` or `####` heading starts a new step; the heading text becomes the date/label marker.

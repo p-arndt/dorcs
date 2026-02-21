@@ -426,6 +426,55 @@
   z-index: 1;
 }
 
+/* Typography blocks - composable text styling */
+.slide-content .text-block {
+  text-align: center;
+  margin: 0.75rem 0;
+}
+.slide-content .text-block-hero {
+  font-size: 3.5rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+}
+.slide-content .text-block-hero p {
+  margin: 0;
+}
+.slide-content .text-block-caption {
+  font-size: 1.1rem;
+  opacity: 0.9;
+}
+.slide-content .text-block-caption p {
+  margin: 0.25rem 0;
+}
+.slide-content .text-block-label {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-weight: 600;
+}
+.slide-content .text-block-label p {
+  margin: 0;
+}
+.slide-content .text-block-stat {
+  text-align: center;
+  margin: 1rem 0;
+}
+.slide-content .text-block-stat-value {
+  font-size: 4rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+}
+.slide-content .text-block-stat-caption {
+  font-size: 1.25rem;
+  margin-top: 0.5rem;
+  opacity: 0.95;
+}
+.slide-content .text-block-stat-caption p {
+  margin: 0.25rem 0;
+}
+
 /* _columns directive - alternative to layout columns-N */
 .presentation-slide[data-columns="2"]:not([data-layout="split"]):not(.split) .slide-content {
   column-count: 2;
