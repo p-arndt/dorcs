@@ -184,7 +184,7 @@ auth:
 # GitHub integration configuration
 github:
   # Enable GitHub integration to fetch and serve markdown files from a GitHub repository
-  enabled: false 
+  enabled: false
 
   # Repository tree URL (e.g., "https://github.com/p-arndt/dorcs/tree/main/docs")
   # Supports formats:
@@ -195,6 +195,8 @@ github:
   # GitHub token for private repositories (optional, supports ${ENV_VAR} expansion)
   token: ${GITHUB_TOKEN}
 
+  # edit_on_github:                                 # Optional: "Edit on GitHub" for local docs
+    # repository: "https://github.com/owner/repo/tree/main/docs"
   # Cache time-to-live for GitHub content (optional, default: 1h)
   # Examples: "1h", "30m", "24h"
   # cache_ttl: "1h"

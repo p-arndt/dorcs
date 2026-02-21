@@ -31,6 +31,18 @@ The repository URL can be in several formats:
 - `https://github.com/owner/repo` - Root of repository (uses default branch)
 - `owner/repo/tree/branch/path` - Without `https://github.com/` prefix (added automatically)
 
+## Edit on GitHub Link
+
+When using GitHub as a content source, an **"Edit on GitHub"** link appears on each page. Clicking it opens the source markdown file in GitHub's web editor, allowing readers to suggest changes via pull requests—just like Docusaurus, MkDocs, and other doc tools.
+
+For local docs deployed from GitHub (e.g. GitHub Pages), add `edit_on_github.repository` to your config to enable the link:
+
+```yaml
+github:
+  edit_on_github:
+    repository: "https://github.com/owner/repo/tree/main/docs"
+```
+
 ## How It Works
 
 - When enabled, dorcs automatically discovers all `.md` files in the specified GitHub directory tree

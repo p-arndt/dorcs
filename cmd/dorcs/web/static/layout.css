@@ -595,6 +595,41 @@ body.search-open {
 
 section.main { min-width: 0; }
 
+/* Edit on GitHub link */
+.content-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 12px;
+}
+.content-wrapper .edit-on-github {
+  order: -1;
+}
+.edit-on-github {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  font-size: 0.8125rem;
+  color: var(--muted);
+  text-decoration: none;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--code-bg) 55%, transparent);
+  transition: color 0.15s, border-color 0.15s, background 0.15s;
+}
+.edit-on-github:hover {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+.edit-on-github svg {
+  flex-shrink: 0;
+}
+.content-wrapper .markdown {
+  width: 100%;
+  align-self: stretch;
+}
+
 /* Mobile TOC (shown only on mobile) */
 .mobile-toc {
   display: none;

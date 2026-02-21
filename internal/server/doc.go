@@ -2,11 +2,14 @@
 package server
 
 import (
+	"fmt"
 	"html/template"
 	"net/http"
 	"strings"
 	"time"
 
+	"github.com/p-arndt/dorcs/internal/config"
+	"github.com/p-arndt/dorcs/internal/github"
 	"github.com/p-arndt/dorcs/internal/site"
 )
 
@@ -93,6 +96,11 @@ func (h *Handler) handleDocByKeyWithSite(w http.ResponseWriter, r *http.Request,
 	m.Meta.Tags = append([]string(nil), rendered.Doc.Tags...)
 	m.Meta.SourcePath = rendered.Doc.RelPath
 
+	// Compute "Edit on GitHub" URL when docs are hosted on GitHub
+	if siteConfig != nil {
+		m.EditOnGitHubURL = computeEditOnGitHubURL(rendered.Doc, siteConfig.GitHub, currentLang, currentVersion)
+	}
+
 	// Add config and theme CSS if available
 	if siteConfig != nil {
 		m.Config = siteConfig
@@ -121,6 +129,41 @@ func (h *Handler) handleDocByKeyWithSite(w http.ResponseWriter, r *http.Request,
 			http.Error(w, "template error: "+err.Error(), http.StatusInternalServerError)
 		}
 	}
+}
+
+// computeEditOnGitHubURL returns the GitHub "edit this page" URL when applicable.
+// Supports: (1) GitHub content source (doc.IsGitHub), (2) edit_on_github for local docs.
+func computeEditOnGitHubURL(doc *site.Doc, gh config.GitHubConfig, currentLang, currentVersion string) string {
+	// Case 1: Docs sourced from GitHub - use exact GitHubPath
+	if doc.IsGitHub && gh.Enabled && gh.Repository != "" && doc.GitHubPath != "" {
+		repoInfo, err := github.ParseRepositoryURL(gh.Repository)
+		if err != nil {
+			return ""
+		}
+		return fmt.Sprintf("https://github.com/%s/%s/edit/%s/%s",
+			repoInfo.Owner, repoInfo.Repo, repoInfo.Branch, doc.GitHubPath)
+	}
+	// Case 2: Local docs with edit_on_github - derive path from RelPath and repo structure
+	if gh.EditOnGitHub.Repository != "" && doc.RelPath != "" {
+		repoInfo, err := github.ParseRepositoryURL(gh.EditOnGitHub.Repository)
+		if err != nil {
+			return ""
+		}
+		path := repoInfo.Path
+		if path == "" {
+			path = "docs"
+		}
+		if currentLang != "" {
+			path = path + "/" + currentLang
+		}
+		if currentVersion != "" {
+			path = path + "/" + currentVersion
+		}
+		filePath := strings.TrimPrefix(path+"/"+doc.RelPath, "/")
+		return fmt.Sprintf("https://github.com/%s/%s/edit/%s/%s",
+			repoInfo.Owner, repoInfo.Repo, repoInfo.Branch, filePath)
+	}
+	return ""
 }
 
 func setCommonSecurityHeaders(w http.ResponseWriter) {

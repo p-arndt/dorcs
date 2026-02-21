@@ -284,7 +284,11 @@ github:
   repository: "https://github.com/owner/repo/tree/main/docs"  # Repository tree URL
   token: "${GITHUB_TOKEN}"                         # Optional: GitHub token (recommended)
   cache_ttl: "1h"                                 # Optional: Cache TTL (default: 1h)
+  edit_on_github:                                 # Optional: "Edit on GitHub" for local docs
+    repository: "https://github.com/owner/repo/tree/main/docs"
 ```
+
+**Edit on GitHub link:** When docs are sourced from GitHub (`enabled: true`), an "Edit on GitHub" link appears on each page—clicking it opens the source file in GitHub's editor. For local docs (e.g. deployed to GitHub Pages), add `edit_on_github.repository` to show the link.
 
 > [!TIP]
 > For detailed documentation on using GitHub as a content source, including setup instructions, troubleshooting, and best practices, see the [GitHub guide](./external-content/github.md).

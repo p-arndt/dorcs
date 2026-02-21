@@ -136,6 +136,10 @@ type DocPageModel struct {
 	PresentationHeader string
 	// PresentationFooter is shown on each slide when set in front matter
 	PresentationFooter string
+
+	// EditOnGitHubURL is the GitHub "edit this page" URL when docs are hosted on GitHub.
+	// Shown as an "Edit on GitHub" link in the content area.
+	EditOnGitHubURL string
 }
 
 // ServeHTTP routes requests:

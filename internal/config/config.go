@@ -230,6 +230,16 @@ type GitHubConfig struct {
 
 	// CacheTTL is the cache time-to-live (default: 1h)
 	CacheTTL string `json:"cache_ttl" yaml:"cache_ttl"`
+
+	// EditOnGitHub enables "Edit on GitHub" links for local docs deployed from GitHub (e.g. GitHub Pages).
+	// When set, an "Edit on GitHub" link appears on each page pointing to the source file.
+	EditOnGitHub EditOnGitHubConfig `json:"edit_on_github" yaml:"edit_on_github"`
+}
+
+// EditOnGitHubConfig configures the "Edit on GitHub" link for local docs.
+type EditOnGitHubConfig struct {
+	// Repository is the GitHub repo URL (e.g., "https://github.com/owner/repo/tree/main/docs")
+	Repository string `json:"repository" yaml:"repository"`
 }
 
 // Default returns the default configuration.
