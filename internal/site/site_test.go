@@ -554,94 +554,125 @@ Final content.
 
 func TestPreprocessMarkdownGitHubRelativePaths(t *testing.T) {
 	tests := []struct {
-		name        string
-		markdown    string
-		doc         *Doc
-		basePath    string
-		language    string
-		version     string
-		expected    string
-		description string
+		name          string
+		markdown      string
+		doc           *Doc
+		basePath      string
+		language      string
+		version       string
+		useGitHubAuth bool
+		expected      string
+		description   string
 	}{
 		{
-			name:        "GitHub root index with relative image path",
-			markdown:    "![Logo](../logo.png)",
-			doc:         &Doc{Key: "", RelPath: "index.md", DirKey: "", IsGitHub: true, GitHubPath: "docs/index.md"},
-			basePath:    "",
-			language:    "",
-			version:     "",
-			expected:    "![Logo](/logo.png)",
-			description: "Image at parent of docs/ should resolve to /logo.png",
+			name:          "GitHub root index with relative image path (with GitHub client)",
+			markdown:      "![Logo](./logo.png)",
+			doc:           &Doc{Key: "", RelPath: "index.md", DirKey: "", IsGitHub: true, GitHubPath: "docs/index.md"},
+			basePath:      "",
+			language:      "",
+			version:       "",
+			useGitHubAuth: true,
+			expected:      "![Logo](https://raw.githubusercontent.com/owner/repo/main/docs/logo.png)",
+			description:   "With GitHub client, relative image resolves to raw.githubusercontent.com",
 		},
 		{
-			name:        "GitHub nested index with relative image path",
-			markdown:    "![Guide](../images/guide.png)",
-			doc:         &Doc{Key: "guide", RelPath: "guide/index.md", DirKey: "guide", IsGitHub: true, GitHubPath: "docs/guide/index.md"},
-			basePath:    "",
-			language:    "",
-			version:     "",
-			expected:    "![Guide](/images/guide.png)",
-			description: "Image at sibling directory should resolve correctly",
+			name:          "GitHub root index with relative image path (no GitHub client)",
+			markdown:      "![Logo](../logo.png)",
+			doc:           &Doc{Key: "", RelPath: "index.md", DirKey: "", IsGitHub: true, GitHubPath: "docs/index.md"},
+			basePath:      "",
+			language:      "",
+			version:       "",
+			useGitHubAuth: false,
+			expected:      "![Logo](/logo.png)",
+			description:   "Without GitHub client, falls back to local path resolution",
 		},
 		{
-			name:        "GitHub document with local relative image path",
-			markdown:    "![Screenshot](./screenshot.png)",
-			doc:         &Doc{Key: "guide/intro", RelPath: "guide/intro.md", DirKey: "guide", IsGitHub: true, GitHubPath: "docs/guide/intro.md"},
-			basePath:    "",
-			language:    "",
-			version:     "",
-			expected:    "![Screenshot](/docs/guide/screenshot.png)",
-			description: "Local image in same directory should resolve to GitHub path",
+			name:          "GitHub nested index with relative image path",
+			markdown:      "![Guide](../images/guide.png)",
+			doc:           &Doc{Key: "guide", RelPath: "guide/index.md", DirKey: "guide", IsGitHub: true, GitHubPath: "docs/guide/index.md"},
+			basePath:      "",
+			language:      "",
+			version:       "",
+			useGitHubAuth: false,
+			expected:      "![Guide](/images/guide.png)",
+			description:   "Image at sibling directory should resolve correctly",
 		},
 		{
-			name:        "GitHub document with parent directory reference",
-			markdown:    "![Parent](../../assets/logo.png)",
-			doc:         &Doc{Key: "api/v2/endpoints", RelPath: "api/v2/endpoints.md", DirKey: "api/v2", IsGitHub: true, GitHubPath: "docs/api/v2/endpoints.md"},
-			basePath:    "",
-			language:    "",
-			version:     "",
-			expected:    "![Parent](/docs/assets/logo.png)",
-			description: "Going up two levels from docs/api/v2 should resolve correctly in GitHub path",
+			name:          "GitHub document with local relative image path (with GitHub client)",
+			markdown:      "![Screenshot](./screenshot.png)",
+			doc:           &Doc{Key: "guide/intro", RelPath: "guide/intro.md", DirKey: "guide", IsGitHub: true, GitHubPath: "docs/guide/intro.md"},
+			basePath:      "",
+			language:      "",
+			version:       "",
+			useGitHubAuth: true,
+			expected:      "![Screenshot](https://raw.githubusercontent.com/owner/repo/main/docs/guide/screenshot.png)",
+			description:   "With GitHub client, same-dir image resolves to raw URL",
 		},
 		{
-			name:        "GitHub doc with basePath set",
-			markdown:    "![Logo](../logo.png)",
-			doc:         &Doc{Key: "", RelPath: "index.md", DirKey: "", IsGitHub: true, GitHubPath: "docs/index.md"},
-			basePath:    "/myapp",
-			language:    "",
-			version:     "",
-			expected:    "![Logo](/myapp/logo.png)",
-			description: "Image paths should include basePath",
+			name:          "GitHub document with parent directory reference (with GitHub client)",
+			markdown:      "![Parent](../../assets/logo.png)",
+			doc:           &Doc{Key: "api/v2/endpoints", RelPath: "api/v2/endpoints.md", DirKey: "api/v2", IsGitHub: true, GitHubPath: "docs/api/v2/endpoints.md"},
+			basePath:      "",
+			language:      "",
+			version:       "",
+			useGitHubAuth: true,
+			expected:      "![Parent](https://raw.githubusercontent.com/owner/repo/main/docs/assets/logo.png)",
+			description:   "Parent ref resolves correctly to raw URL",
 		},
 		{
-			name:        "GitHub doc with absolute URL unchanged",
-			markdown:    "![External](https://example.com/logo.png)",
-			doc:         &Doc{Key: "", RelPath: "index.md", DirKey: "", IsGitHub: true, GitHubPath: "docs/index.md"},
-			basePath:    "",
-			language:    "",
-			version:     "",
-			expected:    "![External](https://example.com/logo.png)",
-			description: "Absolute URLs should not be modified",
+			name:          "GitHub doc with basePath set (with GitHub client)",
+			markdown:      "![Logo](../logo.png)",
+			doc:           &Doc{Key: "", RelPath: "index.md", DirKey: "", IsGitHub: true, GitHubPath: "docs/index.md"},
+			basePath:      "/myapp",
+			language:      "",
+			version:       "",
+			useGitHubAuth: true,
+			expected:      "![Logo](https://raw.githubusercontent.com/owner/repo/main/logo.png)",
+			description:   "With GitHub client, basePath does not apply to raw URLs",
 		},
 		{
-			name:        "GitHub doc with already absolute path",
-			markdown:    "![Logo](/logo.png)",
-			doc:         &Doc{Key: "", RelPath: "index.md", DirKey: "", IsGitHub: true, GitHubPath: "docs/index.md"},
-			basePath:    "",
-			language:    "",
-			version:     "",
-			expected:    "![Logo](/logo.png)",
-			description: "Already absolute paths should not be modified",
+			name:          "GitHub doc with basePath set (no GitHub client)",
+			markdown:      "![Logo](../logo.png)",
+			doc:           &Doc{Key: "", RelPath: "index.md", DirKey: "", IsGitHub: true, GitHubPath: "docs/index.md"},
+			basePath:      "/myapp",
+			language:      "",
+			version:       "",
+			useGitHubAuth: false,
+			expected:      "![Logo](/myapp/logo.png)",
+			description:   "Without GitHub client, image paths should include basePath",
 		},
 		{
-			name:        "Local (non-GitHub) document uses mapped key",
-			markdown:    "![Logo](../logo.png)",
-			doc:         &Doc{Key: "guide/intro", RelPath: "guide/intro.md", DirKey: "guide", IsGitHub: false, GitHubPath: ""},
-			basePath:    "",
-			language:    "",
-			version:     "",
-			expected:    "![Logo](/logo.png)",
-			description: "Local docs should use their mapped key, not GitHubPath",
+			name:          "GitHub doc with absolute URL unchanged",
+			markdown:      "![External](https://example.com/logo.png)",
+			doc:           &Doc{Key: "", RelPath: "index.md", DirKey: "", IsGitHub: true, GitHubPath: "docs/index.md"},
+			basePath:      "",
+			language:      "",
+			version:       "",
+			useGitHubAuth: true,
+			expected:      "![External](https://example.com/logo.png)",
+			description:   "Absolute URLs should not be modified",
+		},
+		{
+			name:          "GitHub doc with already absolute path",
+			markdown:      "![Logo](/logo.png)",
+			doc:           &Doc{Key: "", RelPath: "index.md", DirKey: "", IsGitHub: true, GitHubPath: "docs/index.md"},
+			basePath:      "",
+			language:      "",
+			version:       "",
+			useGitHubAuth: true,
+			expected:      "![Logo](/logo.png)",
+			description:   "Already absolute paths should not be modified",
+		},
+		{
+			name:          "Local (non-GitHub) document uses mapped key",
+			markdown:      "![Logo](../logo.png)",
+			doc:           &Doc{Key: "guide/intro", RelPath: "guide/intro.md", DirKey: "guide", IsGitHub: false, GitHubPath: ""},
+			basePath:      "",
+			language:      "",
+			version:       "",
+			useGitHubAuth: false,
+			expected:      "![Logo](/logo.png)",
+			description:   "Local docs should use their mapped key, not GitHubPath",
 		},
 	}
 
@@ -653,6 +684,9 @@ func TestPreprocessMarkdownGitHubRelativePaths(t *testing.T) {
 				Version:         tt.version,
 				DefaultVersion:  tt.version,
 				DefaultLanguage: tt.language,
+			}
+			if tt.useGitHubAuth {
+				s.SetGitHubConfig(newMockGitHubClient(), "owner", "repo", "main", "docs")
 			}
 			result := s.preprocessMarkdown(tt.markdown, tt.doc)
 			if result != tt.expected {

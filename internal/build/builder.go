@@ -127,7 +127,7 @@ func (b *Builder) Build(includeDrafts bool) error {
 			} else {
 				// Languages only: docs/{lang}/
 				if err := b.buildLanguage(langCodeForSite, isDefaultLang, lang.Code, includeDrafts); err != nil {
-				return fmt.Errorf("build language %s: %w", lang.Code, err)
+					return fmt.Errorf("build language %s: %w", lang.Code, err)
 				}
 			}
 		}

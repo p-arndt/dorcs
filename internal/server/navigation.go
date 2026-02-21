@@ -145,7 +145,7 @@ type mockSiteConfig struct {
 	defaultLang    string
 }
 
-func (m *mockSiteConfig) IsMultiVersion() bool  { return false }
-func (m *mockSiteConfig) GetDefaultVersion() string { return "" }
-func (m *mockSiteConfig) IsMultiLingual() bool  { return m.isMultiLingual }
+func (m *mockSiteConfig) IsMultiVersion() bool       { return false }
+func (m *mockSiteConfig) GetDefaultVersion() string  { return "" }
+func (m *mockSiteConfig) IsMultiLingual() bool       { return m.isMultiLingual }
 func (m *mockSiteConfig) GetDefaultLanguage() string { return m.defaultLang }

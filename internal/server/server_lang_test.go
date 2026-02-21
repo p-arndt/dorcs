@@ -18,9 +18,9 @@ func TestLanguageDetection(t *testing.T) {
 
 	// Create default language files (new MkDocs-style structure)
 	files := map[string]string{
-		"index.md":             `# Home`,
-		"getting-started.md":   `# Getting Started`,
-		"de/index.md":          `# Startseite`,
+		"index.md":              `# Home`,
+		"getting-started.md":    `# Getting Started`,
+		"de/index.md":           `# Startseite`,
 		"de/getting-started.md": `# Erste Schritte`,
 	}
 

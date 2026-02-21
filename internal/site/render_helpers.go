@@ -3,6 +3,7 @@ package site
 import (
 	"bytes"
 	"fmt"
+	"path"
 	"strings"
 	"time"
 
@@ -51,9 +52,15 @@ func (s *Site) preprocessMarkdown(raw string, doc *Doc) string {
 	}
 	raw = markdown.RewriteExtensionlessDocLinks(raw, docDir, s.BasePath, languageForURL, s.Version, defaultVersion, defaultLanguage)
 
-	// Rewrite relative image paths to absolute paths
-	// This ensures images work correctly when default language uses its folder but URL has no prefix
-	raw = markdown.RewriteRelativeImagePaths(raw, docDir, s.BasePath, languageForURL, s.Version, defaultVersion, defaultLanguage)
+	// Rewrite relative image paths
+	// For GitHub-sourced docs: resolve to raw.githubusercontent.com URLs (images live in the repo)
+	// For local docs: resolve to absolute site paths
+	if doc.IsGitHub && s.githubClient != nil && doc.GitHubPath != "" {
+		githubDir := path.Dir(doc.GitHubPath)
+		raw = markdown.RewriteRelativeImagePathsForGitHub(raw, githubDir, s.githubOwner, s.githubRepo, s.githubBranch)
+	} else {
+		raw = markdown.RewriteRelativeImagePaths(raw, docDir, s.BasePath, languageForURL, s.Version, defaultVersion, defaultLanguage)
+	}
 
 	// Convert GitHub-style alert blocks in markdown (pre-process for goldmark)
 	raw = markdownext.ConvertAlertBlocksInMarkdown(raw)

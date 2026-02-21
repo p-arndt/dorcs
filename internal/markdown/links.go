@@ -9,6 +9,12 @@ import (
 var mdInlineLinkRE = regexp.MustCompile(`\[(?P<text>[^\]]+)\]\((?P<href>[^)]+)\)`)
 var mdImageRE = regexp.MustCompile(`!\[(?P<alt>[^\]]*)\]\((?P<src>[^)]+)\)`)
 
+// htmlImgSrcDoubleRE matches src="url" in img tags
+var htmlImgSrcDoubleRE = regexp.MustCompile(`(<img\b[^>]*?\ssrc=)"([^"]*)"`)
+
+// htmlImgSrcSingleRE matches src='url' in img tags
+var htmlImgSrcSingleRE = regexp.MustCompile(`(<img\b[^>]*?\ssrc=)'([^']*)'`)
+
 // LinkInfo represents a markdown link with its position.
 type LinkInfo struct {
 	Text   string // Link text
@@ -449,4 +455,71 @@ func RewriteRelativeImagePaths(md string, currentDirKey string, basePath string,
 		}
 		return "![" + alt + "](" + newSrc + ")"
 	})
+}
+
+// RewriteRelativeImagePathsForGitHub rewrites relative image paths to GitHub raw URLs.
+// Use this when content is sourced from GitHub so images (which are not served by dorcs)
+// load correctly from raw.githubusercontent.com.
+// githubDir is the directory of the current document in the repo (e.g., "docs" for docs/index.md).
+func RewriteRelativeImagePathsForGitHub(md string, githubDir string, owner string, repo string, branch string) string {
+	rawURLBase := "https://raw.githubusercontent.com/" + owner + "/" + repo + "/" + branch + "/"
+	resolveAndRewrite := func(src string) (string, bool) {
+		src = strings.TrimSpace(src)
+		if src == "" {
+			return "", false
+		}
+		lower := strings.ToLower(src)
+		if strings.Contains(lower, "://") {
+			return "", false // absolute URL, skip
+		}
+		if strings.HasPrefix(src, "/") {
+			return "", false // site-absolute path, skip (would 404 for GitHub content anyway)
+		}
+		srcClean := strings.ReplaceAll(src, "\\", "/")
+		var fullPath string
+		if githubDir == "" {
+			fullPath = srcClean
+		} else {
+			fullPath = githubDir + "/" + srcClean
+		}
+		clean := path.Clean("/" + fullPath)
+		clean = strings.TrimPrefix(clean, "/")
+		if clean == "" || clean == "." || clean == ".." || strings.HasPrefix(clean, "../") || strings.Contains(clean, "/../") {
+			return "", false
+		}
+		return rawURLBase + clean, true
+	}
+
+	// Rewrite markdown images ![alt](src)
+	md = mdImageRE.ReplaceAllStringFunc(md, func(m string) string {
+		sub := mdImageRE.FindStringSubmatch(m)
+		if len(sub) != 3 {
+			return m
+		}
+		alt, src := sub[1], sub[2]
+		if newSrc, ok := resolveAndRewrite(src); ok {
+			return "![" + alt + "](" + newSrc + ")"
+		}
+		return m
+	})
+
+	// Rewrite HTML img src="..." or src='...'
+	rewriteHTMLImgSrc := func(m string, sub []string, quote string) string {
+		if len(sub) < 3 {
+			return m
+		}
+		prefix, src := sub[1], sub[2]
+		if newSrc, ok := resolveAndRewrite(src); ok {
+			return prefix + quote + newSrc + quote
+		}
+		return m
+	}
+	md = htmlImgSrcDoubleRE.ReplaceAllStringFunc(md, func(m string) string {
+		return rewriteHTMLImgSrc(m, htmlImgSrcDoubleRE.FindStringSubmatch(m), `"`)
+	})
+	md = htmlImgSrcSingleRE.ReplaceAllStringFunc(md, func(m string) string {
+		return rewriteHTMLImgSrc(m, htmlImgSrcSingleRE.FindStringSubmatch(m), `'`)
+	})
+
+	return md
 }

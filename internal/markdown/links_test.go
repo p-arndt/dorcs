@@ -336,3 +336,52 @@ func TestResolveLinkToDocKey(t *testing.T) {
 		})
 	}
 }
+
+func TestRewriteRelativeImagePathsForGitHub(t *testing.T) {
+	owner, repo, branch := "owner", "repo", "main"
+	tests := []struct {
+		name      string
+		md        string
+		githubDir string
+		expected  string
+	}{
+		{
+			name:      "markdown image in docs root",
+			md:        "![Logo](./logo.png)",
+			githubDir: "docs",
+			expected:  "![Logo](https://raw.githubusercontent.com/owner/repo/main/docs/logo.png)",
+		},
+		{
+			name:      "markdown image with parent ref",
+			md:        "![Logo](../logo.png)",
+			githubDir: "docs",
+			expected:  "![Logo](https://raw.githubusercontent.com/owner/repo/main/logo.png)",
+		},
+		{
+			name:      "HTML img tag with relative path",
+			md:        `<img src="./logo.png" alt="Dorcs Logo" width="200">`,
+			githubDir: "docs",
+			expected:  `<img src="https://raw.githubusercontent.com/owner/repo/main/docs/logo.png" alt="Dorcs Logo" width="200">`,
+		},
+		{
+			name:      "absolute URL unchanged",
+			md:        "![External](https://example.com/logo.png)",
+			githubDir: "docs",
+			expected:  "![External](https://example.com/logo.png)",
+		},
+		{
+			name:      "nested doc with same-dir image",
+			md:        "![Screenshot](./screenshot.png)",
+			githubDir: "docs/guide",
+			expected:  "![Screenshot](https://raw.githubusercontent.com/owner/repo/main/docs/guide/screenshot.png)",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := RewriteRelativeImagePathsForGitHub(tt.md, tt.githubDir, owner, repo, branch)
+			if got != tt.expected {
+				t.Errorf("RewriteRelativeImagePathsForGitHub() = %q\nwant %q", got, tt.expected)
+			}
+		})
+	}
+}
