@@ -26,17 +26,13 @@ func (s *Site) preprocessMarkdown(raw string, doc *Doc) string {
 	// Also resolves relative links like ./explain.md based on the current document's directory
 	// For index.md files, use the document's Key as the directory (e.g., guide/index.md uses "guide")
 	// For regular files, use DirKey (e.g., guide/intro.md uses "guide")
+	// Use Key/DirKey for both local and GitHub docs - they already reflect the site URL structure.
+	// Do NOT use doc.GitHubPath for this: it includes the repo root (e.g. "docs/") which would
+	// wrongly resolve ./xxx.md to /docs/xxx instead of /section/xxx when the doc is in a subfolder.
 	docDir := doc.DirKey
 	if isIndexRel(doc.RelPath) {
 		// This is an index.md file, so the document's directory is its Key
 		docDir = doc.Key
-	}
-
-	// For GitHub documents, use the directory of the GitHub file path for relative path resolution
-	if doc.IsGitHub && doc.GitHubPath != "" {
-		githubDir := dirKeyFromKey(keyFromRel(doc.GitHubPath))
-		// Use GitHub path directory for relative resolution
-		docDir = githubDir
 	}
 
 	defaultVersion := s.DefaultVersion

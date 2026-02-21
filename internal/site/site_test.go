@@ -696,3 +696,28 @@ func TestPreprocessMarkdownGitHubRelativePaths(t *testing.T) {
 		})
 	}
 }
+
+// TestPreprocessMarkdownGitHubRelativeDocLinks ensures that relative doc links (e.g. ./xxx.md)
+// in GitHub docs resolve to the correct path based on the doc's Key/DirKey, NOT doc.GitHubPath.
+// Bug: GitHubPath includes repo root (e.g. "docs/") which wrongly resolved ./xxx.md to /docs/xxx
+// instead of /external-content/xxx when the doc is in docs/external-content/.
+func TestPreprocessMarkdownGitHubRelativeDocLinks(t *testing.T) {
+	s := &Site{BasePath: "/docs", DefaultVersion: "", DefaultLanguage: ""}
+	s.SetGitHubConfig(newMockGitHubClient(), "owner", "repo", "main", "docs")
+
+	// Doc at docs/external-content/index.md: Key="external-content", GitHubPath="docs/external-content/index.md"
+	// Relative link ./github.md must resolve to /docs/external-content/github, NOT /docs/github
+	md := "[GitHub Guide](./github.md)"
+	doc := &Doc{
+		Key:        "external-content",
+		RelPath:    "external-content/index.md",
+		DirKey:     "external-content",
+		IsGitHub:   true,
+		GitHubPath: "docs/external-content/index.md",
+	}
+	result := s.preprocessMarkdown(md, doc)
+	expected := "[GitHub Guide](/docs/external-content/github)"
+	if result != expected {
+		t.Errorf("GitHub doc in subfolder: preprocessMarkdown(%q) = %q, want %q", md, result, expected)
+	}
+}
