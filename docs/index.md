@@ -9,7 +9,7 @@ draft: false
 # Dorcs
 
 <div style="display: flex; justify-content: center; align-items: center;">
-<img src="../logo.png" alt="Dorcs Logo" width="200" height="200" style="border: none;" />
+<img src="./logo.png" alt="Dorcs Logo" width="200" height="200" style="border: none;" />
 </div>
 
 Dorcs is a single-binary static documentation server for Markdown files. It is a simple and easy to use documentation server that allows you to create and host your documentation site in minutes.
