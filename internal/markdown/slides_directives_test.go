@@ -69,6 +69,20 @@ func TestParseSlideDirectives(t *testing.T) {
 			wantMeta:    SlideMetadata{Color: "white", BackgroundImage: "url(bg.jpg)"},
 			wantContent: "Dark slide",
 		},
+		{
+			name:        "layout primitives",
+			chunk:       "<!-- _layout: columns-2 -->\n<!-- _gap: loose -->\n<!-- _align: start -->\n<!-- _columns: 2 -->\n\nContent",
+			inherited:   SlideMetadata{},
+			wantMeta:    SlideMetadata{Layout: "columns-2", Gap: "loose", Align: "start", Columns: "2"},
+			wantContent: "Content",
+		},
+		{
+			name:        "layout inheritance",
+			chunk:       "# Slide 2",
+			inherited:   SlideMetadata{Layout: "lead", Gap: "tight"},
+			wantMeta:    SlideMetadata{Layout: "lead", Gap: "tight"},
+			wantContent: "# Slide 2",
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

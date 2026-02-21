@@ -71,6 +71,10 @@ func (s *Site) RenderDoc(key string) (*RenderedDoc, error) {
 			slides = append(slides, RenderedSlide{
 				HTML:               template.HTML(htmlOutput),
 				Class:              meta.Class,
+				Layout:             meta.Layout,
+				Gap:                meta.Gap,
+				Align:              meta.Align,
+				Columns:            meta.Columns,
 				Color:              meta.Color,
 				BackgroundColor:    meta.BackgroundColor,
 				BackgroundImage:    meta.BackgroundImage,

@@ -16,7 +16,11 @@ var directivePattern = regexp.MustCompile(`^\s*<!--\s*(_?)(\w+):\s*(.+)\s*-->\s*
 // SlideMetadata holds parsed directives for a single slide.
 // Marpit-compatible: https://marpit.marp.app/directives
 type SlideMetadata struct {
-	Class              string // HTML class for slide
+	Class              string // HTML class for slide (extra styling, e.g. invert)
+	Layout             string // Layout preset: default, lead, left, right, columns-2, columns-3, timeline, split
+	Gap                string // Spacing: tight, normal, loose
+	Align              string // Content alignment: start, center, end
+	Columns            string // Number of columns: 2, 3, 4 (alternative to layout columns-N)
 	Color              string // CSS color (text)
 	BackgroundColor    string
 	BackgroundImage    string
@@ -33,6 +37,14 @@ func parseDirective(meta *SlideMetadata, key, val string) {
 	switch keyLower {
 	case "class":
 		meta.Class = val
+	case "layout":
+		meta.Layout = val
+	case "gap":
+		meta.Gap = val
+	case "align":
+		meta.Align = val
+	case "columns":
+		meta.Columns = val
 	case "color":
 		meta.Color = val
 	case "backgroundcolor":

@@ -146,6 +146,62 @@
   overflow-x: auto;
 }
 
+/* Layout: big - large centered text for stats, quotes, single statements (no heading required) */
+.presentation-slide.big .slide-content,
+.presentation-slide[data-layout="big"] .slide-content {
+  max-width: 800px;
+  text-align: center;
+}
+.presentation-slide.big .slide-content p,
+.presentation-slide[data-layout="big"] .slide-content p {
+  font-size: 1.85rem;
+  line-height: 1.5;
+  margin: 1rem 0;
+}
+.presentation-slide.big .slide-content p:first-of-type,
+.presentation-slide[data-layout="big"] .slide-content p:first-of-type {
+  font-size: 3.5rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+}
+.presentation-slide.big .slide-content p:last-of-type:not(:first-of-type),
+.presentation-slide[data-layout="big"] .slide-content p:last-of-type:not(:first-of-type) {
+  font-size: 1.25rem;
+  opacity: 0.9;
+}
+.presentation-slide.big .slide-content h1,
+.presentation-slide[data-layout="big"] .slide-content h1 {
+  font-size: 4rem;
+  border-bottom: none;
+  padding-bottom: 0;
+  margin-bottom: 1rem;
+}
+.presentation-slide.big .slide-content h2,
+.presentation-slide[data-layout="big"] .slide-content h2 {
+  font-size: 2.5rem;
+}
+
+/* Layout: quote - large centered quote with smaller attribution */
+.presentation-slide.quote .slide-content,
+.presentation-slide[data-layout="quote"] .slide-content {
+  max-width: 780px;
+  text-align: center;
+}
+.presentation-slide.quote .slide-content p,
+.presentation-slide[data-layout="quote"] .slide-content p {
+  font-size: 1.75rem;
+  line-height: 1.5;
+  font-style: italic;
+}
+.presentation-slide.quote .slide-content p:last-of-type:not(:first-of-type),
+.presentation-slide[data-layout="quote"] .slide-content p:last-of-type:not(:first-of-type) {
+  font-size: 1.1rem;
+  font-style: normal;
+  opacity: 0.9;
+  margin-top: 1.5rem;
+}
+
 /* Layout: lead - title slide, PowerPoint-style */
 .presentation-slide.lead .slide-content h1 {
   font-size: 3.25rem;
@@ -192,6 +248,199 @@
   display: block;
   margin-left: auto;
   margin-right: 0;
+}
+
+/* Layout primitives: gap (spacing) */
+.presentation-slide[data-gap="tight"] .slide-content {
+  --slide-gap: 1rem;
+}
+.presentation-slide[data-gap="loose"] .slide-content {
+  --slide-gap: 3.5rem;
+}
+.presentation-slide .slide-content {
+  --slide-gap: 2rem;
+}
+
+/* Layout primitives: align (content alignment) */
+.presentation-slide[data-align="start"] {
+  align-items: flex-start;
+}
+.presentation-slide[data-align="start"] .slide-content {
+  margin-left: 0;
+  text-align: left;
+}
+.presentation-slide[data-align="end"] {
+  align-items: flex-end;
+}
+.presentation-slide[data-align="end"] .slide-content {
+  margin-right: 0;
+  text-align: right;
+}
+
+/* Layout: columns-2, columns-3 - auto column splitting via CSS columns */
+.presentation-slide.columns-2,
+.presentation-slide[data-layout="columns-2"] {
+  display: grid;
+  place-content: center;
+  padding: 5rem 4rem;
+}
+.presentation-slide.columns-2 .slide-content,
+.presentation-slide[data-layout="columns-2"] .slide-content {
+  columns: 2;
+  column-gap: var(--slide-gap, 2rem);
+  max-width: 1000px;
+  width: 100%;
+  text-align: left;
+}
+.presentation-slide.columns-3,
+.presentation-slide[data-layout="columns-3"] {
+  display: grid;
+  place-content: center;
+  padding: 5rem 4rem;
+}
+.presentation-slide.columns-3 .slide-content,
+.presentation-slide[data-layout="columns-3"] .slide-content {
+  columns: 3;
+  column-gap: var(--slide-gap, 2rem);
+  max-width: 1100px;
+  width: 100%;
+  text-align: left;
+}
+
+/* Layout: split - title/visual left (1fr), content right (2fr). Requires <div class="col"> for each panel. */
+.presentation-slide.split,
+.presentation-slide[data-layout="split"] {
+  display: grid;
+  place-content: center;
+  padding: 5rem 4rem;
+}
+.presentation-slide.split .slide-content,
+.presentation-slide[data-layout="split"] .slide-content {
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  gap: var(--slide-gap, 2rem);
+  max-width: 1000px;
+  width: min(95%, 1000px);
+  text-align: left;
+  align-items: start;
+}
+.presentation-slide.split .slide-content > * {
+  grid-column: 1 / -1;
+}
+.presentation-slide.split .slide-content > .col {
+  grid-column: span 1;
+  padding: 1rem 1.25rem;
+  min-width: 0;
+}
+.presentation-slide.split .slide-content > .col:first-of-type {
+  padding-right: 1.5rem;
+}
+
+/* Layout: timeline - horizontal axis (structure for ::: timeline block) */
+.presentation-slide.timeline .slide-content,
+.presentation-slide[data-layout="timeline"] .slide-content {
+  max-width: 100%;
+  width: 95%;
+  text-align: left;
+}
+
+/* Timeline block - horizontal layout with date markers */
+.slide-content .timeline {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--slide-gap, 2rem);
+  width: 100%;
+  margin: 1.5rem 0;
+  padding: 0 0.5rem;
+}
+
+.slide-content .timeline-step {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  min-width: 0;
+}
+
+.slide-content .timeline-marker {
+  width: 4rem;
+  height: 4rem;
+  border-radius: 50%;
+  background: var(--link);
+  color: var(--bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.7rem;
+  font-weight: 600;
+  line-height: 1.2;
+  text-align: center;
+  padding: 0.5rem;
+  box-sizing: border-box;
+  flex-shrink: 0;
+  margin-bottom: 1rem;
+  border: 3px solid color-mix(in srgb, var(--link) 80%, transparent);
+}
+
+.slide-content .timeline-content {
+  font-size: 0.95rem;
+  line-height: 1.5;
+  text-align: center;
+}
+
+.slide-content .timeline-content h1,
+.slide-content .timeline-content h2,
+.slide-content .timeline-content h3,
+.slide-content .timeline-content h4 {
+  margin-top: 0;
+  margin-bottom: 0.5rem;
+  font-size: 1.1rem;
+}
+
+.slide-content .timeline-content p {
+  margin: 0.25rem 0;
+  font-size: 0.9rem;
+}
+
+/* Timeline connector line (visual axis) */
+.slide-content .timeline {
+  position: relative;
+}
+
+.slide-content .timeline::before {
+  content: "";
+  position: absolute;
+  top: 2rem;
+  left: 2rem;
+  right: 2rem;
+  height: 3px;
+  background: linear-gradient(to right, var(--link), color-mix(in srgb, var(--link) 50%, transparent));
+  z-index: 0;
+}
+
+.slide-content .timeline-step {
+  position: relative;
+  z-index: 1;
+}
+
+/* _columns directive - alternative to layout columns-N */
+.presentation-slide[data-columns="2"]:not([data-layout="split"]):not(.split) .slide-content {
+  column-count: 2;
+  column-gap: var(--slide-gap, 2rem);
+  text-align: left;
+}
+.presentation-slide[data-columns="3"]:not([data-layout="split"]):not(.split) .slide-content {
+  column-count: 3;
+  column-gap: var(--slide-gap, 2rem);
+  text-align: left;
+}
+.presentation-slide[data-columns="4"]:not([data-layout="split"]):not(.split) .slide-content {
+  column-count: 4;
+  column-gap: var(--slide-gap, 2rem);
+  text-align: left;
 }
 
 /* Layout: two-columns - side-by-side columns, properly centered */

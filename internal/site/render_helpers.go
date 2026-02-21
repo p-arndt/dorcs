@@ -68,6 +68,9 @@ func (s *Site) preprocessMarkdown(raw string, doc *Doc) string {
 	// Convert accordion blocks in markdown (pre-process for goldmark)
 	raw = markdownext.ConvertAccordionBlocksInMarkdown(raw)
 
+	// Convert timeline blocks in markdown (pre-process for goldmark)
+	raw = markdownext.ConvertTimelineBlocksInMarkdown(raw)
+
 	return raw
 }
 
@@ -120,6 +123,9 @@ func (s *Site) convertMarkdownToHTML(raw string, doc *Doc) (string, error) {
 
 	// Convert accordion blocks in the HTML output
 	htmlOutput = markdownext.ConvertAccordionBlocksInHTML(htmlOutput)
+
+	// Convert timeline blocks in the HTML output
+	htmlOutput = markdownext.ConvertTimelineBlocksInHTML(htmlOutput)
 
 	return htmlOutput, nil
 }

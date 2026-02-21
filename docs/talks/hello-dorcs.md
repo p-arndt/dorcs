@@ -1,39 +1,40 @@
 ---
-title: "Hello Dorcs"
+title: "Dorcs Presentations"
 presentation: true
-presentation_header: "Dorcs · Static Docs"
-presentation_footer: "Built with Dorcs"
+presentation_header: "Dorcs · Feature Overview"
+presentation_footer: "Build docs and slides in one place"
 ---
 
 <!-- _class: lead -->
 <!-- _paginate: false -->
 
-# Welcome
+# Dorcs Presentations
 
-Build docs and slides in one place.
+Markdown-powered slide decks built in.
 
 ---
 
 <!-- _class: left -->
 
-## Features
+## Layout: Left
 
-- Single binary
-- Markdown slides
-- No Marp needed
-- Layout options: lead, left, right, two-columns, fit, invert
+`<!-- _class: left -->`
+
+- Content aligned to the left
+- Ideal for bullet lists
+- Code snippets and dense content
 
 ---
 
 <!-- _class: right -->
 
-## Right-Aligned Layout
+## Layout: Right
 
 `<!-- _class: right -->`
 
-Content aligned to the right side.
+Content aligned to the right.
 
-Useful for conclusion slides or emphasis.
+Good for conclusions and emphasis.
 
 ---
 
@@ -41,23 +42,117 @@ Useful for conclusion slides or emphasis.
 
 <div class="col">
 
-### Left Column
+### Two Columns
 
-- Single binary
-- Markdown slides
-- No Marp needed
+`<!-- _class: two-columns -->`
+
+Use `<div class="col">` for each column.
 
 </div>
 
 <div class="col">
 
-### Right Column
+### Explicit Columns
 
-- Layout: lead, left, right
-- two-columns, fit, invert
-- Marpit directives supported
+- Full control over column content
+- Each column is a separate block
+- Marpit-compatible
 
 </div>
+
+---
+
+<!-- _layout: columns-2 -->
+
+## Auto Columns
+
+`<!-- _layout: columns-2 -->`
+
+Content flows automatically into columns. No `div.col` needed.
+
+### Left Column
+
+Paragraphs and lists distribute naturally.
+
+### Right Column
+
+Headings and content flow into the second column.
+
+---
+
+<!-- _layout: columns-3 -->
+<!-- _gap: loose -->
+
+## Three Columns
+
+**Features** — Single binary, Markdown, no external deps.
+
+**Layout options** — lead, left, right, columns, split, timeline.
+
+**Styling** — _class, _layout, _gap, _align, _columns.
+
+---
+
+<!-- _layout: big -->
+
+35%
+
+of an audience's retention rate is attributed to the visuals used.
+
+---
+
+<!-- _layout: quote -->
+
+They may forget what you said, but they will never forget how you made them feel.
+
+– Carl W. Buechner
+
+---
+
+<!-- _layout: split -->
+<!-- _align: start -->
+
+## Split Layout
+
+`<!-- _layout: split -->` — use `<div class="col">` for each panel.
+
+<div class="col">
+
+### Left Panel (1fr)
+
+Title or visual placeholder. Smaller area.
+
+</div>
+
+<div class="col">
+
+### Right Panel (2fr)
+
+Main content goes here. Larger area for details, lists, or paragraphs.
+
+</div>
+
+---
+
+<!-- _layout: timeline -->
+
+# Timeline Block
+
+`<!-- _layout: timeline -->` with `::: timeline`
+
+::: timeline
+### Q1 · Discovery
+**Research & Planning**
+Initial phase and requirements.
+
+### Q2 · Build
+**Development**
+Implementation and testing.
+
+### Q3 · Launch
+**Release**
+Deploy and iterate.
+:::
 
 ---
 
@@ -65,95 +160,46 @@ Useful for conclusion slides or emphasis.
 
 ## Fit Layout
 
-`<!-- _class: fit -->` — compact, fits more content.
+`<!-- _class: fit -->` — compact sizing
 
 - Smaller headings and text
-- Ideal for code snippets or dense lists
-- Great for appendix slides
+- Fits more content per slide
+- Great for appendix slides or code-heavy content
 
 ---
 
-<!-- _class: invert -->
+<!-- _layout: columns-2 -->
+<!-- _align: start -->
 
-## Invert Layout
+## Layout Primitives
 
-`<!-- _class: invert -->`
-
-Dark background, light text.
-
-High contrast for emphasis or dark themes.
-
----
-
-<!-- _class: lead -->
-<!-- _backgroundColor: #16213e -->
-<!-- _color: white -->
-
-## Custom Background
-
-`<!-- _backgroundColor: #16213e -->`  
-`<!-- _color: white -->`
-
-Full control over slide colors.
+| Directive | Effect |
+|-----------|--------|
+| `_layout` | Structure: lead, left, right, big, quote, columns-2, columns-3, split, timeline |
+| `_gap` | Spacing: tight, normal, loose |
+| `_align` | Alignment: start, center, end |
+| `_columns` | Column count: 2, 3, 4 |
 
 ---
 
-<!-- _backgroundImage: "linear-gradient(to bottom, #67b8e3, #0288d1)" -->
-<!-- _color: white -->
-
-## Gradient Background
-
-`<!-- _backgroundImage: "linear-gradient(...)" -->`
-
-White text on blue gradient.
-
-Marpit-compatible styling.
-
----
-
-<!-- backgroundColor: #e8f5e9 -->
-<!-- color: black -->
-
-## Inherited Directives
-
-`<!-- backgroundColor: #e8f5e9 -->` (no underscore)
-`<!-- color: black -->`  (no underscore )
-
-This slide has a light green background and black text.
-
----
-
-The next slide inherits it too!
-
----
-
-<!-- _backgroundColor: white -->
-
-## Spot Directive Reset
-
-`<!-- _backgroundColor: white -->` (with underscore)
-
-Spot directive applies only to this slide.
-
-Next slide goes back to inherited green.
-
----
-
-<!-- _header: Custom Slide Header -->
-<!-- _footer: Slide-specific footer -->
+<!-- _header: Custom Header -->
+<!-- _footer: Custom Footer -->
+<!-- _paginate: false -->
 
 ## Header & Footer
 
 `<!-- _header: ... -->` and `<!-- _footer: ... -->`
 
-Override the presentation-wide header and footer for a single slide.
+Override presentation-wide header and footer for a single slide.
+
+`<!-- _paginate: false -->` hides the slide number.
 
 ---
 
 <!-- _paginate: false -->
 
-# Thank You !!!
+# Thank You
 
 **Dorcs** — Static docs and slides in one place.
 
-→ / Space to navigate · ← to go back
+→ / Space to navigate · ← to go back · F for fullscreen

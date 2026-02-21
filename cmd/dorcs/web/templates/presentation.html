@@ -19,7 +19,7 @@
 <body class="presentation" data-base-path="{{ .BasePath }}">
   <div class="presentation-deck">
     {{ range $i, $slide := .Slides }}
-    <section class="presentation-slide {{ $slide.Class }}{{ if $slide.BackgroundImage }} has-bg-image{{ end }}{{ if or $slide.Color $slide.BackgroundColor $slide.BackgroundImage }} has-custom-bg{{ end }}" data-slide="{{ $i }}" data-paginate="{{ $slide.Paginate }}"
+    <section class="presentation-slide {{ $slide.Class }} {{ $slide.Layout }}{{ if $slide.BackgroundImage }} has-bg-image{{ end }}{{ if or $slide.Color $slide.BackgroundColor $slide.BackgroundImage }} has-custom-bg{{ end }}" data-slide="{{ $i }}" data-paginate="{{ $slide.Paginate }}" data-layout="{{ $slide.Layout }}" data-gap="{{ $slide.Gap }}" data-align="{{ $slide.Align }}" data-columns="{{ $slide.Columns }}"
       {{- if or $slide.Color $slide.BackgroundColor $slide.BackgroundImage }} style="{{ if $slide.Color }}color: {{ $slide.Color }}; {{ end }}{{ if $slide.BackgroundColor }}background-color: {{ $slide.BackgroundColor }}; {{ end }}{{ if $slide.BackgroundImage }}background-image: {{ $slide.BackgroundImage }}; background-size: {{ if $slide.BackgroundSize }}{{ $slide.BackgroundSize }}{{ else }}cover{{ end }}; background-position: {{ if $slide.BackgroundPosition }}{{ $slide.BackgroundPosition }}{{ else }}center{{ end }}; background-repeat: {{ if $slide.BackgroundRepeat }}{{ $slide.BackgroundRepeat }}{{ else }}no-repeat{{ end }}; {{ end }}"{{ end }}>
       {{- $header := or $slide.Header $.PresentationHeader -}}
       {{- if $header }}

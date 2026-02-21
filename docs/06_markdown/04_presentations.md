@@ -45,6 +45,10 @@ Dorcs supports [Marpit-compatible directives](https://marpit.marp.app/directives
 | `_header` | `<!-- _header: Slide title -->` | Slide-specific header |
 | `_footer` | `<!-- _footer: Confidential -->` | Slide-specific footer |
 | `_paginate` | `<!-- _paginate: false -->` | Hide slide number (`false` or `skip`) |
+| `_layout` | `<!-- _layout: columns-2 -->` | Layout preset (see Layout Control) |
+| `_gap` | `<!-- _gap: loose -->` | Spacing between columns/items: `tight`, `normal`, `loose` |
+| `_align` | `<!-- _align: start -->` | Content alignment: `start`, `center`, `end` |
+| `_columns` | `<!-- _columns: 3 -->` | Number of equal columns: `2`, `3`, `4` |
 
 ### Spot vs inherited directives
 
@@ -72,6 +76,53 @@ Dorcs supports [Marpit-compatible directives](https://marpit.marp.app/directives
 - **`invert`** – Inverted colors (dark background, light text)
 - **`two-columns`** – Two-column layout (use `<div class="col">` for each column)
 
+### Layout Control
+
+Use `_layout` for structure and `_class` for extra styling (e.g. `_class: invert`). Layout primitives compose:
+
+| Layout | Description |
+|--------|-------------|
+| `default` | Centered, single column |
+| `lead` | Large title, subtitle |
+| `big` | Large centered text — stats, single statement (no heading required) |
+| `quote` | Large centered quote; last paragraph = smaller attribution |
+| `left` | Left-aligned content |
+| `right` | Right-aligned content |
+| `columns-2` | Two equal columns (auto flow, no `div.col` needed) |
+| `columns-3` | Three equal columns |
+| `split` | 1fr 2fr grid: use `<div class="col">` for each panel |
+| `timeline` | Horizontal timeline axis (for `::: timeline` block) |
+
+Combine with `_gap`, `_align`, or `_columns`:
+
+```markdown
+<!-- _layout: columns-2 -->
+<!-- _gap: loose -->
+
+## Compare & Contrast
+Left column content flows here.
+
+Right column continues automatically.
+```
+
+```markdown
+<!-- _layout: split -->
+
+<div class="col">
+
+## Title or visual
+Smaller area on the left.
+
+</div>
+
+<div class="col">
+
+### Main content
+Larger area on the right for detailed content.
+
+</div>
+```
+
 ### Example: Lead Slide
 
 ```markdown
@@ -79,6 +130,26 @@ Dorcs supports [Marpit-compatible directives](https://marpit.marp.app/directives
 
 # Welcome to Dorcs
 Build docs and slides in one place.
+```
+
+### Example: Big Text (stat or statement)
+
+```markdown
+<!-- _layout: big -->
+
+35%
+
+of an audience's retention rate is attributed to the visuals used.
+```
+
+### Example: Quote
+
+```markdown
+<!-- _layout: quote -->
+
+They may forget what you said, but they will never forget how you made them feel.
+
+– Carl W. Buechner
 ```
 
 ### Example: Left-Aligned Slide
@@ -149,6 +220,42 @@ No slide number shown.
 - Item B
 
 </div>
+```
+
+### Example: Auto Columns (no div.col)
+
+```markdown
+<!-- _layout: columns-2 -->
+
+### Left column content
+Paragraphs and lists flow automatically into columns.
+
+### Right column content
+No manual wrapping needed.
+```
+
+### Timeline Block
+
+Use the `::: timeline` block for roadmaps and process steps. Each `###` or `####` heading starts a new step; the heading text becomes the date/label marker.
+
+```markdown
+<!-- _layout: timeline -->
+
+# Project Roadmap
+
+::: timeline
+### 2024 · Q1
+**Discovery**
+Initial research and planning.
+
+### 2024 · Q2
+**Build**
+Development and testing.
+
+### 2024 · Q3
+**Launch**
+Release and iterate.
+:::
 ```
 
 ## Front Matter Options
