@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync/atomic"
 	"time"
 
 	"github.com/fsnotify/fsnotify"
@@ -14,31 +15,49 @@ import (
 // It should reload the config and return an error if reloading fails.
 type ConfigReloadCallback func() error
 
+// RebuildCallback is a function that rebuilds site index(es) when files change.
+// If nil, the default site's BuildIndex is used.
+type RebuildCallback func() error
+
 // StartWatcher starts a file watcher that automatically rebuilds the index
-// when markdown files in the site's root directory change.
+// when markdown files change. watchRoot is the top-level directory to watch
+// (e.g. the docs directory); it should include all language/version subdirs
+// so changes in any of them are detected. If rebuildAll is provided, it is
+// called instead of s.BuildIndex() to rebuild all affected sites.
 // If broadcaster is provided, it will notify connected clients for live reload.
 // If configReload is provided, it will be called when config files change.
 // configFilePath is an optional path to a config file outside the docs directory to watch.
 // It returns a cleanup function that should be called to stop the watcher.
-func (s *Site) StartWatcher(broadcaster *ReloadBroadcaster, configReload ConfigReloadCallback, configFilePath string) (func(), error) {
+func (s *Site) StartWatcher(watchRoot string, broadcaster *ReloadBroadcaster, configReload ConfigReloadCallback, configFilePath string, rebuildAll RebuildCallback) (func(), error) {
 	watcher, err := fsnotify.NewWatcher()
 	if err != nil {
 		return nil, err
 	}
 
-	// Add the root directory and all subdirectories
-	if err := s.addWatchRecursive(watcher, s.RootDir); err != nil {
+	// Use watchRoot if provided, otherwise fall back to site's RootDir
+	rootToWatch := watchRoot
+	if rootToWatch == "" {
+		rootToWatch = s.RootDir
+	}
+	absWatchRoot, err := filepath.Abs(rootToWatch)
+	if err != nil {
 		watcher.Close()
 		return nil, err
 	}
 
-	// If config file is outside the docs directory, watch its directory too
+	// Add the root directory and all subdirectories
+	if err := s.addWatchRecursive(watcher, absWatchRoot); err != nil {
+		watcher.Close()
+		return nil, err
+	}
+
+	// If config file is outside the watched directory, watch its directory too
 	if configFilePath != "" {
 		configDir := filepath.Dir(configFilePath)
 		absConfigDir, err := filepath.Abs(configDir)
 		if err == nil {
-			// Only add if it's different from the root dir
-			if absConfigDir != s.RootDir {
+			// Only add if it's different from the watch root
+			if absConfigDir != absWatchRoot {
 				if err := watcher.Add(absConfigDir); err != nil {
 					log.Printf("dorcs: warning: failed to watch config directory %s: %v", absConfigDir, err)
 				}
@@ -51,6 +70,8 @@ func (s *Site) StartWatcher(broadcaster *ReloadBroadcaster, configReload ConfigR
 	var debounceTimer *time.Timer
 	var configDebounceTimer *time.Timer
 	debounceDuration := 500 * time.Millisecond
+	// Track if we saw Create/Remove/Rename (index must be rebuilt); Write/Chmod only need reload
+	var structuralChange atomic.Bool
 	// Config files get longer debounce since they're changed less frequently
 	// and full page reloads are more expensive
 	configDebounceDuration := 1000 * time.Millisecond
@@ -113,6 +134,11 @@ func (s *Site) StartWatcher(broadcaster *ReloadBroadcaster, configReload ConfigR
 					continue
 				}
 
+				// Create/Remove/Rename affect index (nav, doc list); Write/Chmod are content-only
+				if event.Has(fsnotify.Create) || event.Has(fsnotify.Remove) || event.Has(fsnotify.Rename) {
+					structuralChange.Store(true)
+				}
+
 				// If a new directory was created, add it to the watcher
 				if event.Has(fsnotify.Create) {
 					if info, err := filepath.Abs(event.Name); err == nil {
@@ -128,15 +154,24 @@ func (s *Site) StartWatcher(broadcaster *ReloadBroadcaster, configReload ConfigR
 				}
 
 				debounceTimer = time.AfterFunc(debounceDuration, func() {
-					log.Printf("dorcs: detected file changes, rebuilding index...")
-					if err := s.BuildIndex(); err != nil {
-						log.Printf("dorcs: error rebuilding index: %v", err)
-					} else {
-						log.Printf("dorcs: index rebuilt successfully")
-						// Notify connected browsers to reload
-						if broadcaster != nil {
-							broadcaster.Notify("reload")
+					needRebuild := structuralChange.Swap(false)
+					if needRebuild {
+						log.Printf("dorcs: detected structural changes, rebuilding index...")
+						var err error
+						if rebuildAll != nil {
+							err = rebuildAll()
+						} else {
+							err = s.BuildIndex()
 						}
+						if err != nil {
+							log.Printf("dorcs: error rebuilding index: %v", err)
+						} else {
+							log.Printf("dorcs: index rebuilt successfully")
+						}
+					}
+					// Always notify - browser fetches fresh content (RenderDoc reads from disk)
+					if broadcaster != nil {
+						broadcaster.Notify("reload")
 					}
 				})
 
@@ -193,11 +228,13 @@ func (s *Site) addWatchRecursive(watcher *fsnotify.Watcher, dir string) error {
 
 // shouldReloadForEvent determines if a file system event should trigger a reload.
 func (s *Site) shouldReloadForEvent(event fsnotify.Event) bool {
-	// We care about: Write, Create, Remove, Rename
+	// We care about: Write, Create, Remove, Rename, Chmod
+	// Chmod is included because some editors on Windows/macOS may emit it when saving
 	if !event.Has(fsnotify.Write) &&
 		!event.Has(fsnotify.Create) &&
 		!event.Has(fsnotify.Remove) &&
-		!event.Has(fsnotify.Rename) {
+		!event.Has(fsnotify.Rename) &&
+		!event.Has(fsnotify.Chmod) {
 		return false
 	}
 
@@ -217,7 +254,7 @@ func (s *Site) shouldReloadForEvent(event fsnotify.Event) bool {
 	}
 
 	// For file operations, only care about .md files
-	if event.Has(fsnotify.Write) || event.Has(fsnotify.Create) || event.Has(fsnotify.Remove) {
+	if event.Has(fsnotify.Write) || event.Has(fsnotify.Create) || event.Has(fsnotify.Remove) || event.Has(fsnotify.Chmod) {
 		ext := strings.ToLower(filepath.Ext(name))
 		if ext != ".md" && ext != ".markdown" {
 			// Unless it's a directory operation

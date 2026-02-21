@@ -72,9 +72,10 @@
       }
     });
 
-    // Fetch the updated page
+    // Fetch the updated page (no-store to avoid serving cached content)
     fetch(window.location.href, {
-      headers: { 'X-Requested-With': 'XMLHttpRequest' }
+      headers: { 'X-Requested-With': 'XMLHttpRequest' },
+      cache: 'no-store'
     })
     .then(function(response) {
       if (!response.ok) {

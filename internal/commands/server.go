@@ -515,7 +515,43 @@ func RunServer(templatesFS, staticFS embed.FS, version string) {
 			}
 		}
 
-		cleanup, err := s.StartWatcher(reloadBroadcaster, configReload, configPath)
+		// Rebuild all sites when any file changes (handles multi-lang/version)
+		rebuildAll := func() error {
+			seen := make(map[*site.Site]struct{})
+			for _, site := range []*site.Site{s} {
+				if site != nil {
+					if _, ok := seen[site]; !ok {
+						seen[site] = struct{}{}
+						if err := site.BuildIndex(); err != nil {
+							return err
+						}
+					}
+				}
+			}
+			for _, site := range sites {
+				if site != nil {
+					if _, ok := seen[site]; !ok {
+						seen[site] = struct{}{}
+						if err := site.BuildIndex(); err != nil {
+							return err
+						}
+					}
+				}
+			}
+			for _, site := range versionSites {
+				if site != nil {
+					if _, ok := seen[site]; !ok {
+						seen[site] = struct{}{}
+						if err := site.BuildIndex(); err != nil {
+							return err
+						}
+					}
+				}
+			}
+			return nil
+		}
+
+		cleanup, err := s.StartWatcher(absDir, reloadBroadcaster, configReload, configPath, rebuildAll)
 		if err != nil {
 			log.Fatalf("start watcher: %v", err)
 		}

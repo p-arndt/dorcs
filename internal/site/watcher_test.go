@@ -21,7 +21,7 @@ func TestStartWatcherReload(t *testing.T) {
 	}
 
 	b := NewReloadBroadcaster()
-	cleanup, err := s.StartWatcher(b, nil, "")
+	cleanup, err := s.StartWatcher(docs, b, nil, "", nil)
 	if err != nil {
 		t.Fatalf("StartWatcher: %v", err)
 	}
