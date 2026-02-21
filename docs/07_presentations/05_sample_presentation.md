@@ -1,8 +1,8 @@
 ---
-title: "Dorcs Presentations"
+title: "Sample Presentation"
 presentation: true
-presentation_header: "Dorcs · Feature Overview"
-presentation_footer: "Build docs and slides in one place"
+presentation_header: "Dorcs · Sample Presentation"
+presentation_footer: "Sample Presentation built with Dorcs"
 ---
 
 <!-- _class: lead -->

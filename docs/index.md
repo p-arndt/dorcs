@@ -90,6 +90,7 @@ Or if you ready to get started now, download the latest release for your platfor
 - 🚢 [Deployment](./04_deployment.md) - Deploy to production
 - 🎨 [Themes](./05_themes.md) - Browse all available themes
 - 📝 [Markdown Features](./06_markdown/index.md) - Complete guide to markdown features
+- 🎥 [Presentations](./07_presentations/index.md) - Create slide decks from Markdown with layout and styling options
 
 ## Features
 
@@ -106,6 +107,7 @@ Or if you ready to get started now, download the latest release for your platfor
 - **Multiple themes** – choose from 20+ built-in themes
 - **Search** – built-in search functionality
 - **Edit Mode** – online editing with authentication (create, edit, delete files directly in the browser)
+- **Presentations** – create slide decks from Markdown with layout and styling options
 
 ## How It Works
 
