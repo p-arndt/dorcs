@@ -107,6 +107,15 @@ func ReadFrontMatterAndHash(path string) (FrontMatter, string, error) {
 	if v, ok := data["after"].(string); ok {
 		fm.After = v
 	}
+	if v, ok := data["presentation"].(bool); ok {
+		fm.Presentation = v
+	}
+	if v, ok := data["presentation_header"].(string); ok {
+		fm.PresentationHeader = v
+	}
+	if v, ok := data["presentation_footer"].(string); ok {
+		fm.PresentationFooter = v
+	}
 
 	return fm, hash, nil
 }
@@ -200,6 +209,15 @@ func ReadMarkdownStripFrontMatter(path string) (raw string, metaOut FrontMatter,
 	if v, ok := data["after"].(string); ok {
 		fm.After = v
 	}
+	if v, ok := data["presentation"].(bool); ok {
+		fm.Presentation = v
+	}
+	if v, ok := data["presentation_header"].(string); ok {
+		fm.PresentationHeader = v
+	}
+	if v, ok := data["presentation_footer"].(string); ok {
+		fm.PresentationFooter = v
+	}
 
 	// NOTE: raw markdown is returned unchanged for now (may still include front matter).
 	return string(b), fm, hash, stat.ModTime(), nil
@@ -282,6 +300,15 @@ func ParseFrontMatterFromContent(content []byte) (*FrontMatter, string, error) {
 	}
 	if v, ok := data["after"].(string); ok {
 		fm.After = v
+	}
+	if v, ok := data["presentation"].(bool); ok {
+		fm.Presentation = v
+	}
+	if v, ok := data["presentation_header"].(string); ok {
+		fm.PresentationHeader = v
+	}
+	if v, ok := data["presentation_footer"].(string); ok {
+		fm.PresentationFooter = v
 	}
 
 	return fm, hash, nil

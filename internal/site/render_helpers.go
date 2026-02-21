@@ -86,6 +86,9 @@ func (s *Site) reconcileMetadata(doc *Doc, meta markdown.FrontMatter, hash strin
 	}
 	merged.Draft = meta.Draft
 	merged.Order = meta.Order
+	merged.Presentation = meta.Presentation
+	merged.PresentationHeader = meta.PresentationHeader
+	merged.PresentationFooter = meta.PresentationFooter
 	if a := strings.TrimSpace(meta.Author); a != "" {
 		merged.Author = a
 	}

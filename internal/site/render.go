@@ -53,11 +53,46 @@ func (s *Site) RenderDoc(key string) (*RenderedDoc, error) {
 	rawStr := string(raw)
 	rawStr = s.preprocessMarkdown(rawStr, doc)
 
-	// Generate and process TOC
-	toc, _, rawStr := s.generateAndProcessTOC(rawStr, doc, key)
-
 	// Reconcile metadata with fresh read
 	merged := s.reconcileMetadata(doc, meta, hash, modTime)
+
+	// Presentation mode: split by --- and render each slide
+	if merged.Presentation {
+		slideChunks := markdown.SplitSlides(rawStr)
+		slides := make([]RenderedSlide, 0, len(slideChunks))
+		var inherited markdown.SlideMetadata
+		for _, chunk := range slideChunks {
+			meta, content, nextInherited := markdown.ParseSlideDirectives(chunk, inherited)
+			inherited = nextInherited
+			htmlOutput, err := s.convertMarkdownToHTML(content, doc)
+			if err != nil {
+				return nil, err
+			}
+			slides = append(slides, RenderedSlide{
+				HTML:               template.HTML(htmlOutput),
+				Class:              meta.Class,
+				Color:              meta.Color,
+				BackgroundColor:    meta.BackgroundColor,
+				BackgroundImage:    meta.BackgroundImage,
+				BackgroundPosition: meta.BackgroundPosition,
+				BackgroundRepeat:   meta.BackgroundRepeat,
+				BackgroundSize:     meta.BackgroundSize,
+				Header:             meta.Header,
+				Footer:             meta.Footer,
+				Paginate:           meta.Paginate,
+			})
+		}
+		return &RenderedDoc{
+			Doc:         merged,
+			HTML:        "",
+			TocHTML:     "",
+			RawMarkdown: rawStr,
+			Slides:      slides,
+		}, nil
+	}
+
+	// Generate and process TOC
+	toc, _, rawStr := s.generateAndProcessTOC(rawStr, doc, key)
 
 	// Convert markdown to HTML
 	htmlOutput, err := s.convertMarkdownToHTML(rawStr, doc)

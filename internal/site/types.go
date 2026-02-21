@@ -74,9 +74,12 @@ type Doc struct {
 	Date        time.Time
 	Tags        []string
 	Draft       bool
-	Order       int    // Order for sorting (lower numbers appear first)
-	Author      string // Author name
-	After       string // Key of item this should appear after (use "index" for index.md)
+	Order        int    // Order for sorting (lower numbers appear first)
+	Author       string // Author name
+	After        string // Key of item this should appear after (use "index" for index.md)
+	Presentation        bool   // If true, render as Marp-style slide deck
+	PresentationHeader  string // Header text on each slide
+	PresentationFooter  string // Footer text on each slide
 
 	// UpdatedAt is the file modtime.
 	UpdatedAt time.Time
@@ -113,12 +116,28 @@ type NavNode struct {
 	Children []*NavNode
 }
 
+// RenderedSlide is a single slide with Marpit-compatible layout metadata.
+type RenderedSlide struct {
+	HTML               template.HTML
+	Class              string
+	Color              string // CSS text color
+	BackgroundColor    string
+	BackgroundImage    string
+	BackgroundPosition string
+	BackgroundRepeat   string
+	BackgroundSize     string
+	Header             string
+	Footer             string
+	Paginate           string // "true", "false" - show/hide slide number
+}
+
 // RenderedDoc is the result of rendering a markdown file to HTML.
 type RenderedDoc struct {
 	Doc         *Doc
 	HTML        template.HTML
-	TocHTML     template.HTML // reserved for future TOC support
-	RawMarkdown string        // markdown prior to conversion (may include front matter)
+	TocHTML     template.HTML   // reserved for future TOC support
+	RawMarkdown string          // markdown prior to conversion (may include front matter)
+	Slides      []RenderedSlide // Populated when Doc.Presentation is true
 }
 
 // SearchResult represents a single search result.

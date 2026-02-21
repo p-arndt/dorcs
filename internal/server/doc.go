@@ -68,6 +68,9 @@ func (h *Handler) handleDocByKeyWithSite(w http.ResponseWriter, r *http.Request,
 	m.HTML = rendered.HTML
 	m.TOCHTML = rendered.TocHTML
 	m.TOC = rendered.TocHTML
+	m.Slides = rendered.Slides
+	m.PresentationHeader = rendered.Doc.PresentationHeader
+	m.PresentationFooter = rendered.Doc.PresentationFooter
 	m.LastModified = rendered.Doc.UpdatedAt.UTC().Format(time.RFC3339)
 	m.Nav.Nodes = nav
 	m.RootTitle = rootTitle
@@ -105,6 +108,13 @@ func (h *Handler) handleDocByKeyWithSite(w http.ResponseWriter, r *http.Request,
 	m.Version = version
 
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	// Use presentation template for slide decks
+	if rendered.Doc.Presentation && len(rendered.Slides) > 0 {
+		if err := documentTmpl.ExecuteTemplate(w, "presentation", m); err != nil {
+			http.Error(w, "template error: "+err.Error(), http.StatusInternalServerError)
+		}
+		return
+	}
 	// Try "doc" template first (which calls "layout"), fall back to "layout" for compatibility
 	if err := documentTmpl.ExecuteTemplate(w, "doc", m); err != nil {
 		if err2 := h.cfg.DocumentTmpl.ExecuteTemplate(w, "layout", m); err2 != nil {

@@ -1,0 +1,327 @@
+/* dorcs presentation - PowerPoint-style slide deck */
+
+.presentation {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-sans);
+}
+
+.presentation-deck {
+  height: 100%;
+  overflow-y: scroll;
+  scroll-snap-type: y mandatory;
+  scroll-behavior: smooth;
+}
+
+/* Slide - full bleed, symmetric centering */
+.presentation-slide {
+  min-height: 100%;
+  scroll-snap-align: start;
+  scroll-snap-stop: always;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 5rem 4rem;
+  box-sizing: border-box;
+  position: relative;
+  background: var(--bg);
+}
+
+/* Header bar - branded bar with accent */
+.presentation-slide .slide-header {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  padding: 0.85rem 2.5rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+  background: color-mix(in srgb, var(--muted) 6%, transparent);
+  z-index: 5;
+  border-bottom: 3px solid var(--link);
+}
+
+/* Footer bar */
+.presentation-slide .slide-footer {
+  position: absolute;
+  bottom: 3.5rem;
+  left: 0;
+  right: 0;
+  padding: 0.65rem 2.5rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--muted);
+  background: color-mix(in srgb, var(--muted) 6%, transparent);
+  z-index: 5;
+  border-top: 1px solid color-mix(in srgb, var(--muted) 20%, transparent);
+}
+
+/* Content area - comfortable reading width, centered */
+.presentation-slide .slide-content {
+  width: 100%;
+  max-width: 920px;
+  text-align: center;
+  line-height: 1.5;
+}
+
+.presentation-slide .slide-content :first-child {
+  margin-top: 0;
+}
+
+.presentation-slide .slide-content :last-child {
+  margin-bottom: 0;
+}
+
+.presentation-slide .slide-content h1 {
+  font-size: 2.5rem;
+  margin-bottom: 1rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+  color: var(--fg);
+  border-bottom: 2px solid var(--link);
+  padding-bottom: 0.4rem;
+  display: inline-block;
+}
+
+.presentation-slide .slide-content h2 {
+  font-size: 1.85rem;
+  margin-top: 1.75rem;
+  margin-bottom: 0.75rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--fg);
+}
+
+.presentation-slide .slide-content h3 {
+  font-size: 1.3rem;
+  margin-top: 1.25rem;
+  margin-bottom: 0.5rem;
+  font-weight: 600;
+  color: var(--fg);
+}
+
+.presentation-slide .slide-content ul,
+.presentation-slide .slide-content ol {
+  text-align: left;
+  display: inline-block;
+  margin: 1.5rem 0;
+  padding-left: 1.75rem;
+}
+
+.presentation-slide .slide-content ul li::marker {
+  color: var(--link);
+}
+
+.presentation-slide .slide-content li {
+  margin: 0.5rem 0;
+  font-size: 1.15rem;
+  line-height: 1.5;
+}
+
+.presentation-slide .slide-content p {
+  margin: 0.85rem 0;
+  font-size: 1.15rem;
+  line-height: 1.6;
+}
+
+.presentation-slide .slide-content code {
+  font-size: 0.9em;
+  padding: 0.15em 0.4em;
+  border-radius: 4px;
+  background: var(--code-bg);
+}
+
+.presentation-slide .slide-content pre {
+  text-align: left;
+  padding: 1rem 1.25rem;
+  border-radius: 8px;
+  overflow-x: auto;
+}
+
+/* Layout: lead - title slide, PowerPoint-style */
+.presentation-slide.lead .slide-content h1 {
+  font-size: 3.25rem;
+  margin-bottom: 0.75rem;
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.presentation-slide.lead .slide-content p {
+  font-size: 1.35rem;
+  margin-top: 0.75rem;
+  opacity: 0.95;
+}
+
+/* Layout: left - left-aligned content */
+.presentation-slide.left {
+  align-items: flex-start;
+}
+
+.presentation-slide.left .slide-content {
+  text-align: left;
+  max-width: 88%;
+  margin-left: 0;
+}
+
+.presentation-slide.left .slide-content ul,
+.presentation-slide.left .slide-content ol {
+  display: block;
+}
+
+/* Layout: right - right-aligned content */
+.presentation-slide.right {
+  align-items: flex-end;
+}
+
+.presentation-slide.right .slide-content {
+  text-align: right;
+  max-width: 88%;
+  margin-right: 0;
+}
+
+.presentation-slide.right .slide-content ul,
+.presentation-slide.right .slide-content ol {
+  display: block;
+  margin-left: auto;
+  margin-right: 0;
+}
+
+/* Layout: two-columns - side-by-side columns, properly centered */
+.presentation-slide.two-columns {
+  display: grid;
+  place-content: center;
+  padding: 5rem 4rem;
+}
+
+.presentation-slide.two-columns .slide-content {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 3rem;
+  max-width: 1000px;
+  width: min(95%, 1000px);
+  text-align: left;
+  align-items: center;
+  justify-items: stretch;
+}
+
+.presentation-slide.two-columns .slide-content > * {
+  grid-column: 1 / -1;
+}
+
+.presentation-slide.two-columns .slide-content > .col {
+  grid-column: span 1;
+  padding: 1rem 1.25rem;
+  background: color-mix(in srgb, var(--muted) 8%, transparent);
+  border-radius: 8px;
+  border-left: 4px solid var(--link);
+}
+
+.presentation-slide.two-columns .slide-content > .col:last-of-type {
+  border-left-color: color-mix(in srgb, var(--link) 70%, transparent);
+}
+
+/* Layout: fit - compact, fits more content */
+.presentation-slide.fit .slide-content h1 {
+  font-size: 2rem;
+}
+
+.presentation-slide.fit .slide-content h2 {
+  font-size: 1.5rem;
+}
+
+.presentation-slide.fit .slide-content p,
+.presentation-slide.fit .slide-content li {
+  font-size: 1rem;
+}
+
+/* Layout: invert - dark bg, light text (for contrast slides) */
+.presentation-slide.invert {
+  background: var(--fg) !important;
+  color: var(--bg) !important;
+}
+
+.presentation-slide.invert .slide-header,
+.presentation-slide.invert .slide-footer {
+  color: color-mix(in srgb, var(--bg) 70%, transparent);
+  background: color-mix(in srgb, var(--bg) 15%, transparent);
+  border-color: color-mix(in srgb, var(--bg) 35%, transparent);
+}
+
+.presentation-slide.invert .slide-header {
+  border-bottom-color: color-mix(in srgb, var(--bg) 50%, transparent);
+}
+
+.presentation-slide.invert .slide-content code {
+  background: color-mix(in srgb, var(--bg) 20%, transparent);
+}
+
+.presentation-slide.invert.two-columns .slide-content > .col {
+  background: color-mix(in srgb, var(--bg) 18%, transparent);
+  border-left-color: color-mix(in srgb, var(--bg) 45%, transparent);
+}
+
+.presentation-slide.invert .presentation-progress,
+.presentation-slide.invert .presentation-nav-hint {
+  color: color-mix(in srgb, var(--bg) 70%, transparent);
+}
+
+/* Custom background: ensure text contrast when backgroundColor/image is set */
+.presentation-slide.has-custom-bg .slide-header,
+.presentation-slide.has-custom-bg .slide-footer {
+  color: inherit;
+  opacity: 0.9;
+  border-color: color-mix(in srgb, currentColor 30%, transparent);
+}
+
+/* Background image: add subtle text shadow for readability */
+.presentation-slide.has-bg-image .slide-content {
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+.presentation-slide.has-bg-image .slide-content h1,
+.presentation-slide.has-bg-image .slide-content h2,
+.presentation-slide.has-bg-image .slide-content h3 {
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
+}
+
+.presentation-progress {
+  position: fixed;
+  bottom: 1rem;
+  right: 2rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--muted);
+  opacity: 0.85;
+  z-index: 10;
+  pointer-events: none;
+}
+
+.presentation-nav-hint {
+  position: fixed;
+  bottom: 2.25rem;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 0.7rem;
+  letter-spacing: 0.02em;
+  color: var(--muted);
+  opacity: 0.65;
+  z-index: 9;
+  pointer-events: none;
+}
+
+/* Fullscreen mode - hide browser chrome for true presentation */
+body.presentation-fullscreen .presentation-nav-hint {
+  opacity: 0.4;
+}
+
+body.presentation-fullscreen .presentation-progress {
+  opacity: 0.7;
+}

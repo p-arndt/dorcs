@@ -101,10 +101,11 @@ func RunBuild(templatesFS, staticFS embed.FS) {
 		log.Fatalf("build index: %v", err)
 	}
 
-	// Parse templates
+	// Parse templates (include presentation.html for slide decks)
 	tmplDoc, err := templates.ParseFS(templatesFS, "doc",
 		"web/templates/layout.html",
 		"web/templates/doc.html",
+		"web/templates/presentation.html",
 		"web/templates/partials/*.html",
 	)
 	if err != nil {

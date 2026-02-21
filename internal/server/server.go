@@ -128,6 +128,14 @@ type DocPageModel struct {
 
 	// CurrentVersion is the version identifier for the current page
 	CurrentVersion string
+
+	// Slides holds rendered slides (with layout metadata) when Doc.Presentation is true
+	Slides []site.RenderedSlide
+
+	// PresentationHeader is shown on each slide when set in front matter
+	PresentationHeader string
+	// PresentationFooter is shown on each slide when set in front matter
+	PresentationFooter string
 }
 
 // ServeHTTP routes requests:

@@ -10,5 +10,8 @@ type FrontMatter struct {
 	Draft       bool     `yaml:"draft" toml:"draft" json:"draft"`
 	Order       int      `yaml:"order" toml:"order" json:"order"`    // Order for sorting (lower numbers appear first)
 	Author      string   `yaml:"author" toml:"author" json:"author"` // Author name
-	After       string   `yaml:"after" toml:"after" json:"after"`    // Key of item this should appear after (use "index" for index.md)
+	After        string `yaml:"after" toml:"after" json:"after"`        // Key of item this should appear after (use "index" for index.md)
+	Presentation          bool   `yaml:"presentation" toml:"presentation" json:"presentation"`                   // If true, render as Marp-style slide deck
+	PresentationHeader    string `yaml:"presentation_header" toml:"presentation_header" json:"presentation_header"`     // Header text on each slide
+	PresentationFooter    string `yaml:"presentation_footer" toml:"presentation_footer" json:"presentation_footer"`     // Footer text on each slide
 }

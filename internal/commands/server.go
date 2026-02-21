@@ -418,9 +418,11 @@ func RunServer(templatesFS, staticFS embed.FS, version string) {
 
 	// Parse templates
 	// Note: doc.html must be parsed AFTER index.html so its "content" block overrides index.html's
+	// Include presentation.html for slide decks
 	tmplDoc, err := templates.ParseFS(templatesFS, "doc",
 		"web/templates/layout.html",
 		"web/templates/doc.html",
+		"web/templates/presentation.html",
 		"web/templates/partials/*.html",
 	)
 	if err != nil {

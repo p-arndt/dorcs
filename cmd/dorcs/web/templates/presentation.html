@@ -1,0 +1,47 @@
+{{/* presentation.html: full-screen slide deck layout - Marpit directive support */}}
+{{ define "presentation" }}
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="color-scheme" content="light dark" />
+  <title>{{ if .Meta.Title }}{{ .Meta.Title }}{{ else }}{{ .DocTitleFallback }}{{ end }} · {{ .SiteTitle }}</title>
+  {{- with .Meta.Description }}<meta name="description" content="{{ . }}" />{{- end }}
+  <link rel="stylesheet" href="{{ .BasePath }}/static/style.css" />
+  <link rel="stylesheet" href="{{ .BasePath }}/static/syntax.css" />
+  <link rel="stylesheet" href="{{ .BasePath }}/static/presentation.css" />
+  {{- if and .Config .Config.Theme.CustomCSS }}
+  <link rel="stylesheet" href="{{ .BasePath }}/static/custom.css" />
+  {{- end }}
+  {{- if .ThemeCSS }}<style>{{ .ThemeCSS }}</style>{{- end }}
+</head>
+<body class="presentation" data-base-path="{{ .BasePath }}">
+  <div class="presentation-deck">
+    {{ range $i, $slide := .Slides }}
+    <section class="presentation-slide {{ $slide.Class }}{{ if $slide.BackgroundImage }} has-bg-image{{ end }}{{ if or $slide.Color $slide.BackgroundColor $slide.BackgroundImage }} has-custom-bg{{ end }}" data-slide="{{ $i }}" data-paginate="{{ $slide.Paginate }}"
+      {{- if or $slide.Color $slide.BackgroundColor $slide.BackgroundImage }} style="{{ if $slide.Color }}color: {{ $slide.Color }}; {{ end }}{{ if $slide.BackgroundColor }}background-color: {{ $slide.BackgroundColor }}; {{ end }}{{ if $slide.BackgroundImage }}background-image: {{ $slide.BackgroundImage }}; background-size: {{ if $slide.BackgroundSize }}{{ $slide.BackgroundSize }}{{ else }}cover{{ end }}; background-position: {{ if $slide.BackgroundPosition }}{{ $slide.BackgroundPosition }}{{ else }}center{{ end }}; background-repeat: {{ if $slide.BackgroundRepeat }}{{ $slide.BackgroundRepeat }}{{ else }}no-repeat{{ end }}; {{ end }}"{{ end }}>
+      {{- $header := or $slide.Header $.PresentationHeader -}}
+      {{- if $header }}
+      <header class="slide-header">{{ $header }}</header>
+      {{- end }}
+      <div class="slide-content markdown">{{ $slide.HTML }}</div>
+      {{- $footer := or $slide.Footer $.PresentationFooter -}}
+      {{- if $footer }}
+      <footer class="slide-footer">{{ $footer }}</footer>
+      {{- end }}
+    </section>
+    {{ end }}
+  </div>
+  <div class="presentation-progress" aria-hidden="true">1 / {{ len .Slides }}</div>
+  <div class="presentation-nav-hint" aria-hidden="true">← → Space to navigate · F fullscreen</div>
+  <script src="{{ .BasePath }}/static/presentation.js"></script>
+  {{- if .LiveReload }}
+  <script src="{{ .BasePath }}/static/live-reload.js"></script>
+  {{- end }}
+  {{- if and .Config .Config.Auth.Enabled }}
+  <script src="{{ .BasePath }}/static/edit-mode.js"></script>
+  {{- end }}
+</body>
+</html>
+{{ end }}

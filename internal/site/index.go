@@ -66,19 +66,20 @@ func (s *Site) BuildIndex() error {
 			}
 
 			doc := &Doc{
-				Key:         key,
-				FilePath:    path,
-				RelPath:     rel,
-				DirKey:      dirKeyFromKey(key),
-				Title:       strings.TrimSpace(meta.Title),
-				Description: strings.TrimSpace(meta.Description),
-				Tags:        append([]string(nil), meta.Tags...),
-				Draft:       meta.Draft,
-				Order:       meta.Order,
-				Author:      strings.TrimSpace(meta.Author),
-				After:       strings.TrimSpace(meta.After),
-				UpdatedAt:   stat.ModTime(),
-				ContentHash: contentHash,
+				Key:          key,
+				FilePath:     path,
+				RelPath:      rel,
+				DirKey:       dirKeyFromKey(key),
+				Title:        strings.TrimSpace(meta.Title),
+				Description:  strings.TrimSpace(meta.Description),
+				Tags:         append([]string(nil), meta.Tags...),
+				Draft:        meta.Draft,
+				Order:        meta.Order,
+				Author:       strings.TrimSpace(meta.Author),
+				After:        strings.TrimSpace(meta.After),
+				Presentation: meta.Presentation,
+				UpdatedAt:    stat.ModTime(),
+				ContentHash:  contentHash,
 			}
 
 			// Parse date (optional).
@@ -166,6 +167,7 @@ func (s *Site) BuildIndex() error {
 						doc.Order = meta.Order
 						doc.Author = strings.TrimSpace(meta.Author)
 						doc.After = strings.TrimSpace(meta.After)
+						doc.Presentation = meta.Presentation
 
 						// Parse date
 						if ds := strings.TrimSpace(meta.Date); ds != "" {
