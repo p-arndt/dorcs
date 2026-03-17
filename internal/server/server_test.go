@@ -333,3 +333,63 @@ func TestServeHTTPNotFound(t *testing.T) {
 		t.Errorf("ServeHTTP() nonexistent path status = %d, want %d", w.Code, http.StatusNotFound)
 	}
 }
+
+func TestServeHTTPHideDraftDocs(t *testing.T) {
+	tmpDir := t.TempDir()
+
+	files := map[string]string{
+		"index.md": `# Home`,
+		"draft.md": `---
+draft: true
+---
+# Draft Page`,
+	}
+
+	for relPath, content := range files {
+		fullPath := filepath.Join(tmpDir, filepath.FromSlash(relPath))
+		dir := filepath.Dir(fullPath)
+		if err := os.MkdirAll(dir, 0755); err != nil {
+			t.Fatalf("failed to create dir: %v", err)
+		}
+		if err := os.WriteFile(fullPath, []byte(content), 0644); err != nil {
+			t.Fatalf("failed to write file: %v", err)
+		}
+	}
+
+	testSite, _ := site.New(tmpDir, "github", "", "")
+	if err := testSite.BuildIndex(); err != nil {
+		t.Fatalf("BuildIndex() failed: %v", err)
+	}
+
+	tmpl := template.Must(template.New("doc").Parse(`{{define "doc"}}{{.HTML}}{{end}}`))
+	handler := New(Config{
+		DocsDir:      tmpDir,
+		RootDir:      tmpDir,
+		Site:         testSite,
+		DocumentTmpl: tmpl,
+		HideDraft:    true,
+	})
+
+	t.Run("hidden draft returns not found", func(t *testing.T) {
+		req := httptest.NewRequest("GET", "/draft", nil)
+		w := httptest.NewRecorder()
+
+		handler.ServeHTTP(w, req)
+
+		if w.Code != http.StatusNotFound {
+			t.Errorf("ServeHTTP() draft path status = %d, want %d", w.Code, http.StatusNotFound)
+		}
+	})
+
+	handler.cfg.HideDraft = false
+	t.Run("visible draft returns ok", func(t *testing.T) {
+		req := httptest.NewRequest("GET", "/draft", nil)
+		w := httptest.NewRecorder()
+
+		handler.ServeHTTP(w, req)
+
+		if w.Code != http.StatusOK {
+			t.Errorf("ServeHTTP() draft path status = %d, want %d", w.Code, http.StatusOK)
+		}
+	})
+}

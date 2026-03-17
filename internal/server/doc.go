@@ -36,6 +36,7 @@ func (h *Handler) handleDocByKeyWithSite(w http.ResponseWriter, r *http.Request,
 	h.mu.RLock()
 	documentTmpl := h.cfg.DocumentTmpl
 	basePath := h.cfg.BasePath
+	hideDraft := h.cfg.HideDraft
 	siteConfig := h.cfg.SiteConfig
 	siteTitle := h.cfg.SiteTitle
 	reloadBroadcaster := h.cfg.ReloadBroadcaster
@@ -48,6 +49,11 @@ func (h *Handler) handleDocByKeyWithSite(w http.ResponseWriter, r *http.Request,
 	}
 
 	key = cleanKey(key)
+	doc, ok := targetSite.GetDoc(key)
+	if !ok || (hideDraft && doc.Draft) {
+		http.NotFound(w, r)
+		return
+	}
 
 	// Build navigation tree for this site
 	nav := h.buildNavItemsWithSite(targetSite)
