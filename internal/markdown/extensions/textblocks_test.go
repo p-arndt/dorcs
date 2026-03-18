@@ -53,11 +53,11 @@ AGENDA
 
 func TestConvertTextBlocksInHTML(t *testing.T) {
 	tests := []struct {
-		name         string
-		input        string
-		wantHero     bool
-		wantStat     bool
-		wantCaption  bool
+		name        string
+		input       string
+		wantHero    bool
+		wantStat    bool
+		wantCaption bool
 	}{
 		{
 			name:     "hero block",

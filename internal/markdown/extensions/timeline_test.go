@@ -41,8 +41,8 @@ Second quarter.
 			expected: "# Just a heading",
 		},
 		{
-			name: "timeline in code block is preserved",
-			input: "```\n::: timeline\n### Step\nContent\n:::\n```",
+			name:     "timeline in code block is preserved",
+			input:    "```\n::: timeline\n### Step\nContent\n:::\n```",
 			expected: "```",
 		},
 	}
@@ -58,23 +58,23 @@ Second quarter.
 
 func TestConvertTimelineBlocksInHTML(t *testing.T) {
 	tests := []struct {
-		name     string
-		input    string
+		name         string
+		input        string
 		wantTimeline bool
-		wantStep bool
+		wantStep     bool
 	}{
 		{
-			name: "converts TIMELINE_STEP blockquote",
-			input: `<blockquote><p><strong>TIMELINE_STEP:2024 · Jan</strong></p><p><strong>Step 1</strong></p><p>Lorem ipsum.</p></blockquote>`,
+			name:         "converts TIMELINE_STEP blockquote",
+			input:        `<blockquote><p><strong>TIMELINE_STEP:2024 · Jan</strong></p><p><strong>Step 1</strong></p><p>Lorem ipsum.</p></blockquote>`,
 			wantTimeline: true,
-			wantStep: true,
+			wantStep:     true,
 		},
 		{
 			name: "multiple steps",
 			input: `<blockquote><p><strong>TIMELINE_STEP:A</strong></p><p>Content A</p></blockquote>
 <blockquote><p><strong>TIMELINE_STEP:B</strong></p><p>Content B</p></blockquote>`,
 			wantTimeline: true,
-			wantStep: true,
+			wantStep:     true,
 		},
 	}
 	for _, tt := range tests {
