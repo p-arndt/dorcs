@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/url"
 	"regexp"
+	"sort"
 	"strings"
 	"time"
 )
@@ -310,6 +311,8 @@ func (c *Client) DiscoverMarkdownFiles(owner, repo, branch, rootPath string) ([]
 
 		markdownFiles = append(markdownFiles, relativePath)
 	}
+
+	sort.Strings(markdownFiles)
 
 	return markdownFiles, nil
 }

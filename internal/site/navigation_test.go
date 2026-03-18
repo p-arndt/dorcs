@@ -471,3 +471,101 @@ func TestBuildIndexWithExplicitNavSkipsMissingDocsForNonDefaultVersion(t *testin
 		t.Fatalf("expected missing non-default version docs to be skipped, got %+v", nav.Children)
 	}
 }
+
+func TestBuildIndexWithExplicitNavAndGitHubPreservesConfiguredOrder(t *testing.T) {
+	tmpDir := t.TempDir()
+
+	s, err := New(tmpDir, "github", "", "")
+	if err != nil {
+		t.Fatalf("New() failed: %v", err)
+	}
+
+	mockClient := newMockGitHubClient()
+	owner := "test-owner"
+	repo := "test-repo"
+	branch := "main"
+	repoPath := "docs"
+
+	mockClient.discoverFiles[owner+"/"+repo+"/"+branch+"/"+repoPath] = []string{
+		"index.md",
+		"usage/watch-mode.md",
+		"usage/index.md",
+		"01_getting-started.md",
+		"usage/file-structure.md",
+	}
+
+	mockClient.fetchContent[owner+"/"+repo+"/"+branch+"/"+repoPath+"/index.md"] = []byte(`---
+title: Home
+---
+# Home
+
+[[INDEX]]`)
+	mockClient.fetchContent[owner+"/"+repo+"/"+branch+"/"+repoPath+"/01_getting-started.md"] = []byte(`---
+title: Getting Started
+---
+# Getting Started`)
+	mockClient.fetchContent[owner+"/"+repo+"/"+branch+"/"+repoPath+"/usage/index.md"] = []byte(`---
+title: Usage
+---
+# Usage
+
+[[CHILDREN]]`)
+	mockClient.fetchContent[owner+"/"+repo+"/"+branch+"/"+repoPath+"/usage/file-structure.md"] = []byte(`---
+title: File Structure
+---
+# File Structure`)
+	mockClient.fetchContent[owner+"/"+repo+"/"+branch+"/"+repoPath+"/usage/watch-mode.md"] = []byte(`---
+title: Watch Mode
+---
+# Watch Mode`)
+
+	s.SetGitHubConfig(mockClient, owner, repo, branch, repoPath)
+	s.SetExplicitNav(config.NavItems{
+		{Label: "Home", Page: "index.md"},
+		{
+			Label: "Usage",
+			Page:  "usage/index.md",
+			Items: []config.NavItemConfig{
+				{Label: "Watch Mode", Page: "usage/watch-mode.md"},
+				{Label: "File Structure", Page: "usage/file-structure.md"},
+			},
+		},
+		{Label: "Getting Started", Page: "01_getting-started.md"},
+	})
+
+	if err := s.BuildIndex(); err != nil {
+		t.Fatalf("BuildIndex() failed: %v", err)
+	}
+
+	nav := s.NavTree(false)
+	if nav == nil {
+		t.Fatal("NavTree should not be nil")
+	}
+	if len(nav.Children) != 2 {
+		t.Fatalf("expected 2 root nav children (home should not duplicate), got %d", len(nav.Children))
+	}
+	if nav.Children[0].Key != "usage" || nav.Children[1].Key != "01_getting-started" {
+		t.Fatalf("expected configured root order to be preserved, got %+v", nav.Children)
+	}
+
+	if len(nav.Children[0].Children) != 2 {
+		t.Fatalf("expected Usage to have 2 children, got %d", len(nav.Children[0].Children))
+	}
+	if nav.Children[0].Children[0].Key != "usage/watch-mode" || nav.Children[0].Children[1].Key != "usage/file-structure" {
+		t.Fatalf("expected configured child order to be preserved, got %+v", nav.Children[0].Children)
+	}
+
+	rootIndexHTML := string(BuildIndex(PlaceholderContext{Site: s, BasePath: s.BasePath}))
+	usagePos := strings.Index(rootIndexHTML, ">Usage<")
+	gettingStartedPos := strings.Index(rootIndexHTML, ">Getting Started<")
+	if usagePos == -1 || gettingStartedPos == -1 || usagePos >= gettingStartedPos {
+		t.Fatalf("expected site index to follow configured root order, got %q", rootIndexHTML)
+	}
+
+	usageChildrenHTML := string(BuildChildren(PlaceholderContext{Site: s, CurrentKey: "usage", BasePath: s.BasePath}))
+	watchModePos := strings.Index(usageChildrenHTML, ">Watch Mode<")
+	fileStructurePos := strings.Index(usageChildrenHTML, ">File Structure<")
+	if watchModePos == -1 || fileStructurePos == -1 || watchModePos >= fileStructurePos {
+		t.Fatalf("expected children placeholder to follow configured child order, got %q", usageChildrenHTML)
+	}
+}

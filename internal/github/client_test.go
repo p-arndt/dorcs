@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"regexp"
+	"sort"
 	"strings"
 	"testing"
 	"time"
@@ -463,8 +464,8 @@ func TestClientGetBranchSHADistinguishesMissingBranchFromMissingAccess(t *testin
 func TestDiscoverMarkdownFilesFiltering(t *testing.T) {
 	// This tests the logic without HTTP calls
 	entries := []TreeEntry{
-		{Path: "docs/index.md", Type: "blob"},
 		{Path: "docs/getting-started.md", Type: "blob"},
+		{Path: "docs/index.md", Type: "blob"},
 		{Path: "docs/guide/installation.md", Type: "blob"},
 		{Path: "docs/__lang__/de/index.md", Type: "blob"},
 		{Path: "docs/images/logo.png", Type: "blob"},
@@ -493,7 +494,9 @@ func TestDiscoverMarkdownFilesFiltering(t *testing.T) {
 		markdownFiles = append(markdownFiles, relativePath)
 	}
 
-	expected := []string{"index.md", "getting-started.md", "guide/installation.md"}
+	sort.Strings(markdownFiles)
+
+	expected := []string{"getting-started.md", "guide/installation.md", "index.md"}
 	if len(markdownFiles) != len(expected) {
 		t.Errorf("expected %d files, got %d", len(expected), len(markdownFiles))
 	}
