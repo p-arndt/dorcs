@@ -74,7 +74,6 @@ func (s *Site) RenderDoc(key string) (*RenderedDoc, error) {
 				Layout:             meta.Layout,
 				Gap:                meta.Gap,
 				Align:              meta.Align,
-				Columns:            meta.Columns,
 				Color:              meta.Color,
 				BackgroundColor:    meta.BackgroundColor,
 				BackgroundImage:    meta.BackgroundImage,

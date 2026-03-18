@@ -24,14 +24,14 @@ func TestParseSlideDirectives(t *testing.T) {
 			name:        "class directive",
 			chunk:       "<!-- _class: lead -->\n\n# Title",
 			inherited:   SlideMetadata{},
-			wantMeta:    SlideMetadata{Class: "lead"},
+			wantMeta:    SlideMetadata{Class: "lead", Layout: "lead"},
 			wantContent: "# Title",
 		},
 		{
 			name:        "multiple directives",
 			chunk:       "<!-- _class: lead -->\n<!-- _backgroundColor: #1a1a2e -->\n\n# Title",
 			inherited:   SlideMetadata{},
-			wantMeta:    SlideMetadata{Class: "lead", BackgroundColor: "#1a1a2e"},
+			wantMeta:    SlideMetadata{Class: "lead", Layout: "lead", BackgroundColor: "#1a1a2e"},
 			wantContent: "# Title",
 		},
 		{
@@ -71,9 +71,9 @@ func TestParseSlideDirectives(t *testing.T) {
 		},
 		{
 			name:        "layout primitives",
-			chunk:       "<!-- _layout: columns-2 -->\n<!-- _gap: loose -->\n<!-- _align: start -->\n<!-- _columns: 2 -->\n\nContent",
+			chunk:       "<!-- _layout: columns-2 -->\n<!-- _gap: loose -->\n<!-- _align: start -->\n\nContent",
 			inherited:   SlideMetadata{},
-			wantMeta:    SlideMetadata{Layout: "columns-2", Gap: "loose", Align: "start", Columns: "2"},
+			wantMeta:    SlideMetadata{Layout: "columns-2", Gap: "loose", Align: "start"},
 			wantContent: "Content",
 		},
 		{
@@ -82,6 +82,34 @@ func TestParseSlideDirectives(t *testing.T) {
 			inherited:   SlideMetadata{Layout: "lead", Gap: "tight"},
 			wantMeta:    SlideMetadata{Layout: "lead", Gap: "tight"},
 			wantContent: "# Slide 2",
+		},
+		{
+			name:        "space-separated layout with extra class",
+			chunk:       "<!-- _layout: lead invert -->\n\n# Title",
+			inherited:   SlideMetadata{},
+			wantMeta:    SlideMetadata{Layout: "lead", Class: "invert"},
+			wantContent: "# Title",
+		},
+		{
+			name:        "_class promotes to layout when no layout set",
+			chunk:       "<!-- _class: lead -->\n\n# Title",
+			inherited:   SlideMetadata{},
+			wantMeta:    SlideMetadata{Class: "lead", Layout: "lead"},
+			wantContent: "# Title",
+		},
+		{
+			name:        "_class does not promote when layout already set",
+			chunk:       "<!-- _layout: big -->\n<!-- _class: invert -->\n\n# Title",
+			inherited:   SlideMetadata{},
+			wantMeta:    SlideMetadata{Layout: "big", Class: "invert"},
+			wantContent: "# Title",
+		},
+		{
+			name:        "two-columns alias normalizes to cols",
+			chunk:       "<!-- _layout: two-columns -->\n\nContent",
+			inherited:   SlideMetadata{},
+			wantMeta:    SlideMetadata{Layout: "cols"},
+			wantContent: "Content",
 		},
 	}
 	for _, tt := range tests {

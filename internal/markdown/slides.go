@@ -13,14 +13,20 @@ var slideSeparator = regexp.MustCompile(`(?m)^\s*(---|___|\*\*\*|- - -)\s*$`)
 // _ prefix = spot (this slide only). No prefix = inherited (this and following slides).
 var directivePattern = regexp.MustCompile(`^\s*<!--\s*(_?)(\w+):\s*(.+)\s*-->\s*$`)
 
+// knownLayouts is the set of recognized layout names used for auto-promotion and normalization.
+var knownLayouts = map[string]bool{
+	"lead": true, "left": true, "right": true, "big": true, "quote": true,
+	"columns-2": true, "columns-3": true, "cols": true, "split": true,
+	"timeline": true, "fit": true, "invert": true,
+}
+
 // SlideMetadata holds parsed directives for a single slide.
 // Marpit-compatible: https://marpit.marp.app/directives
 type SlideMetadata struct {
 	Class              string // HTML class for slide (extra styling, e.g. invert)
-	Layout             string // Layout preset: default, lead, left, right, columns-2, columns-3, timeline, split
+	Layout             string // Layout preset: default, lead, left, right, columns-2, columns-3, timeline, split, cols
 	Gap                string // Spacing: tight, normal, loose
 	Align              string // Content alignment: start, center, end
-	Columns            string // Number of columns: 2, 3, 4 (alternative to layout columns-N)
 	Color              string // CSS color (text)
 	BackgroundColor    string
 	BackgroundImage    string
@@ -38,13 +44,25 @@ func parseDirective(meta *SlideMetadata, key, val string) {
 	case "class":
 		meta.Class = val
 	case "layout":
-		meta.Layout = val
+		// Space-separated layout values: first known layout token → Layout, rest → Class.
+		parts := strings.Fields(val)
+		if len(parts) == 0 {
+			return
+		}
+		layout := normalizeLayout(parts[0])
+		meta.Layout = layout
+		if len(parts) > 1 {
+			extra := strings.Join(parts[1:], " ")
+			if meta.Class != "" {
+				meta.Class = meta.Class + " " + extra
+			} else {
+				meta.Class = extra
+			}
+		}
 	case "gap":
 		meta.Gap = val
 	case "align":
 		meta.Align = val
-	case "columns":
-		meta.Columns = val
 	case "color":
 		meta.Color = val
 	case "backgroundcolor":
@@ -64,6 +82,14 @@ func parseDirective(meta *SlideMetadata, key, val string) {
 	case "paginate":
 		meta.Paginate = val
 	}
+}
+
+// normalizeLayout maps layout aliases to canonical names.
+func normalizeLayout(layout string) string {
+	if layout == "two-columns" {
+		return "cols"
+	}
+	return layout
 }
 
 // ParseSlideDirectives extracts Marpit-style directives from the start of a slide chunk.
@@ -100,6 +126,11 @@ func ParseSlideDirectives(chunk string, inherited SlideMetadata) (SlideMetadata,
 			inDirectiveBlock = false
 		}
 		kept = append(kept, line)
+	}
+
+	// _class auto-promotion: if Layout is not set and Class matches a known layout, promote it.
+	if meta.Layout == "" && knownLayouts[meta.Class] {
+		meta.Layout = meta.Class
 	}
 
 	return meta, strings.TrimSpace(strings.Join(kept, "\n")), nextInherited

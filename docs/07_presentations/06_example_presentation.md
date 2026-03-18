@@ -5,7 +5,7 @@ presentation_header: "Dorcs · Sample Presentation"
 presentation_footer: "Sample Presentation built with Dorcs"
 ---
 
-<!-- _class: lead -->
+<!-- _layout: lead invert -->
 <!-- _paginate: false -->
 
 # Dorcs Presentations
@@ -14,11 +14,11 @@ Markdown-powered slide decks built in.
 
 ---
 
-<!-- _class: left -->
+<!-- _layout: left -->
 
 ## Layout: Left
 
-`<!-- _class: left -->`
+`<!-- _layout: left -->`
 
 - Content aligned to the left
 - Ideal for bullet lists
@@ -26,11 +26,11 @@ Markdown-powered slide decks built in.
 
 ---
 
-<!-- _class: right -->
+<!-- _layout: right -->
 
 ## Layout: Right
 
-`<!-- _class: right -->`
+`<!-- _layout: right -->`
 
 Content aligned to the right.
 
@@ -38,45 +38,41 @@ Good for conclusions and emphasis.
 
 ---
 
-<!-- _class: two-columns -->
+<!-- _layout: cols -->
 
-<div class="col">
+::: col
 
 ### Two Columns
 
-`<!-- _class: two-columns -->`
+`<!-- _layout: cols -->`
 
-Use `<div class="col">` for each column.
+Use `::: col` blocks for each column.
 
-</div>
+:::
 
-<div class="col">
+::: col
 
 ### Explicit Columns
 
 - Full control over column content
 - Each column is a separate block
-- Marpit-compatible
+- Cleaner than raw HTML divs
 
-</div>
+:::
 
 ---
 
 <!-- _layout: columns-2 -->
 
-## Auto Columns
+## Auto Columns — `columns-2`
 
-`<!-- _layout: columns-2 -->`
+### Syntax
 
-Content flows automatically into columns. No `div.col` needed.
+Use `<!-- _layout: columns-2 -->` and content flows automatically. No `::: col` needed.
 
-### Left Column
+### When to use
 
-Paragraphs and lists distribute naturally.
-
-### Right Column
-
-Headings and content flow into the second column.
+Best for lists, short paragraphs, or sections that distribute naturally across two columns.
 
 ---
 
@@ -89,7 +85,7 @@ Headings and content flow into the second column.
 
 **Layout options** — lead, left, right, columns, split, timeline.
 
-**Styling** — \_class, \_layout, \_gap, \_align, \_columns.
+**Styling** — \_layout, \_gap, \_align, \_class.
 
 ---
 
@@ -105,7 +101,7 @@ of an audience's retention rate is attributed to the visuals used.
 
 They may forget what you said, but they will never forget how you made them feel.
 
-– Carl W. Buechner
+Carl W. Buechner
 
 ---
 
@@ -128,23 +124,23 @@ of an audience's retention rate is attributed to the visuals used.
 
 ## Split Layout
 
-`<!-- _layout: split -->` — use `<div class="col">` for each panel.
+`<!-- _layout: split -->` — use `::: col` for each panel.
 
-<div class="col">
+::: col
 
 ### Left Panel (1fr)
 
 Title or visual placeholder. Smaller area.
 
-</div>
+:::
 
-<div class="col">
+::: col
 
 ### Right Panel (2fr)
 
 Main content goes here. Larger area for details, lists, or paragraphs.
 
-</div>
+:::
 
 ---
 
@@ -174,11 +170,11 @@ Deploy and iterate.
 
 ---
 
-<!-- _class: fit -->
+<!-- _layout: fit -->
 
 ## Fit Layout
 
-`<!-- _class: fit -->` — compact sizing
+`<!-- _layout: fit -->` — compact sizing
 
 - Smaller headings and text
 - Fits more content per slide
@@ -191,13 +187,12 @@ Deploy and iterate.
 
 ## Layout Primitives
 
-| Directive  | Effect                                                                          |
-| ---------- | ------------------------------------------------------------------------------- |
-| `_layout`  | Structure: lead, left, right, big, quote, columns-2, columns-3, split, timeline |
-| Blocks     | `::: hero`, `::: stat`, `::: caption`, `::: label`, `::: timeline`              |
-| `_gap`     | Spacing: tight, normal, loose                                                   |
-| `_align`   | Alignment: start, center, end                                                   |
-| `_columns` | Column count: 2, 3, 4                                                           |
+| Directive | Effect                                                                           |
+| --------- | -------------------------------------------------------------------------------- |
+| `_layout` | Structure: lead, left, right, big, quote, columns-2, columns-3, split, cols, timeline |
+| Blocks    | `::: col`, `::: hero`, `::: stat`, `::: caption`, `::: label`, `::: timeline`   |
+| `_gap`    | Spacing: tight, normal, loose                                                    |
+| `_align`  | Alignment: start, center, end                                                    |
 
 ---
 

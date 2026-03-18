@@ -24,8 +24,8 @@ Add directives as HTML comments at the start of a slide.
 
 | Directive | Purpose |
 | --- | --- |
-| `_class` | Extra slide classes |
-| `_layout` | Layout preset |
+| `_layout` | Layout preset (primary directive for all slide appearance) |
+| `_class` | Extra CSS classes for custom styling only |
 | `_color` | Text color |
 | `_backgroundColor` | Background color |
 | `_backgroundImage` | Background image |
@@ -37,7 +37,16 @@ Add directives as HTML comments at the start of a slide.
 | `_paginate` | Hide or skip slide number |
 | `_gap` | Tight, normal, or loose spacing |
 | `_align` | Start, center, or end alignment |
-| `_columns` | Two, three, or four columns |
+
+## Space-separated layout values
+
+You can combine a layout with extra classes in a single `_layout` directive:
+
+```markdown
+<!-- _layout: lead invert -->
+```
+
+This sets the layout to `lead` and adds `invert` as an extra class. Equivalent to writing both `_layout: lead` and `_class: invert`.
 
 ## Spot vs inherited directives
 

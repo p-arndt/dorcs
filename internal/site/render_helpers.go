@@ -63,6 +63,9 @@ func (s *Site) preprocessMarkdown(raw string, doc *Doc) string {
 	// Convert typography text blocks in markdown (pre-process for goldmark)
 	raw = markdownext.ConvertTextBlocksInMarkdown(raw)
 
+	// Convert ::: col blocks in markdown (pre-process for goldmark)
+	raw = markdownext.ConvertColBlocksInMarkdown(raw)
+
 	return raw
 }
 
@@ -121,6 +124,9 @@ func (s *Site) convertMarkdownToHTML(raw string, doc *Doc) (string, error) {
 
 	// Convert typography text blocks in the HTML output
 	htmlOutput = markdownext.ConvertTextBlocksInHTML(htmlOutput)
+
+	// Convert ::: col blocks in the HTML output
+	htmlOutput = markdownext.ConvertColBlocksInHTML(htmlOutput)
 
 	return htmlOutput, nil
 }

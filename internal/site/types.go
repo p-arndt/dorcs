@@ -127,10 +127,9 @@ type NavNode struct {
 type RenderedSlide struct {
 	HTML               template.HTML
 	Class              string
-	Layout             string // Layout preset: default, lead, left, right, columns-2, columns-3, timeline, split
+	Layout             string // Layout preset: default, lead, left, right, columns-2, columns-3, timeline, split, cols
 	Gap                string // Spacing: tight, normal, loose
 	Align              string // Content alignment: start, center, end
-	Columns            string // Number of columns: 2, 3, 4
 	Color              string // CSS text color
 	BackgroundColor    string
 	BackgroundImage    string

@@ -149,7 +149,7 @@
 /* Layout: big - large centered text for stats, quotes, single statements (no heading required) */
 .presentation-slide.big .slide-content,
 .presentation-slide[data-layout="big"] .slide-content {
-  max-width: 800px;
+  max-width: 880px;
   text-align: center;
 }
 .presentation-slide.big .slide-content p,
@@ -164,11 +164,22 @@
   font-weight: 700;
   letter-spacing: -0.02em;
   line-height: 1.1;
+  margin-bottom: 1.5rem;
+}
+.presentation-slide.big .slide-content p:first-of-type::before,
+.presentation-slide[data-layout="big"] .slide-content p:first-of-type::before {
+  content: "";
+  display: block;
+  width: 3rem;
+  height: 3px;
+  background: var(--link);
+  margin: 0 auto 1.25rem;
 }
 .presentation-slide.big .slide-content p:last-of-type:not(:first-of-type),
 .presentation-slide[data-layout="big"] .slide-content p:last-of-type:not(:first-of-type) {
   font-size: 1.25rem;
-  opacity: 0.9;
+  opacity: 0.75;
+  margin-top: 1.5rem;
 }
 .presentation-slide.big .slide-content h1,
 .presentation-slide[data-layout="big"] .slide-content h1 {
@@ -185,8 +196,19 @@
 /* Layout: quote - large centered quote with smaller attribution */
 .presentation-slide.quote .slide-content,
 .presentation-slide[data-layout="quote"] .slide-content {
-  max-width: 780px;
+  max-width: 840px;
   text-align: center;
+}
+.presentation-slide.quote .slide-content::before,
+.presentation-slide[data-layout="quote"] .slide-content::before {
+  content: "\201C";
+  display: block;
+  font-size: 5rem;
+  line-height: 1;
+  color: var(--link);
+  opacity: 0.6;
+  margin-bottom: -0.5rem;
+  font-family: Georgia, serif;
 }
 .presentation-slide.quote .slide-content p,
 .presentation-slide[data-layout="quote"] .slide-content p {
@@ -196,55 +218,70 @@
 }
 .presentation-slide.quote .slide-content p:last-of-type:not(:first-of-type),
 .presentation-slide[data-layout="quote"] .slide-content p:last-of-type:not(:first-of-type) {
-  font-size: 1.1rem;
+  font-size: 1rem;
   font-style: normal;
-  opacity: 0.9;
-  margin-top: 1.5rem;
+  opacity: 0.7;
+  margin-top: 1.75rem;
+  color: var(--muted);
+}
+.presentation-slide.quote .slide-content p:last-of-type:not(:first-of-type)::before,
+.presentation-slide[data-layout="quote"] .slide-content p:last-of-type:not(:first-of-type)::before {
+  content: "\2014\00a0";
 }
 
 /* Layout: lead - title slide, PowerPoint-style */
-.presentation-slide.lead .slide-content h1 {
+.presentation-slide.lead .slide-content h1,
+.presentation-slide[data-layout="lead"] .slide-content h1 {
   font-size: 3.25rem;
   margin-bottom: 0.75rem;
   border-bottom: none;
   padding-bottom: 0;
 }
 
-.presentation-slide.lead .slide-content p {
+.presentation-slide.lead .slide-content p,
+.presentation-slide[data-layout="lead"] .slide-content p {
   font-size: 1.35rem;
   margin-top: 0.75rem;
   opacity: 0.95;
 }
 
 /* Layout: left - left-aligned content */
-.presentation-slide.left {
+.presentation-slide.left,
+.presentation-slide[data-layout="left"] {
   align-items: flex-start;
 }
 
-.presentation-slide.left .slide-content {
+.presentation-slide.left .slide-content,
+.presentation-slide[data-layout="left"] .slide-content {
   text-align: left;
   max-width: 88%;
   margin-left: 0;
 }
 
 .presentation-slide.left .slide-content ul,
-.presentation-slide.left .slide-content ol {
+.presentation-slide.left .slide-content ol,
+.presentation-slide[data-layout="left"] .slide-content ul,
+.presentation-slide[data-layout="left"] .slide-content ol {
   display: block;
 }
 
 /* Layout: right - right-aligned content */
-.presentation-slide.right {
+.presentation-slide.right,
+.presentation-slide[data-layout="right"] {
   align-items: flex-end;
 }
 
-.presentation-slide.right .slide-content {
+.presentation-slide.right .slide-content,
+.presentation-slide[data-layout="right"] .slide-content {
   text-align: right;
   max-width: 88%;
   margin-right: 0;
 }
 
 .presentation-slide.right .slide-content ul,
-.presentation-slide.right .slide-content ol {
+.presentation-slide.right .slide-content ol,
+.presentation-slide[data-layout="right"] .slide-content ul,
+.presentation-slide[data-layout="right"] .slide-content ol {
   display: block;
   margin-left: auto;
   margin-right: 0;
@@ -307,7 +344,20 @@
   text-align: left;
 }
 
-/* Layout: split - title/visual left (1fr), content right (2fr). Requires <div class="col"> for each panel. */
+/* Top-level headings in auto-column layouts span full width above the columns.
+   h3 and below flow within the columns so they can serve as column sub-headings. */
+.presentation-slide.columns-2 .slide-content h1,
+.presentation-slide.columns-2 .slide-content h2,
+.presentation-slide[data-layout="columns-2"] .slide-content h1,
+.presentation-slide[data-layout="columns-2"] .slide-content h2,
+.presentation-slide.columns-3 .slide-content h1,
+.presentation-slide.columns-3 .slide-content h2,
+.presentation-slide[data-layout="columns-3"] .slide-content h1,
+.presentation-slide[data-layout="columns-3"] .slide-content h2 {
+  column-span: all;
+}
+
+/* Layout: split - title/visual left (1fr), content right (2fr). Requires ::: col for each panel. */
 .presentation-slide.split,
 .presentation-slide[data-layout="split"] {
   display: grid;
@@ -327,13 +377,17 @@
 .presentation-slide.split .slide-content > * {
   grid-column: 1 / -1;
 }
-.presentation-slide.split .slide-content > .col {
+.presentation-slide.split .slide-content > .col,
+.presentation-slide[data-layout="split"] .slide-content > .col {
   grid-column: span 1;
   padding: 1rem 1.25rem;
   min-width: 0;
 }
-.presentation-slide.split .slide-content > .col:first-of-type {
-  padding-right: 1.5rem;
+.presentation-slide.split .slide-content > .col:first-of-type,
+.presentation-slide[data-layout="split"] .slide-content > .col:first-of-type {
+  background: color-mix(in srgb, var(--muted) 6%, transparent);
+  border-radius: 6px;
+  padding: 1.25rem 1.5rem;
 }
 
 /* Layout: timeline - horizontal axis (structure for ::: timeline block) */
@@ -475,30 +529,18 @@
   margin: 0.25rem 0;
 }
 
-/* _columns directive - alternative to layout columns-N */
-.presentation-slide[data-columns="2"]:not([data-layout="split"]):not(.split) .slide-content {
-  column-count: 2;
-  column-gap: var(--slide-gap, 2rem);
-  text-align: left;
-}
-.presentation-slide[data-columns="3"]:not([data-layout="split"]):not(.split) .slide-content {
-  column-count: 3;
-  column-gap: var(--slide-gap, 2rem);
-  text-align: left;
-}
-.presentation-slide[data-columns="4"]:not([data-layout="split"]):not(.split) .slide-content {
-  column-count: 4;
-  column-gap: var(--slide-gap, 2rem);
-  text-align: left;
-}
-
-/* Layout: two-columns - side-by-side columns, properly centered */
+/* Layout: cols - equal side-by-side columns. Requires ::: col for each column. */
+/* two-columns is a deprecated alias for cols (kept for backward compat). */
+.presentation-slide.cols,
+.presentation-slide[data-layout="cols"],
 .presentation-slide.two-columns {
   display: grid;
   place-content: center;
   padding: 5rem 4rem;
 }
 
+.presentation-slide.cols .slide-content,
+.presentation-slide[data-layout="cols"] .slide-content,
 .presentation-slide.two-columns .slide-content {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -506,64 +548,85 @@
   max-width: 1000px;
   width: min(95%, 1000px);
   text-align: left;
-  align-items: center;
+  align-items: start;
   justify-items: stretch;
 }
 
+.presentation-slide.cols .slide-content > *,
+.presentation-slide[data-layout="cols"] .slide-content > *,
 .presentation-slide.two-columns .slide-content > * {
   grid-column: 1 / -1;
 }
 
+.presentation-slide.cols .slide-content > .col,
+.presentation-slide[data-layout="cols"] .slide-content > .col,
 .presentation-slide.two-columns .slide-content > .col {
   grid-column: span 1;
   padding: 1rem 1.25rem;
-  background: color-mix(in srgb, var(--muted) 8%, transparent);
-  border-radius: 8px;
-  border-left: 4px solid var(--link);
+  min-width: 0;
+  border-top: 2px solid color-mix(in srgb, var(--muted) 25%, transparent);
+  padding-top: 1.25rem;
 }
 
+/* Separator only between columns, not before the first one */
+.presentation-slide.cols .slide-content > .col:first-of-type,
+.presentation-slide[data-layout="cols"] .slide-content > .col:first-of-type,
+.presentation-slide.two-columns .slide-content > .col:first-of-type {
+  border-top: none;
+  padding-top: 1rem;
+  border-right: 1px solid color-mix(in srgb, var(--muted) 20%, transparent);
+  padding-right: 2.5rem;
+}
+
+.presentation-slide.cols .slide-content > .col:last-of-type,
+.presentation-slide[data-layout="cols"] .slide-content > .col:last-of-type,
 .presentation-slide.two-columns .slide-content > .col:last-of-type {
-  border-left-color: color-mix(in srgb, var(--link) 70%, transparent);
+  border-top: none;
+  padding-top: 1rem;
 }
 
 /* Layout: fit - compact, fits more content */
-.presentation-slide.fit .slide-content h1 {
+.presentation-slide.fit .slide-content h1,
+.presentation-slide[data-layout="fit"] .slide-content h1 {
   font-size: 2rem;
 }
 
-.presentation-slide.fit .slide-content h2 {
+.presentation-slide.fit .slide-content h2,
+.presentation-slide[data-layout="fit"] .slide-content h2 {
   font-size: 1.5rem;
 }
 
 .presentation-slide.fit .slide-content p,
-.presentation-slide.fit .slide-content li {
+.presentation-slide.fit .slide-content li,
+.presentation-slide[data-layout="fit"] .slide-content p,
+.presentation-slide[data-layout="fit"] .slide-content li {
   font-size: 1rem;
 }
 
 /* Layout: invert - dark bg, light text (for contrast slides) */
-.presentation-slide.invert {
+.presentation-slide.invert,
+.presentation-slide[data-layout="invert"] {
   background: var(--fg) !important;
   color: var(--bg) !important;
 }
 
 .presentation-slide.invert .slide-header,
-.presentation-slide.invert .slide-footer {
+.presentation-slide.invert .slide-footer,
+.presentation-slide[data-layout="invert"] .slide-header,
+.presentation-slide[data-layout="invert"] .slide-footer {
   color: color-mix(in srgb, var(--bg) 70%, transparent);
   background: color-mix(in srgb, var(--bg) 15%, transparent);
   border-color: color-mix(in srgb, var(--bg) 35%, transparent);
 }
 
-.presentation-slide.invert .slide-header {
+.presentation-slide.invert .slide-header,
+.presentation-slide[data-layout="invert"] .slide-header {
   border-bottom-color: color-mix(in srgb, var(--bg) 50%, transparent);
 }
 
-.presentation-slide.invert .slide-content code {
+.presentation-slide.invert .slide-content code,
+.presentation-slide[data-layout="invert"] .slide-content code {
   background: color-mix(in srgb, var(--bg) 20%, transparent);
-}
-
-.presentation-slide.invert.two-columns .slide-content > .col {
-  background: color-mix(in srgb, var(--bg) 18%, transparent);
-  border-left-color: color-mix(in srgb, var(--bg) 45%, transparent);
 }
 
 .presentation-slide.invert .presentation-progress,
