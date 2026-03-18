@@ -87,20 +87,21 @@ func convertNavNodesWithVersionAndLang(nodes []*site.NavNode, basePath string, c
 		if basePath != "" {
 			pathBuilder.WriteString(basePath)
 		}
-		// Add version prefix if not default version
-		if currentVersion != "" && siteConfig != nil && siteConfig.IsMultiVersion() {
-			defaultVersion := siteConfig.GetDefaultVersion()
-			if currentVersion != defaultVersion {
-				pathBuilder.WriteByte('/')
-				pathBuilder.WriteString(currentVersion)
-			}
-		}
 		// Add language prefix if not default language
 		if currentLang != "" && siteConfig != nil && siteConfig.IsMultiLingual() {
 			defaultLang := siteConfig.GetDefaultLanguage()
 			if currentLang != defaultLang {
 				pathBuilder.WriteByte('/')
 				pathBuilder.WriteString(currentLang)
+			}
+		}
+		// Add version prefix if not default version.
+		// URLs are language-first: /de/v1/page
+		if currentVersion != "" && siteConfig != nil && siteConfig.IsMultiVersion() {
+			defaultVersion := siteConfig.GetDefaultVersion()
+			if currentVersion != defaultVersion {
+				pathBuilder.WriteByte('/')
+				pathBuilder.WriteString(currentVersion)
 			}
 		}
 		if n.IsDir {

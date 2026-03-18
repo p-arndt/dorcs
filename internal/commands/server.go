@@ -193,19 +193,17 @@ func RunServer(templatesFS, staticFS embed.FS, version string) {
 	}
 
 	// Create sites: language-first iteration
-	// When using multiple languages OR versions, markdown files in root docs/ are ignored
-	// Only static assets (images, etc.) in root are served as shared assets
-	usingMultiLangOrVersion := cfg.IsMultiLingual() || cfg.IsMultiVersion()
-	if usingMultiLangOrVersion {
+	// When using multiple languages, markdown files in root docs/ are ignored.
+	// In version-only mode, root docs/ serves the default version.
+	// Static assets (images, etc.) in root are served as shared assets in all modes.
+	if cfg.IsMultiLingual() {
 		rootHasMarkdown := hasMarkdownFilesInDir(absDir)
 		if rootHasMarkdown {
-			msg := "when using multiple languages or versions, markdown files in root docs/ folder are ignored"
-			if cfg.IsMultiLingual() && cfg.IsMultiVersion() {
+			msg := "when using multiple languages, markdown files in root docs/ folder are ignored"
+			if cfg.IsMultiVersion() {
 				msg += ". Please move all markdown files to language/version folders (docs/en/v1/, docs/de/v1/, etc.)"
-			} else if cfg.IsMultiLingual() {
-				msg += ". Please move all markdown files to language-specific folders (docs/en/, docs/de/, etc.)"
 			} else {
-				msg += ". Please move all markdown files to version folders (docs/v1/, docs/v2/, etc.)"
+				msg += ". Please move all markdown files to language-specific folders (docs/en/, docs/de/, etc.)"
 			}
 			msg += ". Static assets (images, etc.) in root are served as shared assets."
 			log.Printf("dorcs: warning: %s Found markdown files in %s.", msg, absDir)

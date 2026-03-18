@@ -4,8 +4,21 @@ import (
 	"sync"
 	"testing"
 
+	"github.com/p-arndt/dorcs/internal/config"
 	"github.com/p-arndt/dorcs/internal/site"
 )
+
+type navTestSiteConfig struct {
+	defaultLang    string
+	defaultVersion string
+	multiLang      bool
+	multiVersion   bool
+}
+
+func (c navTestSiteConfig) IsMultiVersion() bool       { return c.multiVersion }
+func (c navTestSiteConfig) GetDefaultVersion() string  { return c.defaultVersion }
+func (c navTestSiteConfig) IsMultiLingual() bool       { return c.multiLang }
+func (c navTestSiteConfig) GetDefaultLanguage() string { return c.defaultLang }
 
 func TestBuildNavItemsWithSite(t *testing.T) {
 	handler := New(Config{
@@ -269,4 +282,87 @@ func TestConvertNavNodesWithLangConcurrency(t *testing.T) {
 	}
 
 	wg.Wait()
+}
+
+func TestConvertNavNodesWithVersionAndLangOrder(t *testing.T) {
+	nodes := []*site.NavNode{
+		{
+			Name:  "Guide",
+			Key:   "guide",
+			IsDir: false,
+			Page:  &site.Doc{Key: "guide", Title: "Guide"},
+		},
+	}
+
+	cfg := navTestSiteConfig{
+		defaultLang:    "en",
+		defaultVersion: "latest",
+		multiLang:      true,
+		multiVersion:   true,
+	}
+
+	items := convertNavNodesWithVersionAndLang(nodes, "/docs", "v1", "de", cfg)
+	if len(items) != 1 {
+		t.Fatalf("expected 1 nav item, got %d", len(items))
+	}
+	if items[0].Path != "/docs/de/v1/guide" {
+		t.Fatalf("path = %q, want %q", items[0].Path, "/docs/de/v1/guide")
+	}
+}
+
+func TestComputeEditOnGitHubURLForDefaultVersion(t *testing.T) {
+	cfg := &config.Config{
+		Versions: config.VersionsConfig{
+			Default: "latest",
+			Enabled: []config.Version{
+				{ID: "latest", Name: "Latest"},
+				{ID: "v1", Name: "Version 1"},
+			},
+		},
+		GitHub: config.GitHubConfig{
+			EditOnGitHub: config.EditOnGitHubConfig{
+				Repository: "https://github.com/example/repo/tree/main/docs",
+			},
+		},
+	}
+
+	doc := &site.Doc{RelPath: "guide.md"}
+
+	got := computeEditOnGitHubURL(doc, cfg, "", "latest")
+	want := "https://github.com/example/repo/edit/main/docs/guide.md"
+	if got != want {
+		t.Fatalf("default version edit URL = %q, want %q", got, want)
+	}
+}
+
+func TestComputeEditOnGitHubURLForLanguageAndVersion(t *testing.T) {
+	cfg := &config.Config{
+		Languages: config.LanguagesConfig{
+			Default: "en",
+			Enabled: []config.Language{
+				{Code: "en", Name: "English"},
+				{Code: "de", Name: "Deutsch"},
+			},
+		},
+		Versions: config.VersionsConfig{
+			Default: "latest",
+			Enabled: []config.Version{
+				{ID: "latest", Name: "Latest"},
+				{ID: "v1", Name: "Version 1"},
+			},
+		},
+		GitHub: config.GitHubConfig{
+			EditOnGitHub: config.EditOnGitHubConfig{
+				Repository: "https://github.com/example/repo/tree/main/docs",
+			},
+		},
+	}
+
+	doc := &site.Doc{RelPath: "guide.md"}
+
+	got := computeEditOnGitHubURL(doc, cfg, "de", "v1")
+	want := "https://github.com/example/repo/edit/main/docs/de/v1/guide.md"
+	if got != want {
+		t.Fatalf("language/version edit URL = %q, want %q", got, want)
+	}
 }

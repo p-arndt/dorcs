@@ -104,7 +104,7 @@ func (h *Handler) handleDocByKeyWithSite(w http.ResponseWriter, r *http.Request,
 
 	// Compute "Edit on GitHub" URL when docs are hosted on GitHub
 	if siteConfig != nil {
-		m.EditOnGitHubURL = computeEditOnGitHubURL(rendered.Doc, siteConfig.GitHub, currentLang, currentVersion)
+		m.EditOnGitHubURL = computeEditOnGitHubURL(rendered.Doc, siteConfig, currentLang, currentVersion)
 	}
 
 	// Add config and theme CSS if available
@@ -139,7 +139,11 @@ func (h *Handler) handleDocByKeyWithSite(w http.ResponseWriter, r *http.Request,
 
 // computeEditOnGitHubURL returns the GitHub "edit this page" URL when applicable.
 // Supports: (1) GitHub content source (doc.IsGitHub), (2) edit_on_github for local docs.
-func computeEditOnGitHubURL(doc *site.Doc, gh config.GitHubConfig, currentLang, currentVersion string) string {
+func computeEditOnGitHubURL(doc *site.Doc, cfg *config.Config, currentLang, currentVersion string) string {
+	if cfg == nil {
+		return ""
+	}
+	gh := cfg.GitHub
 	// Case 1: Docs sourced from GitHub - use exact GitHubPath
 	if doc.IsGitHub && gh.Enabled && gh.Repository != "" && doc.GitHubPath != "" {
 		repoInfo, err := github.ParseRepositoryURL(gh.Repository)
@@ -162,7 +166,11 @@ func computeEditOnGitHubURL(doc *site.Doc, gh config.GitHubConfig, currentLang, 
 		if currentLang != "" {
 			path = path + "/" + currentLang
 		}
-		if currentVersion != "" {
+		defaultVersion := ""
+		if cfg.IsMultiVersion() {
+			defaultVersion = cfg.GetDefaultVersion()
+		}
+		if currentVersion != "" && currentVersion != defaultVersion {
 			path = path + "/" + currentVersion
 		}
 		filePath := strings.TrimPrefix(path+"/"+doc.RelPath, "/")
