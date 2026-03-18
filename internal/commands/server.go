@@ -34,6 +34,7 @@ func RunServer(templatesFS, staticFS embed.FS, version string) {
 		cache      = flag.Bool("cache", true, "Cache rendered documents in memory (mtime-based)")
 		noDrafts   = flag.Bool("no-drafts", true, "Hide documents with front matter draft: true")
 		configFile = flag.String("config", "", "Path to config file (default: looks for dorcs.yaml in current directory, then docs dir)")
+		repo       = flag.String("repo", "", "GitHub repository to bootstrap docs and config from")
 		theme      = flag.String("theme", "", "Theme preset: default, ocean, forest, sunset, midnight, lavender, rose")
 		themeMode  = flag.String("theme-mode", "", "Theme mode: light, dark, auto")
 		watch      = flag.Bool("watch", false, "Watch for file changes and automatically reload")
@@ -52,6 +53,7 @@ func RunServer(templatesFS, staticFS embed.FS, version string) {
 	}
 
 	flag.Parse()
+	configuredDir := *dir
 
 	// Get root directory (where dorcs is running) for static assets like logo/favicon
 	rootDir, err := os.Getwd()
@@ -73,18 +75,15 @@ func RunServer(templatesFS, staticFS embed.FS, version string) {
 	prefix := SanitizeBasePrefix(*baseURL)
 
 	// Load configuration
-	var cfg *config.Config
-	if *configFile != "" {
-		cfg, err = config.LoadFromFile(*configFile)
-		if err != nil {
-			log.Fatalf("load config: %v", err)
-		}
-		log.Printf("dorcs: loaded config from %s", *configFile)
-	} else {
-		cfg, err = config.Load(configuredAbsDir)
-		if err != nil {
-			log.Fatalf("load config: %v", err)
-		}
+	bootstrap, err := loadConfigWithBootstrap(absRootDir, configuredDir, *configFile, *repo)
+	if err != nil {
+		log.Fatalf("load config: %v", err)
+	}
+	cfg := bootstrap.Config
+	if bootstrap.Source != "" && bootstrap.Source != "defaults" {
+		log.Printf("dorcs: loaded config from %s", bootstrap.Source)
+	} else if strings.TrimSpace(*repo) != "" {
+		log.Printf("dorcs: no remote config found in %s; using defaults", *repo)
 	}
 
 	absDir, cleanupDocsDir, err := ResolveDocsDir(configuredAbsDir, cfg.GitHub.Enabled)
@@ -114,65 +113,13 @@ func RunServer(templatesFS, staticFS embed.FS, version string) {
 	codeTheme := cfg.GetCodeTheme()
 
 	// Set up GitHub integration if enabled
-	var ghClient *github.Client
-	var ghCache *github.Cache
+	var ghClient github.ClientAPI
 	var repoInfo *github.RepositoryInfo
 	if cfg.GitHub.Enabled && cfg.GitHub.Repository != "" {
-		// Parse cache TTL
-		cacheTTL := time.Hour // default
-		if cfg.GitHub.CacheTTL != "" {
-			if parsed, err := time.ParseDuration(cfg.GitHub.CacheTTL); err == nil {
-				cacheTTL = parsed
-			} else {
-				log.Printf("dorcs: warning: invalid cache_ttl '%s', using default 1h", cfg.GitHub.CacheTTL)
-			}
-		}
-
-		// Parse repository URL
-		var err error
-		repoInfo, err = github.ParseRepositoryURL(cfg.GitHub.Repository)
+		ghClient, repoInfo, err = setupGitHubIntegration(absRootDir, cfg)
 		if err != nil {
-			log.Fatalf("parse GitHub repository URL: %v", err)
+			log.Fatalf("setup GitHub integration: %v", err)
 		}
-
-		// Create cache directory in working directory
-		cacheDir := filepath.Join(rootDir, ".cache", "github")
-		if err := os.MkdirAll(cacheDir, 0755); err != nil {
-			log.Printf("dorcs: warning: failed to create cache directory %s: %v (using in-memory cache only)", cacheDir, err)
-			cacheDir = "" // Fall back to in-memory only
-		}
-
-		// Get default branch if not specified
-		if repoInfo.Branch == "" {
-			ghCache = github.NewCache(cacheDir)
-			tempClient := github.NewClient(cfg.GitHub.Token, ghCache, cacheTTL)
-			defaultBranch, err := tempClient.GetDefaultBranch(repoInfo.Owner, repoInfo.Repo)
-			if err != nil {
-				log.Fatalf("get default branch: %v", err)
-			}
-			repoInfo.Branch = defaultBranch
-		}
-
-		// Create cache and client
-		if ghCache == nil {
-			ghCache = github.NewCache(cacheDir)
-		}
-		ghClient = github.NewClient(cfg.GitHub.Token, ghCache, cacheTTL)
-
-		if cacheDir != "" {
-			log.Printf("dorcs: using persistent cache at %s", cacheDir)
-		}
-
-		tokenState := "empty"
-		switch {
-		case strings.Contains(cfg.GitHub.Token, "${"):
-			tokenState = "unexpanded"
-		case strings.TrimSpace(cfg.GitHub.Token) != "":
-			tokenState = "present"
-		}
-		log.Printf("dorcs: GitHub token state: %s (length=%d)", tokenState, len(strings.TrimSpace(cfg.GitHub.Token)))
-
-		log.Printf("dorcs: GitHub integration enabled: %s/%s@%s/%s", repoInfo.Owner, repoInfo.Repo, repoInfo.Branch, repoInfo.Path)
 		log.Printf("dorcs: note: local docs directory will be ignored when GitHub integration is enabled")
 	}
 
@@ -235,33 +182,13 @@ func RunServer(templatesFS, staticFS embed.FS, version string) {
 							log.Printf("dorcs: warning: language %s version %s folder not found, skipping", lang.Code, ver.ID)
 							continue
 						}
-						// GitHub enabled: create site anyway
-						verLangSite, err = site.NewWithVersionPath(absDir, codeTheme, prefix, langCodeForSite, versionID, versionPath)
-						if err != nil {
-							log.Fatalf("init site for language %s version %s: %v", lang.Code, ver.ID, err)
-						}
+						log.Fatalf("init site for language %s version %s: %v", lang.Code, ver.ID, err)
 					}
 
 					// Set GitHub config if enabled
 					if ghClient != nil && repoInfo != nil {
-						githubPath := repoInfo.Path
-						// Build path: {lang}/{version} (MkDocs-style)
-						// If langCodeForSite is set (even for default language when root has no files), use it
-						if langCodeForSite != "" {
-							if githubPath != "" {
-								githubPath = githubPath + "/" + langCodeForSite
-							} else {
-								githubPath = langCodeForSite
-							}
-						}
-						if ver.ID != defaultVersion {
-							if githubPath != "" {
-								githubPath = githubPath + "/" + ver.ID
-							} else {
-								githubPath = ver.ID
-							}
-						}
-						verLangSite.SetGitHubConfig(ghClient, repoInfo.Owner, repoInfo.Repo, repoInfo.Branch, githubPath)
+						githubPath := github.ContentPath(repoInfo.Path, langCodeForSite, ver.ID, versionPath, defaultVersion)
+						applyRepoToSite(verLangSite, ghClient, repoInfo, githubPath)
 					}
 
 					verLangSite.SetExplicitNav(cfg.Nav.Items)
@@ -294,24 +221,13 @@ func RunServer(templatesFS, staticFS embed.FS, version string) {
 						log.Printf("dorcs: warning: language %s folder not found, skipping", lang.Code)
 						continue
 					}
-					langSite, err = site.New(absDir, codeTheme, prefix, langCodeForSite)
-					if err != nil {
-						log.Fatalf("init site for language %s: %v", lang.Code, err)
-					}
+					log.Fatalf("init site for language %s: %v", lang.Code, err)
 				}
 
 				// Set GitHub config if enabled
 				if ghClient != nil && repoInfo != nil {
-					githubPath := repoInfo.Path
-					// If langCodeForSite is set (even for default language when root has no files), use it
-					if langCodeForSite != "" {
-						if githubPath != "" {
-							githubPath = githubPath + "/" + langCodeForSite
-						} else {
-							githubPath = langCodeForSite
-						}
-					}
-					langSite.SetGitHubConfig(ghClient, repoInfo.Owner, repoInfo.Repo, repoInfo.Branch, githubPath)
+					githubPath := github.ContentPath(repoInfo.Path, langCodeForSite, "", "", "")
+					applyRepoToSite(langSite, ghClient, repoInfo, githubPath)
 				}
 
 				langSite.SetExplicitNav(cfg.Nav.Items)
@@ -352,23 +268,13 @@ func RunServer(templatesFS, staticFS embed.FS, version string) {
 					log.Printf("dorcs: warning: version %s folder not found, skipping", ver.ID)
 					continue
 				}
-				verSite, err = site.NewWithVersionPath(absDir, codeTheme, prefix, "", versionID, versionPath)
-				if err != nil {
-					log.Fatalf("init site for version %s: %v", ver.ID, err)
-				}
+				log.Fatalf("init site for version %s: %v", ver.ID, err)
 			}
 
 			// Set GitHub config if enabled
 			if ghClient != nil && repoInfo != nil {
-				githubPath := repoInfo.Path
-				if ver.ID != defaultVersion {
-					if githubPath != "" {
-						githubPath = githubPath + "/" + ver.ID
-					} else {
-						githubPath = ver.ID
-					}
-				}
-				verSite.SetGitHubConfig(ghClient, repoInfo.Owner, repoInfo.Repo, repoInfo.Branch, githubPath)
+				githubPath := github.ContentPath(repoInfo.Path, "", ver.ID, versionPath, defaultVersion)
+				applyRepoToSite(verSite, ghClient, repoInfo, githubPath)
 			}
 
 			verSite.SetExplicitNav(cfg.Nav.Items)
@@ -390,7 +296,7 @@ func RunServer(templatesFS, staticFS embed.FS, version string) {
 
 		// Set GitHub config if enabled
 		if ghClient != nil && repoInfo != nil {
-			singleSite.SetGitHubConfig(ghClient, repoInfo.Owner, repoInfo.Repo, repoInfo.Branch, repoInfo.Path)
+			applyRepoToSite(singleSite, ghClient, repoInfo, repoInfo.Path)
 		}
 
 		singleSite.SetExplicitNav(cfg.Nav.Items)

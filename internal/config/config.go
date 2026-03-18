@@ -278,8 +278,6 @@ func Load(docsDir string) (*Config, error) {
 	// Load .env file first if it exists
 	loadEnvFile()
 
-	cfg := Default()
-
 	// Get current working directory
 	wd, err := os.Getwd()
 	if err != nil {
@@ -305,36 +303,20 @@ func Load(docsDir string) (*Config, error) {
 		for _, name := range []string{"dorcs.yaml", "dorcs.yml"} {
 			path := filepath.Join(searchDir, name)
 			if data, err := os.ReadFile(path); err == nil {
-				if err := yaml.Unmarshal(data, cfg); err != nil {
-					return nil, err
-				}
-				applyDefaults(cfg)
-				expandEnvVars(cfg)
-				if err := cfg.Validate(); err != nil {
-					return nil, err
-				}
-				return cfg, nil
+				return decodeConfig(data, path)
 			}
 		}
 
 		// Try JSON
 		path := filepath.Join(searchDir, "dorcs.json")
 		if data, err := os.ReadFile(path); err == nil {
-			if err := json.Unmarshal(data, cfg); err != nil {
-				return nil, err
-			}
-			applyDefaults(cfg)
-			expandEnvVars(cfg)
-			if err := cfg.Validate(); err != nil {
-				return nil, err
-			}
-			return cfg, nil
+			return decodeConfig(data, path)
 		}
 	}
 
 	// No config file found - return defaults (languages/versions must be explicitly configured)
 
-	return cfg, nil
+	return Default(), nil
 }
 
 // LoadFromFile reads configuration from a specific file path.
@@ -343,38 +325,24 @@ func LoadFromFile(path string) (*Config, error) {
 	// Load .env file first if it exists
 	loadEnvFile()
 
-	cfg := Default()
-
 	data, err := os.ReadFile(path)
 	if err != nil {
 		return nil, err
 	}
 
-	ext := filepath.Ext(path)
-	switch ext {
-	case ".yaml", ".yml":
-		if err := yaml.Unmarshal(data, cfg); err != nil {
-			return nil, err
-		}
-	case ".json":
-		if err := json.Unmarshal(data, cfg); err != nil {
-			return nil, err
-		}
-	default:
-		// Try YAML first, then JSON
-		if err := yaml.Unmarshal(data, cfg); err != nil {
-			if err := json.Unmarshal(data, cfg); err != nil {
-				return nil, err
-			}
-		}
-	}
+	return decodeConfig(data, path)
+}
 
-	applyDefaults(cfg)
-	expandEnvVars(cfg)
-	if err := cfg.Validate(); err != nil {
-		return nil, err
-	}
-	return cfg, nil
+// LoadFromBytes reads configuration from raw bytes and a source name.
+// sourceName is used to detect the file type and improve error context.
+func LoadFromBytes(sourceName string, data []byte) (*Config, error) {
+	loadEnvFile()
+	return decodeConfig(data, sourceName)
+}
+
+// LoadEnvFile loads environment variables from a .env file if it exists.
+func LoadEnvFile() {
+	loadEnvFile()
 }
 
 // loadEnvFile loads environment variables from a .env file if it exists.
@@ -488,6 +456,36 @@ func applyDefaults(cfg *Config) {
 	} else if cfg.Versions.Default != "" && !cfg.IsVersionEnabled(cfg.Versions.Default) {
 		cfg.Versions.Enabled = append([]Version{{ID: cfg.Versions.Default, Name: cfg.Versions.Default}}, cfg.Versions.Enabled...)
 	}
+}
+
+func decodeConfig(data []byte, sourceName string) (*Config, error) {
+	cfg := Default()
+
+	ext := filepath.Ext(sourceName)
+	switch ext {
+	case ".yaml", ".yml":
+		if err := yaml.Unmarshal(data, cfg); err != nil {
+			return nil, err
+		}
+	case ".json":
+		if err := json.Unmarshal(data, cfg); err != nil {
+			return nil, err
+		}
+	default:
+		// Try YAML first, then JSON
+		if err := yaml.Unmarshal(data, cfg); err != nil {
+			if err := json.Unmarshal(data, cfg); err != nil {
+				return nil, err
+			}
+		}
+	}
+
+	applyDefaults(cfg)
+	expandEnvVars(cfg)
+	if err := cfg.Validate(); err != nil {
+		return nil, err
+	}
+	return cfg, nil
 }
 
 // GetColorScheme returns the effective color scheme based on config.

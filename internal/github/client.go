@@ -42,6 +42,14 @@ type RepositoryInfo struct {
 	Path   string
 }
 
+// ClientAPI captures the GitHub operations dorcs uses across command and build paths.
+type ClientAPI interface {
+	DiscoverMarkdownFiles(owner, repo, branch, rootPath string) ([]string, error)
+	FetchMarkdown(owner, repo, branch, filePath string) ([]byte, error)
+	GetDefaultBranch(owner, repo string) (string, error)
+	ListDirectory(owner, repo, branch, dirPath string) ([]TreeEntry, error)
+}
+
 // Client provides GitHub API access.
 type Client struct {
 	httpClient *http.Client
@@ -103,7 +111,7 @@ func ParseRepositoryURL(repoURL string) (*RepositoryInfo, error) {
 
 	owner := parts[0]
 	repo := parts[1]
-	branch := "main" // default branch
+	branch := ""
 	repoPath := ""
 
 	// Check if we have tree/branch/path structure
@@ -123,6 +131,32 @@ func ParseRepositoryURL(repoURL string) (*RepositoryInfo, error) {
 		Branch: branch,
 		Path:   repoPath,
 	}, nil
+}
+
+// ContentPath resolves the repository subpath for a language/version-aware docs site.
+func ContentPath(basePath, language, versionID, versionPath, defaultVersion string) string {
+	path := strings.Trim(basePath, "/")
+	if language != "" {
+		if path != "" {
+			path += "/" + language
+		} else {
+			path = language
+		}
+	}
+
+	effectiveVersionPath := versionID
+	if versionPath != "" {
+		effectiveVersionPath = versionPath
+	}
+	if effectiveVersionPath != "" && versionID != "" && versionID != defaultVersion {
+		if path != "" {
+			path += "/" + effectiveVersionPath
+		} else {
+			path = effectiveVersionPath
+		}
+	}
+
+	return path
 }
 
 // GetDefaultBranch gets the default branch for a repository.

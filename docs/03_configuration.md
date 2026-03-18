@@ -21,6 +21,19 @@ Dorcs checks in this order:
 
 You can override discovery with `--config`.
 
+If you start Dorcs with `--repo`, config bootstrap changes:
+
+1. `dorcs.yaml`, `dorcs.yml`, `dorcs.json` at the GitHub repo root
+2. the same filenames at the repo path from `--repo` such as `docs/`
+
+If no remote config file exists, Dorcs keeps running with defaults.
+
+Precedence is:
+
+1. `--config`
+2. `--repo`
+3. local discovery
+
 ## Minimal config
 
 ```yaml
@@ -196,6 +209,14 @@ github:
 ```
 
 Use this when content should be read from GitHub instead of the local docs directory, or when you want page-level "Edit on GitHub" links for local content.
+
+You can also skip local config mounting entirely and bootstrap from a repo:
+
+```bash
+dorcs --repo https://github.com/owner/repo/tree/main/docs
+```
+
+In repo mode, Dorcs loads both docs and config from that repository. The fetched config does not need to repeat `github.enabled` or `github.repository`.
 
 ## Example config
 

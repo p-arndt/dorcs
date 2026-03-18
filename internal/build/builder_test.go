@@ -8,7 +8,29 @@ import (
 	"testing"
 
 	"github.com/p-arndt/dorcs/internal/config"
+	"github.com/p-arndt/dorcs/internal/github"
 )
+
+type mockGitHubBuilderClient struct {
+	entries []github.TreeEntry
+	files   map[string][]byte
+}
+
+func (m *mockGitHubBuilderClient) DiscoverMarkdownFiles(owner, repo, branch, rootPath string) ([]string, error) {
+	return nil, nil
+}
+
+func (m *mockGitHubBuilderClient) FetchMarkdown(owner, repo, branch, filePath string) ([]byte, error) {
+	return m.files[filePath], nil
+}
+
+func (m *mockGitHubBuilderClient) ListDirectory(owner, repo, branch, dirPath string) ([]github.TreeEntry, error) {
+	return m.entries, nil
+}
+
+func (m *mockGitHubBuilderClient) GetDefaultBranch(owner, repo string) (string, error) {
+	return "main", nil
+}
 
 func writeDocs(t testing.TB, dir string, n int) {
 	t.Helper()
@@ -86,6 +108,46 @@ func BenchmarkBuildLanguage(bm *testing.B) {
 	for i := 0; i < bm.N; i++ {
 		if err := builder.buildLanguage("", true, "", false); err != nil {
 			bm.Fatalf("buildLanguage failed: %v", err)
+		}
+	}
+}
+
+func TestCopyGitHubStaticAssets(t *testing.T) {
+	outDir := t.TempDir()
+
+	builder := New(Config{
+		DocsDir:      t.TempDir(),
+		RootDir:      t.TempDir(),
+		OutputDir:    outDir,
+		SiteConfig:   config.Default(),
+		DocumentTmpl: template.Must(template.New("doc").Parse(`{{define "doc"}}{{.HTML}}{{end}}`)),
+		GitHubClient: &mockGitHubBuilderClient{
+			entries: []github.TreeEntry{
+				{Path: "docs/logo.png", Type: "blob"},
+				{Path: "docs/guide/diagram.svg", Type: "blob"},
+				{Path: "docs/index.md", Type: "blob"},
+			},
+			files: map[string][]byte{
+				"docs/logo.png":          []byte("png"),
+				"docs/guide/diagram.svg": []byte("svg"),
+			},
+		},
+		GitHubRepo: &github.RepositoryInfo{
+			Owner:  "owner",
+			Repo:   "repo",
+			Branch: "main",
+			Path:   "docs",
+		},
+	})
+
+	if err := builder.copyDocsStaticAssets(); err != nil {
+		t.Fatalf("copyDocsStaticAssets() error = %v", err)
+	}
+
+	for _, rel := range []string{"logo.png", filepath.Join("guide", "diagram.svg")} {
+		path := filepath.Join(outDir, rel)
+		if _, err := os.Stat(path); err != nil {
+			t.Fatalf("expected copied asset %s: %v", path, err)
 		}
 	}
 }

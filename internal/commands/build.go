@@ -8,7 +8,7 @@ import (
 	"path/filepath"
 
 	"github.com/p-arndt/dorcs/internal/build"
-	"github.com/p-arndt/dorcs/internal/config"
+	"github.com/p-arndt/dorcs/internal/github"
 	"github.com/p-arndt/dorcs/internal/site"
 	"github.com/p-arndt/dorcs/internal/templates"
 )
@@ -23,10 +23,12 @@ func RunBuild(templatesFS, staticFS embed.FS) {
 		title      = buildFlags.String("title", "", "Site title shown in header (overrides config file)")
 		noDrafts   = buildFlags.Bool("no-drafts", true, "Hide documents with front matter draft: true")
 		configFile = buildFlags.String("config", "", "Path to config file (default: looks for dorcs.yaml in current directory, then docs dir)")
+		repo       = buildFlags.String("repo", "", "GitHub repository to bootstrap docs and config from")
 		theme      = buildFlags.String("theme", "", "Theme preset: default, ocean, forest, sunset, midnight, lavender, rose")
 		themeMode  = buildFlags.String("theme-mode", "", "Theme mode: light, dark, auto")
 	)
 	buildFlags.Parse(os.Args[2:]) // Skip "build" command
+	configuredDir := *dir
 
 	// Get root directory (where dorcs is running) for static assets like logo/favicon
 	rootDir, err := os.Getwd()
@@ -54,18 +56,15 @@ func RunBuild(templatesFS, staticFS embed.FS) {
 	prefix := SanitizeBasePrefix(*baseURL)
 
 	// Load configuration
-	var cfg *config.Config
-	if *configFile != "" {
-		cfg, err = config.LoadFromFile(*configFile)
-		if err != nil {
-			log.Fatalf("load config: %v", err)
-		}
-		log.Printf("dorcs: loaded config from %s", *configFile)
-	} else {
-		cfg, err = config.Load(configuredAbsDir)
-		if err != nil {
-			log.Fatalf("load config: %v", err)
-		}
+	bootstrap, err := loadConfigWithBootstrap(absRootDir, configuredDir, *configFile, *repo)
+	if err != nil {
+		log.Fatalf("load config: %v", err)
+	}
+	cfg := bootstrap.Config
+	if bootstrap.Source != "" && bootstrap.Source != "defaults" {
+		log.Printf("dorcs: loaded config from %s", bootstrap.Source)
+	} else if *repo != "" {
+		log.Printf("dorcs: no remote config found in %s; using defaults", *repo)
 	}
 
 	absDir, cleanupDocsDir, err := ResolveDocsDir(configuredAbsDir, cfg.GitHub.Enabled)
@@ -97,6 +96,17 @@ func RunBuild(templatesFS, staticFS embed.FS) {
 	if err != nil {
 		log.Fatalf("init site: %v", err)
 	}
+
+	var ghClient github.ClientAPI
+	var repoInfo *github.RepositoryInfo
+	if cfg.GitHub.Enabled && cfg.GitHub.Repository != "" {
+		ghClient, repoInfo, err = setupGitHubIntegration(absRootDir, cfg)
+		if err != nil {
+			log.Fatalf("setup GitHub integration: %v", err)
+		}
+		applyRepoToSite(s, ghClient, repoInfo, repoInfo.Path)
+		log.Printf("dorcs: note: local docs directory will be ignored when GitHub integration is enabled")
+	}
 	s.SetExplicitNav(cfg.Nav.Items)
 	if err := s.BuildIndex(); err != nil {
 		log.Fatalf("build index: %v", err)
@@ -124,6 +134,8 @@ func RunBuild(templatesFS, staticFS embed.FS) {
 		DocumentTmpl: tmplDoc,
 		StaticFS:     staticFS,
 		TemplatesFS:  templatesFS,
+		GitHubClient: ghClient,
+		GitHubRepo:   repoInfo,
 	})
 
 	// Build static site

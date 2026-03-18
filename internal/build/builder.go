@@ -18,22 +18,25 @@ import (
 	"golang.org/x/sync/errgroup"
 
 	"github.com/p-arndt/dorcs/internal/config"
+	"github.com/p-arndt/dorcs/internal/github"
 	"github.com/p-arndt/dorcs/internal/server"
 	"github.com/p-arndt/dorcs/internal/site"
 )
 
 // Builder generates a static HTML site from markdown documents.
 type Builder struct {
-	docsDir     string
-	rootDir     string
-	outputDir   string
-	basePath    string
-	site        *site.Site
-	config      *config.Config
-	template    *template.Template
-	staticFS    embed.FS
-	templatesFS embed.FS
-	parallelism int
+	docsDir      string
+	rootDir      string
+	outputDir    string
+	basePath     string
+	site         *site.Site
+	config       *config.Config
+	template     *template.Template
+	staticFS     embed.FS
+	templatesFS  embed.FS
+	parallelism  int
+	githubClient github.ClientAPI
+	githubRepo *github.RepositoryInfo
 }
 
 // Config holds configuration for the builder.
@@ -48,7 +51,9 @@ type Config struct {
 	StaticFS     embed.FS
 	TemplatesFS  embed.FS
 	// Parallelism limits concurrent page renders. 0 = auto (NumCPU).
-	Parallelism int
+	Parallelism  int
+	GitHubClient github.ClientAPI
+	GitHubRepo *github.RepositoryInfo
 }
 
 // New creates a new builder.
@@ -58,16 +63,18 @@ func New(cfg Config) *Builder {
 		p = runtime.NumCPU()
 	}
 	return &Builder{
-		docsDir:     cfg.DocsDir,
-		rootDir:     cfg.RootDir,
-		outputDir:   cfg.OutputDir,
-		basePath:    cfg.BasePath,
-		site:        cfg.Site,
-		config:      cfg.SiteConfig,
-		template:    cfg.DocumentTmpl,
-		staticFS:    cfg.StaticFS,
-		templatesFS: cfg.TemplatesFS,
-		parallelism: p,
+		docsDir:      cfg.DocsDir,
+		rootDir:      cfg.RootDir,
+		outputDir:    cfg.OutputDir,
+		basePath:     cfg.BasePath,
+		site:         cfg.Site,
+		config:       cfg.SiteConfig,
+		template:     cfg.DocumentTmpl,
+		staticFS:     cfg.StaticFS,
+		templatesFS:  cfg.TemplatesFS,
+		parallelism:  p,
+		githubClient: cfg.GitHubClient,
+		githubRepo:   cfg.GitHubRepo,
 	}
 }
 
@@ -111,10 +118,7 @@ func (b *Builder) Build(includeDrafts bool) error {
 		// Multi-language: iterate languages first, then versions inside each language
 		for _, lang := range b.config.Languages.Enabled {
 			isDefaultLang := lang.Code == defaultLang
-			langCodeForSite := ""
-			if !isDefaultLang {
-				langCodeForSite = lang.Code
-			}
+			langCodeForSite := lang.Code
 
 			if b.config.IsMultiVersion() {
 				// Both languages and versions: docs/{lang}/{version}/
@@ -167,6 +171,11 @@ func (b *Builder) Build(includeDrafts bool) error {
 // isDefault indicates if this is the default language
 // langCodeForURL is the language code for URLs (used in output paths)
 func (b *Builder) buildLanguage(langCodeForSite string, isDefault bool, langCodeForURL string, includeDrafts bool) error {
+	defaultLang := ""
+	if b.config != nil && b.config.IsMultiLingual() {
+		defaultLang = b.config.GetDefaultLanguage()
+	}
+
 	// Create site instance for this language
 	codeTheme := b.config.GetCodeTheme()
 	langSite, err := site.New(b.docsDir, codeTheme, b.basePath, langCodeForSite)
@@ -174,7 +183,9 @@ func (b *Builder) buildLanguage(langCodeForSite string, isDefault bool, langCode
 		// If language folder doesn't exist, skip it
 		return nil
 	}
+	b.applyGitHubConfig(langSite, langCodeForSite, "", "", "")
 	langSite.SetExplicitNav(b.config.Nav.Items)
+	langSite.SetDefaultLanguage(defaultLang)
 	if err := langSite.BuildIndex(); err != nil {
 		return fmt.Errorf("build index for language %s: %w", langCodeForURL, err)
 	}
@@ -253,6 +264,15 @@ func (b *Builder) buildLanguage(langCodeForSite string, isDefault bool, langCode
 // isDefaultLang indicates if this is the default language
 // langCodeForURL is the language code for URLs (used in output paths)
 func (b *Builder) buildVersionLanguage(versionID string, versionPath string, isDefaultVersion bool, langCodeForSite string, isDefaultLang bool, langCodeForURL string, includeDrafts bool) error {
+	defaultLang := ""
+	defaultVersion := ""
+	if b.config != nil && b.config.IsMultiLingual() {
+		defaultLang = b.config.GetDefaultLanguage()
+	}
+	if b.config != nil && b.config.IsMultiVersion() {
+		defaultVersion = b.config.GetDefaultVersion()
+	}
+
 	// Create site instance for this version and language
 	codeTheme := b.config.GetCodeTheme()
 	verLangSite, err := site.NewWithVersionPath(b.docsDir, codeTheme, b.basePath, langCodeForSite, versionID, versionPath)
@@ -260,7 +280,10 @@ func (b *Builder) buildVersionLanguage(versionID string, versionPath string, isD
 		// If version/language folder doesn't exist, skip it
 		return nil
 	}
+	b.applyGitHubConfig(verLangSite, langCodeForSite, versionID, versionPath, defaultVersion)
 	verLangSite.SetExplicitNav(b.config.Nav.Items)
+	verLangSite.SetDefaultVersion(defaultVersion)
+	verLangSite.SetDefaultLanguage(defaultLang)
 	if err := verLangSite.BuildIndex(); err != nil {
 		return fmt.Errorf("build index for version %s language %s: %w", versionID, langCodeForURL, err)
 	}
@@ -426,6 +449,15 @@ func (b *Builder) renderDocumentForVersionLanguage(handler *server.Handler, doc 
 	}
 
 	return nil
+}
+
+func (b *Builder) applyGitHubConfig(s *site.Site, language, versionID, versionPath, defaultVersion string) {
+	if s == nil || b.githubClient == nil || b.githubRepo == nil {
+		return
+	}
+
+	githubPath := github.ContentPath(b.githubRepo.Path, language, versionID, versionPath, defaultVersion)
+	s.SetGitHubConfig(b.githubClient, b.githubRepo.Owner, b.githubRepo.Repo, b.githubRepo.Branch, githubPath)
 }
 
 // generateSitemapForVersionLanguage generates a sitemap.xml file for a specific version and language.
@@ -673,6 +705,10 @@ func (b *Builder) renderDocumentForLanguage(handler *server.Handler, doc *site.D
 
 // copyDocsStaticAssets copies static assets from the docs directory.
 func (b *Builder) copyDocsStaticAssets() error {
+	if b.githubClient != nil && b.githubRepo != nil {
+		return b.copyGitHubStaticAssets()
+	}
+
 	return filepath.WalkDir(b.docsDir, func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return err
@@ -726,6 +762,51 @@ func (b *Builder) copyDocsStaticAssets() error {
 
 		return nil
 	})
+}
+
+func (b *Builder) copyGitHubStaticAssets() error {
+	entries, err := b.githubClient.ListDirectory(b.githubRepo.Owner, b.githubRepo.Repo, b.githubRepo.Branch, b.githubRepo.Path)
+	if err != nil {
+		return err
+	}
+
+	rootPath := strings.Trim(b.githubRepo.Path, "/")
+	for _, entry := range entries {
+		if entry.Type != "blob" {
+			continue
+		}
+		if !isStaticAsset(entry.Path) {
+			continue
+		}
+
+		rel := entry.Path
+		if rootPath != "" {
+			prefix := rootPath + "/"
+			if !strings.HasPrefix(entry.Path, prefix) {
+				continue
+			}
+			rel = strings.TrimPrefix(entry.Path, prefix)
+		}
+
+		if rel == "" || filepath.Base(rel) == ".dorcs_sessions.json" {
+			continue
+		}
+
+		content, err := b.githubClient.FetchMarkdown(b.githubRepo.Owner, b.githubRepo.Repo, b.githubRepo.Branch, entry.Path)
+		if err != nil {
+			return err
+		}
+
+		dstPath := filepath.Join(b.outputDir, filepath.FromSlash(rel))
+		if err := os.MkdirAll(filepath.Dir(dstPath), 0755); err != nil {
+			return err
+		}
+		if err := os.WriteFile(dstPath, content, 0644); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 // generateSitemapForLanguage generates a sitemap.xml file for a specific language.

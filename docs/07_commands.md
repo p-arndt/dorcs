@@ -33,6 +33,7 @@ Flags:
 | `--cache` | `true` | Currently accepted by the CLI, but not behaviorally significant in the current server implementation |
 | `--no-drafts` | `true` | Hide draft pages |
 | `--config` | `""` | Explicit config file |
+| `--repo` | `""` | GitHub repository to bootstrap docs and config from |
 | `--theme` | `""` | Override theme preset |
 | `--theme-mode` | `""` | Override theme mode |
 | `--watch` | `false` | Enable file watching and live reload |
@@ -41,6 +42,10 @@ Example:
 
 ```bash
 dorcs --dir ./docs --watch --addr 127.0.0.1:8080
+```
+
+```bash
+dorcs --repo https://github.com/owner/repo/tree/main/docs
 ```
 
 ## `dorcs init`
@@ -83,6 +88,7 @@ Flags:
 | `--title` | `""` | Override site title |
 | `--no-drafts` | `true` | Hide draft pages |
 | `--config` | `""` | Explicit config file |
+| `--repo` | `""` | GitHub repository to bootstrap docs and config from |
 | `--theme` | `""` | Override theme preset |
 | `--theme-mode` | `""` | Override theme mode |
 
@@ -92,9 +98,15 @@ Example:
 dorcs build --output ./dist --base-url /docs
 ```
 
+```bash
+dorcs build --repo owner/repo/tree/main/docs --output ./dist
+```
+
 ## Notes
 
 - The default server mode also exposes search and sitemap endpoints
 - `--watch` is skipped for GitHub-backed docs
+- `--config` takes precedence over `--repo`
+- `--repo` looks for `dorcs.yaml`, `dorcs.yml`, or `dorcs.json` at the repo root first, then at the repo path
 - `--base-url` is sanitized to avoid invalid path segments
 - static builds generate `sitemap.xml`, but not a live search API

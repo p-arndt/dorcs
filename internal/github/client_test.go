@@ -49,7 +49,7 @@ func TestParseRepositoryURL(t *testing.T) {
 			want: &RepositoryInfo{
 				Owner:  "owner",
 				Repo:   "repo",
-				Branch: "main",
+				Branch: "",
 				Path:   "",
 			},
 			wantErr: false,

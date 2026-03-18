@@ -85,7 +85,8 @@ GOOS=windows GOARCH=amd64 go build -o dorcs.exe ./cmd/dorcs
 | `-title`      | `""`     | Site title shown in header (overrides config file)                                   |
 | `-cache`      | `true`   | Cache rendered documents in memory                                                   |
 | `-no-drafts`  | `true`   | Hide documents with `draft: true` front matter                                       |
-| `-config`     | `""`     | Path to config file (default: looks for `dorcs.yaml` in docs dir)                    |
+| `-config`     | `""`     | Path to config file (default: current directory first, then docs directory)          |
+| `-repo`       | `""`     | GitHub repository to bootstrap docs and config from                                  |
 | `-theme`      | `""`     | Theme preset: `default`, `ocean`, `forest`, `sunset`, `midnight`, `lavender`, `rose` |
 | `-theme-mode` | `""`     | Theme mode: `light`, `dark`, `auto`                                                  |
 | `-watch`      | `false`  | Watch for file changes and automatically reload                                      |
@@ -139,7 +140,15 @@ draft: false
 
 ## Configuration File
 
-dorcs supports a configuration file for advanced customization. Place a `dorcs.yaml` (or `dorcs.yml` or `dorcs.json`) file in your docs directory.
+dorcs supports a configuration file for advanced customization. By default it looks for `dorcs.yaml`, `dorcs.yml`, or `dorcs.json` in the current directory first, then in the docs directory.
+
+You can also bootstrap both docs and config directly from GitHub:
+
+```sh
+dorcs --repo https://github.com/owner/repo/tree/main/docs
+```
+
+When `-repo` is used, dorcs looks for config files at the repo root first and then at the repo path. `-config` still takes precedence over `-repo`.
 
 
 ### Theme Presets
