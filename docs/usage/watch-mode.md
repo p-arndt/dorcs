@@ -1,19 +1,19 @@
 ---
 title: "Watch Mode"
-description: "How to use watch mode"
-tags: [watch-mode, development]
-date: 2025-12-14
+description: "Live reload and file watching in Dorcs."
+tags: [usage, watch]
+date: 2026-03-18
 draft: false
 ---
 
 # Watch Mode
 
-You can use Dorcs with watch mode for development. This means that you can see your changes immediately in the browser without having to restart the server.
+Watch mode is the fastest way to write docs locally.
 
-It is as easy as adding the `--watch` flag to the command when starting the server.
+## Start it
 
 ```bash
-./dorcs --watch
+dorcs --watch
 ```
 
 > [!IMPORTANT]
@@ -23,5 +23,9 @@ It is as easy as adding the `--watch` flag to the command when starting the serv
 
 Watch mode watches the `docs` directory for changes and automatically reloads the page. 
 It also watches the `dorcs.yaml` file for changes. So if you change the configuration, the server will automatically reload.
+
+## Limits
+
+When GitHub content mode is enabled, file watching is skipped because content is not sourced from the local docs directory.
 
 

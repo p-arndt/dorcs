@@ -1,27 +1,29 @@
 ---
 title: "Themes"
-description: "Browse all available themes and customize your documentation site."
-tags: [themes, customization, styling]
-date: 2025-12-13
+description: "Theme presets and styling options in Dorcs."
+tags: [themes, styling]
+date: 2026-03-18
 draft: false
 ---
 
 # Themes
 
-dorcs comes with a variety of built-in themes. Each theme includes both light and dark color schemes with matching syntax highlighting.
+Dorcs ships with preset themes and supports targeted overrides.
 
-## Using Themes
+## Set a theme
 
-**Via configuration file:**
+In config:
+
 ```yaml
 theme:
-  preset: midnight
-  mode: auto  # light, dark, or auto
+  preset: nord
+  mode: auto
 ```
 
-**Via command line:**
+Or from the CLI:
+
 ```bash
-./dorcs --theme midnight --theme-mode dark
+dorcs --theme nord --theme-mode dark
 ```
 
 ## Available Themes

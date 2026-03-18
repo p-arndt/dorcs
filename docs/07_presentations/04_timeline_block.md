@@ -1,34 +1,38 @@
 ---
 title: "Timeline Block"
-description: "Timeline block for slide decks"
-tags: [presentations, slides, markdown]
-date: 2026-02-21
+description: "Build roadmap slides with the timeline block."
+tags: [presentations, timeline]
+date: 2026-03-18
+draft: false
 ---
 
 # Timeline Block
 
-Use the `::: timeline` block for roadmaps and process steps. Each `###` or `####` heading starts a new step; the heading text becomes the date/label marker.
+Use `::: timeline` inside a slide with the `timeline` layout.
 
 ```markdown
 <!-- _layout: timeline -->
 
-# Project Roadmap
+# Roadmap
 
 ::: timeline
 
-### 2024 · Q1
+### Q1
 
-**Discovery**
-Initial research and planning.
+**Discover**
+Research and planning.
 
-### 2024 · Q2
+### Q2
 
 **Build**
-Development and testing.
+Implementation and testing.
 
-### 2024 · Q3
+### Q3
 
 **Launch**
-Release and iterate.
+Release and iteration.
+
 :::
 ```
+
+Each `###` or `####` heading starts a new timeline step.

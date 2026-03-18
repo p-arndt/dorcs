@@ -1,42 +1,55 @@
 ---
 title: "Order of Docs"
-description: "How to order your docs"
-tags: [ordering, docs]
-date: 2025-12-14
+description: "How Dorcs determines page order in navigation."
+tags: [usage, navigation]
+date: 2026-03-18
 draft: false
 ---
 
 # Order of Docs
 
-## Two Navigation Modes
+Dorcs can order pages automatically or follow an explicit navigation tree.
 
-dorcs supports two ways to control navigation:
+## Best option for most sites
 
-1. Explicit navigation in `dorcs.yaml` with `nav.items`
-2. Automatic navigation from folders and files
+Use `nav.items` when you need stable labels and exact ordering across folders.
 
-If `nav.items` is present, it fully defines the sidebar order and grouping.
+## Automatic ordering
+
+Without `nav.items`, Dorcs uses the file tree and common ordering hints:
+
+1. numeric prefixes such as `01_`, `02_`
+2. front matter hints like `order`
+3. alphabetical fallback
+
+Example:
+
+```text
+docs/
+├── 01_intro.md
+├── 02_install.md
+└── 03_deploy.md
+```
+
+## Explicit ordering
 
 ```yaml
 nav:
   items:
     - Home: index.md
-    - Getting Started: 01_getting-started.md
-    - Usage:
-        page: usage/index.md
+    - Guides:
+        page: guides/index.md
         items:
-          - Writing Your Docs: usage/writing-your-docs.md
-          - Metadata: usage/metadata.md
+          - Install: guides/install.md
+          - Deploy: guides/deploy.md
 ```
 
-## Automatic Navigation
+Use this when:
 
-If `nav.items` is not configured, dorcs builds navigation automatically from your docs tree.
+- filenames should stay technical
+- labels should be more readable
+- multiple sections need custom grouping
 
-Automatic ordering prefers:
+## Recommendation
 
-1. Numeric prefixes in filenames (for example `01_`, `02_`)
-2. `order` field in front matter
-3. Alphabetical by title
-
-Files with numeric prefixes such as `01_installation.md` appear before files without prefixes.
+Use filename prefixes for small sites. Use `nav.items` once the docs become product-facing or multi-section.

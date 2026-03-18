@@ -1,36 +1,56 @@
 ---
 title: "Metadata"
-description: "Metadata features"
-tags: [metadata, frontmatter]
-date: 2025-12-14
+description: "Front matter fields supported by Dorcs."
+tags: [usage, metadata]
+date: 2026-03-18
 draft: false
 ---
 
 # Metadata
 
-Add metadata to your markdown files using YAML front matter at the top of the file:
+Dorcs reads YAML front matter from Markdown files.
+
+## Example
 
 ```yaml
 ---
-title: "Page Title"
-description: "Page description for SEO"
-date: 2025-12-13
-tags: [tag1, tag2, tag3]
+title: "Getting Started"
+description: "Set up the project and run it locally"
+date: 2026-03-18
+tags:
+  - guide
+  - setup
 draft: false
-order: 1
+order: 10
+author: "Team Docs"
+after: "installation"
+presentation: false
+presentation_header: "Engineering"
+presentation_footer: "Internal"
 ---
-# Getting Started
-
-Your content here...
 ```
 
-**Available fields:**
+## Common fields
 
-- `title` - Page title (used in navigation and browser tab)
-- `description` - Meta description for SEO
-- `date` - Publication date (YYYY-MM-DD format)
-- `tags` - List of tags for categorization
-- `draft` - Set to `true` to hide from navigation (when using `--no-drafts`)
-- `order` - Numeric value for sorting pages in automatic navigation (lower numbers appear first)
-- `author` - Author name (displayed with `[[AUTHOR]]` placeholder)
-- `after` - Key of item this should appear after in automatic navigation (use `"index"` to place after index.md) (See [Order of Docs](./order-of-docs.md) for more information.)
+| Field | Type | Purpose |
+| --- | --- | --- |
+| `title` | string | Page title |
+| `description` | string | Meta description |
+| `date` | string | Display date |
+| `tags` | list | Tag metadata |
+| `draft` | bool | Hide when drafts are disabled |
+| `order` | number | Manual order hint |
+| `author` | string | Author metadata |
+| `after` | string | Relative ordering hint |
+
+## Presentation fields
+
+| Field | Type | Purpose |
+| --- | --- | --- |
+| `presentation` | bool | Render page as a slide deck |
+| `presentation_header` | string | Default slide header |
+| `presentation_footer` | string | Default slide footer |
+
+## Draft behavior
+
+Draft pages are hidden by default because `--no-drafts` defaults to `true` in both server and build mode.

@@ -89,7 +89,7 @@ Headings and content flow into the second column.
 
 **Layout options** — lead, left, right, columns, split, timeline.
 
-**Styling** — _class, _layout, _gap, _align, _columns.
+**Styling** — \_class, \_layout, \_gap, \_align, \_columns.
 
 ---
 
@@ -155,15 +155,19 @@ Main content goes here. Larger area for details, lists, or paragraphs.
 `<!-- _layout: timeline -->` with `::: timeline`
 
 ::: timeline
+
 ### Q1 · Discovery
+
 **Research & Planning**
 Initial phase and requirements.
 
 ### Q2 · Build
+
 **Development**
 Implementation and testing.
 
 ### Q3 · Launch
+
 **Release**
 Deploy and iterate.
 :::
@@ -187,13 +191,13 @@ Deploy and iterate.
 
 ## Layout Primitives
 
-| Directive | Effect |
-|-----------|--------|
-| `_layout` | Structure: lead, left, right, big, quote, columns-2, columns-3, split, timeline |
-| Blocks | `::: hero`, `::: stat`, `::: caption`, `::: label`, `::: timeline` |
-| `_gap` | Spacing: tight, normal, loose |
-| `_align` | Alignment: start, center, end |
-| `_columns` | Column count: 2, 3, 4 |
+| Directive  | Effect                                                                          |
+| ---------- | ------------------------------------------------------------------------------- |
+| `_layout`  | Structure: lead, left, right, big, quote, columns-2, columns-3, split, timeline |
+| Blocks     | `::: hero`, `::: stat`, `::: caption`, `::: label`, `::: timeline`              |
+| `_gap`     | Spacing: tight, normal, loose                                                   |
+| `_align`   | Alignment: start, center, end                                                   |
+| `_columns` | Column count: 2, 3, 4                                                           |
 
 ---
 

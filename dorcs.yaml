@@ -16,11 +16,11 @@ site:
   description: "Single static binary documentation server for Markdown files"
 
   # Logo URL - replaces text title if set (optional)
-  # Place logo.png in the root directory where dorcs is running and reference it as "/logo.png"
+  # Place logo.png in the docs directory (or a shared asset location under docs/) and reference it as "/logo.png"
   # logo: "/logo.png"
 
   # Custom favicon URL (optional)
-  # Place favicon.ico in the root directory where dorcs is running and reference it as "/favicon.ico"
+  # Place favicon.ico in the docs directory (or a shared asset location under docs/) and reference it as "/favicon.ico"
   # favicon: "/favicon.ico"
 
 # Theme and styling configuration
@@ -64,10 +64,10 @@ theme:
 
 # Navigation configuration
 nav:
-  # Show search box in sidebar (default: true)
+  # Search trigger configuration key (currently accepted, but the UI always shows search)
   show_search: true
 
-  # Keep all folders expanded by default (default: false)
+  # Expand-all configuration key (currently accepted, but not used by the UI)
   expand_all: false
 
   # Explicit sidebar order (MkDocs-style).
@@ -104,7 +104,8 @@ nav:
           - Layout: 07_presentations/02_layout.md
           - Typography: 07_presentations/03_typography.md
           - Timeline Block: 07_presentations/04_timeline_block.md
-          - Sample Presentation: 07_presentations/05_sample_presentation.md
+          - Presentation Code Example: 07_presentations/05_sample_presentation_code.md
+          - Example Presentation: 07_presentations/06_example_presentation.md
     - Commands: 07_commands.md
     - Edit: 08_edit.md
 
@@ -157,16 +158,14 @@ footer:
 
 # Versioning configuration
 # Allows you to maintain multiple versions of your documentation (e.g., v1, v2, latest)
-# Uses MkDocs-style structure: versions are in direct folders (docs/v1/, docs/latest/)
-# Default version is served at root URL, other versions at /v1/, /v2/, etc.
+# Default-version content is served from the root docs folder.
+# Non-default versions are served from direct folders like docs/v1/ and docs/v2/.
 # versions:
 #   # Default version identifier (served at root URL, no prefix)
-#   default: "v1"
-#
+#   default: "latest"
+
 #   # Enabled versions list (explicit configuration required)
 #   enabled:
-#     - id: "v0"
-#       name: "V0"
 #     - id: "v1"
 #       name: "V1"
 
@@ -174,26 +173,26 @@ footer:
 #
 # Versioning only (no languages):
 # docs/
-#   index.md                    # Default version (v1) - served at /
+#   index.md                    # Default version - served at /
 #   getting-started.md
 #   v0/
 #     index.md                  # Version 0 - served at /v0/
 #     getting-started.md
 #   v1/
-#     index.md                  # Version 1 (same as root) - served at /v1/
+#     index.md                  # Version 1 - served at /v1/
 #     getting-started.md
 #
 # Both versioning and languages (language-first):
 # docs/
-#   index.md                    # en, v1 (default) - served at /
+#   index.md                    # en, default version - served at /
 #   en/
-#     index.md                  # en, v1 (default) - served at /en/
+#     index.md                  # en, default version - served at /en/
 #     v0/
 #       index.md                # en, v0 - served at /en/v0/
 #     v1/
 #       index.md                # en, v1 - served at /en/v1/
 #   de/
-#     index.md                  # de, v1 (default) - served at /de/
+#     index.md                  # de, default version - served at /de/
 #     v0/
 #       index.md                # de, v0 - served at /de/v0/
 #     v1/

@@ -1,75 +1,67 @@
 ---
 title: "Deployment"
-description: "Deploy dorcs to production on various platforms and services."
-tags: [deployment, production, hosting]
-date: 2025-12-13
+description: "Build and deploy a static Dorcs site."
+tags: [deployment]
+date: 2026-03-18
 draft: false
 ---
 
 # Deployment
 
-Deploy your dorcs documentation site to production.
+For production, Dorcs is usually used in static build mode.
 
+## Build the site
 
-
-## Build for Production
-
-Build a static binary with no dependencies:
-
-**Linux:**
 ```bash
-CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build \
-  -trimpath \
-  -ldflags="-s -w" \
-  -o dorcs \
-  ./cmd/dorcs
+dorcs build --dir ./docs --output ./dist
 ```
 
-**Windows:**
-```cmd
-set CGO_ENABLED=0
-set GOOS=windows
-set GOARCH=amd64
-go build -trimpath -ldflags="-s -w" -o dorcs.exe ./cmd/dorcs
-```
+Common flags:
 
-**macOS:**
+- `--base-url /docs` for subpath deployments
+- `--config ./dorcs.yaml` for an explicit config file
+- `--theme` and `--theme-mode` to override config during build
+
+## Deploy the output
+
+Upload the contents of `dist/` to any static host:
+
+- GitHub Pages
+- Netlify
+- Vercel
+- S3 + CDN
+- Nginx or Caddy
+
+## Subpath deployments
+
+If the site is served below the domain root, set the base path during build:
+
 ```bash
-CGO_ENABLED=0 GOOS=darwin GOARCH=amd64 go build \
-  -trimpath \
-  -ldflags="-s -w" \
-  -o dorcs \
-  ./cmd/dorcs
+dorcs build --base-url /docs
 ```
 
-The `-s -w` flags strip debug symbols and reduce binary size.
+That ensures internal links, assets, and APIs are generated with the correct prefix.
+That ensures internal links and assets are generated with the correct prefix.
 
-## Deployment Options
+## GitHub Pages example
 
-**Docker Compose:**
-
-The project includes a `docker-compose.yml` file. For production, configure via `dorcs.yaml`:
-
-```yaml
-services:
-  dorcs:
-    build: .
-    ports:
-      - "8080:8080"
-    volumes:
-      - ./docs:/docs
-    restart: unless-stopped
-```
-
-## Monitoring
-
-**Health check:**
 ```bash
-curl http://localhost:8080/api/health
+dorcs build --output ./dist --base-url /my-project
 ```
 
+Publish `dist/` to the `gh-pages` branch or your Pages artifact workflow.
 
-## Next Steps
+## Reverse proxy setup
 
-- ⚙️ [Configuration](./03_configuration.md) - Production configuration
-- 🎨 [Themes](./05_themes.md) - Customize appearance
+If you run Dorcs as a live server behind a proxy instead of exporting static files:
+
+- forward `X-Forwarded-Proto` when terminating TLS upstream
+- keep the configured `--base-url` consistent with the mounted path
+
+## Production checklist
+
+- build with the right `--base-url`
+- verify logo and favicon paths
+- disable drafts if you do not want preview content published
+- check external links and "Edit on GitHub" targets
+- note that static builds do not include the live `/api/search` endpoint

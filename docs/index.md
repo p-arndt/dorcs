@@ -1,8 +1,8 @@
 ---
 title: "Dorcs"
-description: "Welcome to dorcs - a single-binary static documentation server for Markdown files."
-tags: [docs, markdown]
-date: 2025-12-13
+description: "Single-binary documentation server and static site builder for Markdown."
+tags: [docs, overview]
+date: 2026-03-18
 draft: false
 ---
 
@@ -12,13 +12,19 @@ draft: false
 <img src="./logo.png" alt="Dorcs Logo" width="200" height="200" style="border: none;" />
 </div>
 
-Dorcs is a single-binary static documentation server for Markdown files. It is a simple and easy to use documentation server that allows you to create and host your documentation site in minutes.
+Dorcs turns a folder of Markdown files into a documentation site and can also export it as static HTML.
 
-## Get Started
+## Why dorcs
 
-Ready to get started? Check out the [Getting Started guide](./01_getting-started.md) to have your documentation site running in under 5 minutes.
+- Single binary, no runtime stack
+- Clean extensionless URLs
+- Generated navigation, table of contents, and live search in server mode
+- Live reload in development
+- Static builds for deployment
+- Optional themes, GitHub-backed docs, versions, languages, presentations, and edit mode
 
-Or if you ready to get started now, download the latest release for your platform:
+## Start here
+
 
 <div style="display: flex; flex-wrap: wrap; justify-content: center; gap: 1.5em; margin: 2em 0;">
   <a href="https://github.com/p-arndt/dorcs/releases/latest/download/dorcs-windows-amd64.exe"
@@ -79,81 +85,26 @@ Or if you ready to get started now, download the latest release for your platfor
   </a>
 </div>
 
+1. Read [Getting Started](./01_getting-started.md) for the fastest path to a running site.
+2. Use [Configuration](./03_configuration.md) to customize branding, navigation, and behavior.
+3. See [Writing Your Docs](./usage/writing-your-docs.md) for content structure and authoring patterns.
+4. Use [Deployment](./04_deployment.md) when you are ready to ship a static build.
 
-## Documentation
+## Core workflow
 
-- 🚀 [Getting Started](./01_getting-started.md) - Complete quick start guide
-- 📦 [Installation](./02_installation.md) - Detailed installation instructions
-- ⚙️ [Configuration](./03_configuration.md) - Customize your site with `dorcs.yaml`
-- 📁 [File Structure](./usage/file-structure.md) - Organize docs with languages and versions
-- 🔗 [External Content](./external-content/index.md) - Serve content from external sources (GitHub, etc.)
-- 🚢 [Deployment](./04_deployment.md) - Deploy to production
-- 🎨 [Themes](./05_themes.md) - Browse all available themes
-- 📝 [Markdown Features](./06_markdown/index.md) - Complete guide to markdown features
-- 🎥 [Presentations](./07_presentations/index.md) - Create slide decks from Markdown with layout and styling options
+```bash
+dorcs init
+dorcs --watch
+dorcs build
+```
 
-## Features
+## What the docs cover
 
-- **Single binary** – no runtime dependencies, statically linkable
-- **Extensionless URLs** – `/guide/getting-started` serves `docs/guide/getting-started.md`
-- **External Content Sources** – serve markdown files directly from GitHub repositories with automatic caching
-- **Multi-lingual support** – serve documentation in multiple languages with automatic language switching
-- **YAML front matter** – metadata support (title, description, date, tags, draft)
-- **Table of Contents** – auto-generated from headings with scrollspy
-- **Navigation sidebar** – built automatically from your folder structure
-- **Responsive design** – mobile-friendly with collapsible sidebar
-- **Dark mode** – automatic based on system preference
-- **Live reload** – watch mode for development with smart content updates
-- **Multiple themes** – choose from 20+ built-in themes
-- **Search** – built-in search functionality
-- **Edit Mode** – online editing with authentication (create, edit, delete files directly in the browser)
-- **Presentations** – create slide decks from Markdown with layout and styling options
-
-## How It Works
-
-### URL Routing
-
-dorcs uses extensionless URLs that map directly to your file structure:
-
-| File Path                    | URL                   |
-| ---------------------------- | --------------------- |
-| `docs/index.md`              | `/`                   |
-| `docs/getting-started.md`    | `/getting-started`    |
-| `docs/guide/index.md`        | `/guide`              |
-| `docs/guide/installation.md` | `/guide/installation` |
-
-**Multi-lingual URLs:**
-
-When multiple languages are configured, non-default languages use a language prefix:
-
-| File Path                       | URL                      |
-| ------------------------------- | ------------------------ |
-| `docs/en/index.md`              | `/` or `/en/`            |
-| `docs/de/index.md`              | `/de/`                   |
-| `docs/de/getting-started.md`    | `/de/getting-started`    |
-| `docs/fr/guide/installation.md` | `/fr/guide/installation` |
-
-The default language is served at the root URL (no prefix), while other languages use `/{lang}/` prefixes.
-
-**Versioned URLs:**
-
-When versioning is configured, non-default versions use a version prefix:
-
-| File Path                       | URL                      |
-| ------------------------------- | ------------------------ |
-| `docs/v1/index.md`              | `/v1/`                   |
-| `docs/v1/getting-started.md`    | `/v1/getting-started`    |
-| `docs/en/v1/getting-started.md` | `/en/v1/getting-started` |
-
-**Combined (Languages + Versions):**
-
-When both are configured, URLs use language-first structure:
-
-| File Path                       | URL                      |
-| ------------------------------- | ------------------------ |
-| `docs/en/v1/getting-started.md` | `/en/v1/getting-started` |
-| `docs/de/v1/getting-started.md` | `/de/v1/getting-started` |
-
-See [File Structure & Organization](./usage/file-structure.md) for complete details.
-
-It will also automatically build navigation from your structure and generate a sidebar and a table of contents for each page.
+- [Installation](./02_installation.md): binaries and building from source
+- [Configuration](./03_configuration.md): `dorcs.yaml` and override rules
+- [Usage](./usage/index.md): file layout, metadata, ordering, watch mode
+- [Markdown](./06_markdown/index.md): supported syntax and extensions
+- [Presentations](./07_presentations/index.md): slide decks from Markdown
+- [Commands](./07_commands.md): CLI reference
+- [External Content](./external-content/index.md): GitHub as a docs source
+- [Edit Mode](./08_edit.md): browser-based editing with authentication

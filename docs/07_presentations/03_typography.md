@@ -1,21 +1,48 @@
 ---
 title: "Typography"
-description: "Typography blocks for slide decks"
-tags: [presentations, slides, markdown]
-date: 2026-02-21
+description: "Simple typography rules for better Dorcs presentations."
+tags: [presentations, typography]
+date: 2026-03-18
 draft: false
 ---
 
-# Typography Blocks
+# Typography
 
-Composable blocks for different font sizes. Mix them on the same slide.
+Presentation slides need less text and stronger hierarchy than normal docs pages.
 
-| Block         | Purpose                              |
-| ------------- | ------------------------------------ |
-| `::: hero`    | Large impactful text                 |
-| `::: stat`    | Number (first line) + caption (rest) |
-| `::: caption` | Small supporting text                |
-| `::: label`   | Small uppercase label                |
+## Good defaults
+
+- one idea per slide
+- short headings
+- three to five bullets at most
+- large numbers or statements on `big` slides
+
+## Good slide text
+
+```markdown
+<!-- _layout: big -->
+
+42%
+
+faster onboarding after consolidating product docs
+```
+
+## Avoid
+
+- long paragraphs
+- nested lists
+- dense code samples on title or summary slides
+
+## Typography blocks
+
+Dorcs also supports small presentation-oriented block helpers:
+
+- `::: hero`
+- `::: stat`
+- `::: caption`
+- `::: label`
+
+Example:
 
 ```markdown
 ::: hero
@@ -23,22 +50,10 @@ Composable blocks for different font sizes. Mix them on the same slide.
 :::
 
 ::: caption
-of an audience's retention rate is attributed to the visuals used.
+faster onboarding after restructuring the docs
 :::
 ```
 
-```markdown
-::: stat
-35%
-of an audience's retention rate is attributed to the visuals used.
-:::
-```
+## Use docs for detail
 
-```markdown
-::: label
-AGENDA
-:::
-
-1. Introducing yourself
-2. Engaging the audience
-```
+Keep the full explanation in a normal Dorcs page and use the deck to present the main story.
