@@ -12,13 +12,13 @@
       <li class="folder" data-key="{{ .Path }}">
         {{- if .Path }}
           <a class="node{{ if eq .Path $current }} active{{ end }}" href="{{ $base }}{{ .Path }}" data-title="{{ .Title }}">
-            <span class="toggle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg></span>
             <span class="label">{{ if .Title }}{{ .Title }}{{ else }}{{ .Path }}{{ end }}</span>
+            <span class="toggle" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg></span>
           </a>
         {{- else }}
           <span class="node" data-title="{{ .Title }}">
-            <span class="toggle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg></span>
             <span class="label">{{ if .Title }}{{ .Title }}{{ else }}Folder{{ end }}</span>
+            <span class="toggle" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg></span>
           </span>
         {{- end }}
         <ul class="children">
