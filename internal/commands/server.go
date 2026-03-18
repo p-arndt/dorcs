@@ -163,6 +163,15 @@ func RunServer(templatesFS, staticFS embed.FS, version string) {
 			log.Printf("dorcs: using persistent cache at %s", cacheDir)
 		}
 
+		tokenState := "empty"
+		switch {
+		case strings.Contains(cfg.GitHub.Token, "${"):
+			tokenState = "unexpanded"
+		case strings.TrimSpace(cfg.GitHub.Token) != "":
+			tokenState = "present"
+		}
+		log.Printf("dorcs: GitHub token state: %s (length=%d)", tokenState, len(strings.TrimSpace(cfg.GitHub.Token)))
+
 		log.Printf("dorcs: GitHub integration enabled: %s/%s@%s/%s", repoInfo.Owner, repoInfo.Repo, repoInfo.Branch, repoInfo.Path)
 		log.Printf("dorcs: note: local docs directory will be ignored when GitHub integration is enabled")
 	}

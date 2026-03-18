@@ -735,9 +735,10 @@ func (c *Config) GetCodeTheme() string {
 	return getCodeThemeForPreset(c.Theme.Preset)
 }
 
-// IsMultiLingual returns true if multiple languages are enabled.
+// IsMultiLingual returns true if explicit language-folder routing is enabled.
+// This includes single-language setups like docs/en/ when languages are configured.
 func (c *Config) IsMultiLingual() bool {
-	return len(c.Languages.Enabled) > 1
+	return len(c.Languages.Enabled) > 0
 }
 
 // GetLanguage returns the Language config for a given code, or nil if not found.
@@ -767,9 +768,9 @@ func (c *Config) GetDefaultLanguage() string {
 	return ""
 }
 
-// IsMultiVersion returns true if multiple versions are enabled.
+// IsMultiVersion returns true if explicit version-folder routing is enabled.
 func (c *Config) IsMultiVersion() bool {
-	return len(c.Versions.Enabled) > 1
+	return len(c.Versions.Enabled) > 0
 }
 
 // GetVersion returns the Version config for a given ID, or nil if not found.

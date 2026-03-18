@@ -27,7 +27,7 @@ func TestIsMultiLingual(t *testing.T) {
 					},
 				},
 			},
-			expected: false,
+			expected: true,
 		},
 		{
 			name: "multiple languages",
