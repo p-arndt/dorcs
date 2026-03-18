@@ -4,7 +4,6 @@ description: "Typography blocks for slide decks"
 tags: [presentations, slides, markdown]
 date: 2026-02-21
 draft: false
-after: "layout"
 ---
 
 # Typography Blocks

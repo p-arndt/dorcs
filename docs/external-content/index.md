@@ -4,7 +4,6 @@ description: "Serve documentation content from external sources like GitHub"
 tags: [external, content, github, sources]
 date: 2025-12-18
 draft: false
-after: "installation"
 ---
 
 # External Content

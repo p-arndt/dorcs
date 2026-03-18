@@ -3,7 +3,6 @@ title: "Timeline Block"
 description: "Timeline block for slide decks"
 tags: [presentations, slides, markdown]
 date: 2026-02-21
-after: "typography"
 ---
 
 # Timeline Block

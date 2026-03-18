@@ -4,7 +4,6 @@ description: "Complete guide to organizing your documentation files with languag
 tags: [structure, organization, languages, versions]
 date: 2025-12-14
 draft: false
-after: "writing-your-docs"
 ---
 
 # File Structure & Organization

@@ -3,7 +3,6 @@ title: "Edit"
 description: "Edit your documentation site in the browser"
 tags: [edit, browser, markdown]
 date: 2026-02-21
-after: "07_commands"
 ---
 
 # Edit

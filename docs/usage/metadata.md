@@ -31,6 +31,6 @@ Your content here...
 - `date` - Publication date (YYYY-MM-DD format)
 - `tags` - List of tags for categorization
 - `draft` - Set to `true` to hide from navigation (when using `--no-drafts`)
-- `order` - Numeric value for sorting pages in navigation (lower numbers appear first)
+- `order` - Numeric value for sorting pages in automatic navigation (lower numbers appear first)
 - `author` - Author name (displayed with `[[AUTHOR]]` placeholder)
-- `after` - Key of item this should appear after in navigation (use `"index"` to place after index.md) (See [Order of Docs](./order-of-docs.md) for more information.)
+- `after` - Key of item this should appear after in automatic navigation (use `"index"` to place after index.md) (See [Order of Docs](./order-of-docs.md) for more information.)

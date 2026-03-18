@@ -4,7 +4,6 @@ description: "Create slide decks from Markdown with layout and styling options"
 tags: [presentations, slides, markdown]
 date: 2026-02-21
 draft: false
-after: "06_markdown"
 ---
 
 # Presentations

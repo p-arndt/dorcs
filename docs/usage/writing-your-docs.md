@@ -4,7 +4,6 @@ description: "How to write your docs"
 tags: [writing, docs]
 date: 2025-12-14
 draft: false
-after: "index"
 ---
 
 # Writing Your Docs

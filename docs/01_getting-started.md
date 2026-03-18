@@ -4,7 +4,6 @@ description: "Get your documentation site running in minutes."
 tags: [getting-started, quickstart]
 date: 2025-12-13
 draft: false
-after: "index"
 ---
 
 # Getting Started

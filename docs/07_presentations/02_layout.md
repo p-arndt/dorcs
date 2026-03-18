@@ -4,7 +4,6 @@ description: "Layout options for slide decks"
 tags: [presentations, slides, markdown]
 date: 2026-02-21
 draft: false
-after: "directives"
 ---
 
 # Layout Classes

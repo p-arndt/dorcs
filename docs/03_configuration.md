@@ -90,12 +90,33 @@ theme:
 nav:
   show_search: true             # Enable/disable search box
   expand_all: false             # Expand all folders by default
+  items:                        # Optional explicit sidebar tree
+    - Home: index.md
+    - Getting Started: 01_getting-started.md
+    - Usage:
+        page: usage/index.md
+        items:
+          - Writing Your Docs: usage/writing-your-docs.md
+          - Metadata: usage/metadata.md
   links:                        # Header navigation links
     - title: "GitHub"
       url: "https://github.com/..."
       external: true
       icon: "github"            # github, twitter, discord, external
 ```
+
+`nav.items` is optional:
+
+- If `nav.items` is present, it fully defines the sidebar order and grouping.
+- If `nav.items` is omitted, dorcs builds the sidebar from your folders/files automatically.
+- In automatic mode, numeric filename prefixes such as `01_`, `02_`, `03_` control sibling order.
+
+Supported `nav.items` forms:
+
+- `Label: path.md` for a single clickable page
+- `Label: { page: path.md }` for the verbose single-page form
+- `Label: { items: [...] }` for a non-clickable section
+- `Label: { page: path.md, items: [...] }` for a clickable section with children
 
 ### Footer
 

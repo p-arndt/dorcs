@@ -4,7 +4,6 @@ description: "Marpit-compatible directives for slide layout and styling"
 tags: [presentations, slides, markdown]
 date: 2026-02-21
 draft: false
-after: "presentations"
 ---
 
 # Slide Directives
