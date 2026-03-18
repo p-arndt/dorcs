@@ -69,6 +69,7 @@ func (h *Handler) UpdateConfig(cfg *config.Config) {
 // NavItem represents a navigation tree item for sidebar rendering.
 type NavItem struct {
 	Title    string
+	Key      string
 	Path     string // URL path, begins with "/" (e.g. "/guide/getting-started")
 	IsDir    bool
 	Children []NavItem

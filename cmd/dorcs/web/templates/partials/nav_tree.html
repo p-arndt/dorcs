@@ -9,7 +9,7 @@
   {{- if .IsDir }}
     {{- if .Children }}
       {{/* Folder WITH children - show toggle */}}
-      <li class="folder" data-key="{{ .Path }}">
+      <li class="folder" data-key="{{ .Key }}">
         {{- if .Path }}
           <a class="node{{ if eq .Path $current }} active{{ end }}" href="{{ $base }}{{ .Path }}" data-title="{{ .Title }}">
             <span class="label">{{ if .Title }}{{ .Title }}{{ else }}{{ .Path }}{{ end }}</span>

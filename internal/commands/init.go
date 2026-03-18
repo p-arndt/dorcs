@@ -132,10 +132,10 @@ theme:
 
 # Navigation configuration
 nav:
-  # Show search box in sidebar (default: true)
+  # Search trigger configuration key (currently accepted, but the UI always shows search)
   show_search: true
 
-  # Keep all folders expanded by default (default: false)
+  # Expand-all configuration key (currently accepted, but not used by the UI)
   expand_all: false
 
 # Footer configuration

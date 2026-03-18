@@ -205,7 +205,7 @@ func (s *Site) BuildIndex() error {
 
 	var newNav *NavNode
 	if len(explicitNav) > 0 {
-		configuredNav, err := buildConfiguredNavTree(newIndex, explicitNav)
+		configuredNav, err := buildConfiguredNavTree(s, newIndex, explicitNav)
 		if err != nil {
 			return err
 		}

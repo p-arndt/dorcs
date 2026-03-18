@@ -63,9 +63,13 @@ func NewWithVersionPath(rootDir string, codeTheme string, basePath string, langu
 		if stat, err := os.Stat(langDir); err == nil && stat.IsDir() {
 			actualRootDir = langDir
 
-			// If version is specified, look for version folder inside language folder
-			if version != "" {
-				versionDir := filepath.Join(langDir, version)
+			// If version or explicit versionPath is specified, look for version folder inside language folder.
+			versionDirName := version
+			if versionPath != "" {
+				versionDirName = versionPath
+			}
+			if versionDirName != "" {
+				versionDir := filepath.Join(langDir, versionDirName)
 				if stat, err := os.Stat(versionDir); err == nil && stat.IsDir() {
 					actualRootDir = versionDir
 				}
@@ -74,8 +78,8 @@ func NewWithVersionPath(rootDir string, codeTheme string, basePath string, langu
 		}
 		// If language folder doesn't exist, we'll use the base directory
 		// This allows GitHub-only mode where language directories might not exist locally
-	} else if version != "" {
-		// Version-only (no language): docs/{version}/
+	} else if version != "" || versionPath != "" {
+		// Version-only (no language): docs/{version}/ or explicit versionPath
 		if versionPath != "" {
 			// Use custom path
 			versionDir := filepath.Join(abs, versionPath)

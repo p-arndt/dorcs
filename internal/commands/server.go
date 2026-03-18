@@ -221,19 +221,22 @@ func RunServer(templatesFS, staticFS embed.FS, version string) {
 				// Both languages and versions: docs/{lang}/{version}/
 				for _, ver := range cfg.Versions.Enabled {
 					versionID := ""
+					versionPath := ""
 					if ver.ID != defaultVersion {
 						versionID = ver.ID
+					} else {
+						versionPath = ver.ID
 					}
 
 					// Create site: language-first structure
-					verLangSite, err := site.NewWithVersionPath(absDir, codeTheme, prefix, langCodeForSite, versionID, "")
+					verLangSite, err := site.NewWithVersionPath(absDir, codeTheme, prefix, langCodeForSite, versionID, versionPath)
 					if err != nil {
 						if ghClient == nil {
 							log.Printf("dorcs: warning: language %s version %s folder not found, skipping", lang.Code, ver.ID)
 							continue
 						}
 						// GitHub enabled: create site anyway
-						verLangSite, err = site.NewWithVersionPath(absDir, codeTheme, prefix, langCodeForSite, versionID, "")
+						verLangSite, err = site.NewWithVersionPath(absDir, codeTheme, prefix, langCodeForSite, versionID, versionPath)
 						if err != nil {
 							log.Fatalf("init site for language %s version %s: %v", lang.Code, ver.ID, err)
 						}
@@ -336,17 +339,20 @@ func RunServer(templatesFS, staticFS embed.FS, version string) {
 		// Versions only: docs/{version}/
 		for _, ver := range cfg.Versions.Enabled {
 			versionID := ""
+			versionPath := ""
 			if ver.ID != defaultVersion {
 				versionID = ver.ID
+			} else {
+				versionPath = ver.ID
 			}
 
-			verSite, err := site.NewWithVersionPath(absDir, codeTheme, prefix, "", versionID, "")
+			verSite, err := site.NewWithVersionPath(absDir, codeTheme, prefix, "", versionID, versionPath)
 			if err != nil {
 				if ghClient == nil {
 					log.Printf("dorcs: warning: version %s folder not found, skipping", ver.ID)
 					continue
 				}
-				verSite, err = site.NewWithVersionPath(absDir, codeTheme, prefix, "", versionID, "")
+				verSite, err = site.NewWithVersionPath(absDir, codeTheme, prefix, "", versionID, versionPath)
 				if err != nil {
 					log.Fatalf("init site for version %s: %v", ver.ID, err)
 				}

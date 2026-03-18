@@ -235,14 +235,22 @@ window.dorcsLangSwitcher = {
   // =====================
   const navTree = document.getElementById('nav-tree');
   if (navTree) {
+    const expandAll = navTree.dataset.expandAll === 'true';
     // Load saved state from localStorage
     const savedState = JSON.parse(localStorage.getItem('nav-collapsed') || '{}');
+
+    // Apply default collapsed state from config.
+    if (!expandAll) {
+      navTree.querySelectorAll('.folder').forEach(folder => {
+        folder.classList.add('collapsed');
+      });
+    }
 
     // Apply saved collapsed state
     navTree.querySelectorAll('.folder').forEach(folder => {
       const key = folder.dataset.key;
-      if (key && savedState[key]) {
-        folder.classList.add('collapsed');
+      if (key && Object.prototype.hasOwnProperty.call(savedState, key)) {
+        folder.classList.toggle('collapsed', !!savedState[key]);
       }
     });
 

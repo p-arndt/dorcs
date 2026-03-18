@@ -78,6 +78,7 @@ func convertNavNodesWithVersionAndLang(nodes []*site.NavNode, basePath string, c
 
 		item := NavItem{
 			Title:    title,
+			Key:      n.Key,
 			IsDir:    n.IsDir,
 			Children: convertNavNodesWithVersionAndLang(n.Children, basePath, currentVersion, currentLang, siteConfig),
 		}

@@ -429,3 +429,45 @@ func TestBuildIndexKeepsPreviousStateWhenExplicitNavFails(t *testing.T) {
 		t.Fatalf("expected previous nav tree to remain intact after failed rebuild, got %+v", nav)
 	}
 }
+
+func TestBuildIndexWithExplicitNavSkipsMissingDocsForNonDefaultVersion(t *testing.T) {
+	tmpDir := t.TempDir()
+
+	files := map[string]string{
+		"index.md":    "# Latest Home",
+		"guide.md":    "# Latest Guide",
+		"v1/index.md": "# V1 Home",
+	}
+	for relPath, content := range files {
+		fullPath := filepath.Join(tmpDir, filepath.FromSlash(relPath))
+		dir := filepath.Dir(fullPath)
+		if err := os.MkdirAll(dir, 0755); err != nil {
+			t.Fatalf("failed to create dir %q: %v", dir, err)
+		}
+		if err := os.WriteFile(fullPath, []byte(content), 0644); err != nil {
+			t.Fatalf("failed to write %q: %v", fullPath, err)
+		}
+	}
+
+	s, err := NewWithVersion(tmpDir, "github", "", "", "v1")
+	if err != nil {
+		t.Fatalf("NewWithVersion() failed: %v", err)
+	}
+	s.SetDefaultVersion("latest")
+	s.SetExplicitNav(config.NavItems{
+		{Label: "Home", Page: "index.md"},
+		{Label: "Guide", Page: "guide.md"},
+	})
+
+	if err := s.BuildIndex(); err != nil {
+		t.Fatalf("BuildIndex() failed: %v", err)
+	}
+
+	nav := s.NavTree(false)
+	if nav == nil {
+		t.Fatal("NavTree should not be nil")
+	}
+	if len(nav.Children) != 0 {
+		t.Fatalf("expected missing non-default version docs to be skipped, got %+v", nav.Children)
+	}
+}

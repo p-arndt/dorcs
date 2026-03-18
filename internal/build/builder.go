@@ -120,7 +120,11 @@ func (b *Builder) Build(includeDrafts bool) error {
 				// Both languages and versions: docs/{lang}/{version}/
 				for _, ver := range b.config.Versions.Enabled {
 					isDefaultVersion := ver.ID == defaultVersion
-					if err := b.buildVersionLanguage(ver.ID, "", isDefaultVersion, langCodeForSite, isDefaultLang, lang.Code, includeDrafts); err != nil {
+					versionPath := ""
+					if isDefaultVersion {
+						versionPath = ver.ID
+					}
+					if err := b.buildVersionLanguage(ver.ID, versionPath, isDefaultVersion, langCodeForSite, isDefaultLang, lang.Code, includeDrafts); err != nil {
 						return fmt.Errorf("build version %s language %s: %w", ver.ID, lang.Code, err)
 					}
 				}
@@ -135,7 +139,11 @@ func (b *Builder) Build(includeDrafts bool) error {
 		// Versions only: docs/{version}/
 		for _, ver := range b.config.Versions.Enabled {
 			isDefaultVersion := ver.ID == defaultVersion
-			if err := b.buildVersionLanguage(ver.ID, "", isDefaultVersion, "", true, "", includeDrafts); err != nil {
+			versionPath := ""
+			if isDefaultVersion {
+				versionPath = ver.ID
+			}
+			if err := b.buildVersionLanguage(ver.ID, versionPath, isDefaultVersion, "", true, "", includeDrafts); err != nil {
 				return fmt.Errorf("build version %s: %w", ver.ID, err)
 			}
 		}

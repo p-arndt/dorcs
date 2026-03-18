@@ -4,7 +4,7 @@
   <div class="sidebar-header">Navigation</div>
 
   <div class="sidebar-body">
-    <ul class="nav-tree" id="nav-tree">
+    <ul class="nav-tree" id="nav-tree" data-expand-all="{{ if and .Config .Config.Nav.ExpandAll }}true{{ else }}false{{ end }}">
       <li>
         {{- $rootPath := "/" }}
         {{- if and .Config .Config.IsMultiVersion .CurrentVersion }}
@@ -19,7 +19,7 @@
             {{- if eq $rootPath "/" }}
           {{- $rootPath = printf "/%s/" .CurrentLanguage }}
             {{- else }}
-              {{- $rootPath = printf "/%s/%s/" .CurrentVersion .CurrentLanguage }}
+              {{- $rootPath = printf "/%s/%s/" .CurrentLanguage .CurrentVersion }}
             {{- end }}
           {{- end }}
         {{- end }}

@@ -7,7 +7,7 @@ import (
 	"github.com/p-arndt/dorcs/internal/config"
 )
 
-func buildConfiguredNavTree(index map[string]*Doc, items config.NavItems) (*NavNode, error) {
+func buildConfiguredNavTree(site *Site, index map[string]*Doc, items config.NavItems) (*NavNode, error) {
 	root := &NavNode{Name: "", Key: "", IsDir: true}
 	if rootDoc, ok := index[""]; ok {
 		root.Page = rootDoc
@@ -15,7 +15,7 @@ func buildConfiguredNavTree(index map[string]*Doc, items config.NavItems) (*NavN
 	}
 
 	seenPages := make(map[string]string)
-	nodes, err := buildConfiguredNavNodes(index, items, seenPages, "")
+	nodes, err := buildConfiguredNavNodes(site, index, items, seenPages, "")
 	if err != nil {
 		return nil, err
 	}
@@ -23,11 +23,11 @@ func buildConfiguredNavTree(index map[string]*Doc, items config.NavItems) (*NavN
 	return root, nil
 }
 
-func buildConfiguredNavNodes(index map[string]*Doc, items config.NavItems, seenPages map[string]string, parentPath string) ([]*NavNode, error) {
+func buildConfiguredNavNodes(site *Site, index map[string]*Doc, items config.NavItems, seenPages map[string]string, parentPath string) ([]*NavNode, error) {
 	nodes := make([]*NavNode, 0, len(items))
 
 	for _, item := range items {
-		node, include, err := buildConfiguredNavNode(index, item, seenPages, parentPath)
+		node, include, err := buildConfiguredNavNode(site, index, item, seenPages, parentPath)
 		if err != nil {
 			return nil, err
 		}
@@ -39,7 +39,7 @@ func buildConfiguredNavNodes(index map[string]*Doc, items config.NavItems, seenP
 	return nodes, nil
 }
 
-func buildConfiguredNavNode(index map[string]*Doc, item config.NavItemConfig, seenPages map[string]string, parentPath string) (*NavNode, bool, error) {
+func buildConfiguredNavNode(site *Site, index map[string]*Doc, item config.NavItemConfig, seenPages map[string]string, parentPath string) (*NavNode, bool, error) {
 	entryPath := item.Label
 	if parentPath != "" {
 		entryPath = parentPath + " > " + item.Label
@@ -54,6 +54,9 @@ func buildConfiguredNavNode(index map[string]*Doc, item config.NavItemConfig, se
 		}
 		doc, ok := index[resolvedKey]
 		if !ok {
+			if allowMissingConfiguredNavPage(site) {
+				return nil, false, nil
+			}
 			return nil, false, fmt.Errorf("nav item %q references missing doc %q", entryPath, item.Page)
 		}
 		page = doc
@@ -64,7 +67,7 @@ func buildConfiguredNavNode(index map[string]*Doc, item config.NavItemConfig, se
 		seenPages[doc.Key] = entryPath
 	}
 
-	childNodes, err := buildConfiguredNavNodes(index, item.Items, seenPages, entryPath)
+	childNodes, err := buildConfiguredNavNodes(site, index, item.Items, seenPages, entryPath)
 	if err != nil {
 		return nil, false, err
 	}
@@ -92,6 +95,16 @@ func buildConfiguredNavNode(index map[string]*Doc, item config.NavItemConfig, se
 	}
 
 	return node, true, nil
+}
+
+func allowMissingConfiguredNavPage(site *Site) bool {
+	if site == nil {
+		return false
+	}
+	// In multi-version mode, a shared nav config may reference docs that only exist
+	// in the default version. Non-default version sites should omit those entries
+	// instead of failing the whole index build.
+	return strings.TrimSpace(site.DefaultVersion) != "" && strings.TrimSpace(site.Version) != ""
 }
 
 func configuredGroupKey(labelPath string) string {

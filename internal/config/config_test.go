@@ -476,3 +476,36 @@ func TestExplicitConfigurationRequired(t *testing.T) {
 		t.Errorf("expected no versions to be auto-detected, got %d", len(cfg.Versions.Enabled))
 	}
 }
+
+func TestLoadAddsDefaultVersionToEnabledList(t *testing.T) {
+	tmpDir := t.TempDir()
+
+	yamlContent := `
+versions:
+  default: "latest"
+  enabled:
+    - id: "v1"
+      name: "V1"
+`
+	if err := os.WriteFile(filepath.Join(tmpDir, "dorcs.yaml"), []byte(yamlContent), 0644); err != nil {
+		t.Fatalf("failed to write config file: %v", err)
+	}
+
+	cfg, err := Load(tmpDir)
+	if err != nil {
+		t.Fatalf("Load failed: %v", err)
+	}
+
+	if got := cfg.GetDefaultVersion(); got != "latest" {
+		t.Fatalf("default version = %q, want %q", got, "latest")
+	}
+	if len(cfg.Versions.Enabled) != 2 {
+		t.Fatalf("expected 2 enabled versions, got %d", len(cfg.Versions.Enabled))
+	}
+	if cfg.Versions.Enabled[0].ID != "latest" {
+		t.Fatalf("first enabled version = %q, want %q", cfg.Versions.Enabled[0].ID, "latest")
+	}
+	if cfg.Versions.Enabled[1].ID != "v1" {
+		t.Fatalf("second enabled version = %q, want %q", cfg.Versions.Enabled[1].ID, "v1")
+	}
+}

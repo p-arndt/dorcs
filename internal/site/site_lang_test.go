@@ -160,3 +160,58 @@ func TestBuildIndexSkipsLangFolder(t *testing.T) {
 		t.Error("expected to find guide")
 	}
 }
+
+func TestNewWithVersionPathUsesDefaultVersionFolder(t *testing.T) {
+	tmpDir := t.TempDir()
+
+	files := map[string]string{
+		"latest/index.md":      "# Latest Home",
+		"latest/getting.md":    "# Latest Getting",
+		"v1/index.md":          "# V1 Home",
+		"en/latest/index.md":   "# English Latest Home",
+		"en/latest/getting.md": "# English Latest Getting",
+	}
+
+	for relPath, content := range files {
+		fullPath := filepath.Join(tmpDir, filepath.FromSlash(relPath))
+		dir := filepath.Dir(fullPath)
+		if err := os.MkdirAll(dir, 0755); err != nil {
+			t.Fatalf("failed to create dir %q: %v", dir, err)
+		}
+		if err := os.WriteFile(fullPath, []byte(content), 0644); err != nil {
+			t.Fatalf("failed to write %q: %v", fullPath, err)
+		}
+	}
+
+	t.Run("version only default folder", func(t *testing.T) {
+		s, err := NewWithVersionPath(tmpDir, "github", "", "", "", "latest")
+		if err != nil {
+			t.Fatalf("NewWithVersionPath() failed: %v", err)
+		}
+		if want := filepath.Join(tmpDir, "latest"); s.RootDir != want {
+			t.Fatalf("RootDir = %q, want %q", s.RootDir, want)
+		}
+		if err := s.BuildIndex(); err != nil {
+			t.Fatalf("BuildIndex() failed: %v", err)
+		}
+		if _, ok := s.GetDoc(""); !ok {
+			t.Fatal("expected to find latest root index")
+		}
+	})
+
+	t.Run("language plus default version folder", func(t *testing.T) {
+		s, err := NewWithVersionPath(tmpDir, "github", "", "en", "", "latest")
+		if err != nil {
+			t.Fatalf("NewWithVersionPath() failed: %v", err)
+		}
+		if want := filepath.Join(tmpDir, "en", "latest"); s.RootDir != want {
+			t.Fatalf("RootDir = %q, want %q", s.RootDir, want)
+		}
+		if err := s.BuildIndex(); err != nil {
+			t.Fatalf("BuildIndex() failed: %v", err)
+		}
+		if _, ok := s.GetDoc("getting"); !ok {
+			t.Fatal("expected to find docs from en/latest")
+		}
+	})
+}

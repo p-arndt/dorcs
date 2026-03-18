@@ -485,6 +485,8 @@ func applyDefaults(cfg *Config) {
 	// Versions defaults - if default is set but no enabled list, add default to enabled
 	if cfg.Versions.Default != "" && len(cfg.Versions.Enabled) == 0 {
 		cfg.Versions.Enabled = []Version{{ID: cfg.Versions.Default, Name: cfg.Versions.Default}}
+	} else if cfg.Versions.Default != "" && !cfg.IsVersionEnabled(cfg.Versions.Default) {
+		cfg.Versions.Enabled = append([]Version{{ID: cfg.Versions.Default, Name: cfg.Versions.Default}}, cfg.Versions.Enabled...)
 	}
 }
 
