@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/p-arndt/dorcs/internal/config"
 	"github.com/p-arndt/dorcs/internal/markdown"
 	"github.com/p-arndt/dorcs/internal/syntax"
 )
@@ -185,4 +186,18 @@ func (s *Site) SetDefaultLanguage(defaultLanguage string) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.DefaultLanguage = defaultLanguage
+}
+
+// SetExplicitNav configures an optional explicit navigation tree from dorcs.yaml.
+func (s *Site) SetExplicitNav(items config.NavItems) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.explicitNav = append(config.NavItems(nil), items...)
+}
+
+// ExplicitNav returns a snapshot of the current explicit navigation config.
+func (s *Site) ExplicitNav() config.NavItems {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	return append(config.NavItems(nil), s.explicitNav...)
 }

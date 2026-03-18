@@ -166,6 +166,7 @@ func (b *Builder) buildLanguage(langCodeForSite string, isDefault bool, langCode
 		// If language folder doesn't exist, skip it
 		return nil
 	}
+	langSite.SetExplicitNav(b.config.Nav.Items)
 	if err := langSite.BuildIndex(); err != nil {
 		return fmt.Errorf("build index for language %s: %w", langCodeForURL, err)
 	}
@@ -251,6 +252,7 @@ func (b *Builder) buildVersionLanguage(versionID string, versionPath string, isD
 		// If version/language folder doesn't exist, skip it
 		return nil
 	}
+	verLangSite.SetExplicitNav(b.config.Nav.Items)
 	if err := verLangSite.BuildIndex(); err != nil {
 		return fmt.Errorf("build index for version %s language %s: %w", versionID, langCodeForURL, err)
 	}

@@ -126,6 +126,9 @@ type NavConfig struct {
 	// ExpandAll keeps all folders expanded by default (default: false)
 	ExpandAll bool `json:"expand_all" yaml:"expand_all"`
 
+	// Items defines the sidebar navigation order explicitly.
+	Items NavItems `json:"items" yaml:"items"`
+
 	// Links are additional navigation links shown in the header
 	Links []NavLink `json:"links" yaml:"links"`
 }
@@ -307,6 +310,9 @@ func Load(docsDir string) (*Config, error) {
 				}
 				applyDefaults(cfg)
 				expandEnvVars(cfg)
+				if err := cfg.Validate(); err != nil {
+					return nil, err
+				}
 				return cfg, nil
 			}
 		}
@@ -319,6 +325,9 @@ func Load(docsDir string) (*Config, error) {
 			}
 			applyDefaults(cfg)
 			expandEnvVars(cfg)
+			if err := cfg.Validate(); err != nil {
+				return nil, err
+			}
 			return cfg, nil
 		}
 	}
@@ -362,6 +371,9 @@ func LoadFromFile(path string) (*Config, error) {
 
 	applyDefaults(cfg)
 	expandEnvVars(cfg)
+	if err := cfg.Validate(); err != nil {
+		return nil, err
+	}
 	return cfg, nil
 }
 

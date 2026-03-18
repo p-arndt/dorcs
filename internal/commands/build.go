@@ -97,6 +97,7 @@ func RunBuild(templatesFS, staticFS embed.FS) {
 	if err != nil {
 		log.Fatalf("init site: %v", err)
 	}
+	s.SetExplicitNav(cfg.Nav.Items)
 	if err := s.BuildIndex(); err != nil {
 		log.Fatalf("build index: %v", err)
 	}

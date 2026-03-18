@@ -68,11 +68,11 @@ func convertNavNodesWithVersionAndLang(nodes []*site.NavNode, basePath string, c
 	}
 	items := make([]NavItem, 0, len(nodes))
 	for _, n := range nodes {
-		// n.Name now contains the title from index.md for folders (set in buildNavTree)
 		title := n.Name
-
-		// For pages and folders with Page, prefer Page.Title
-		if n.Page != nil && n.Page.Title != "" {
+		if !n.ExplicitTitle && n.Page != nil && n.Page.Title != "" {
+			title = n.Page.Title
+		}
+		if strings.TrimSpace(title) == "" && n.Page != nil && n.Page.Title != "" {
 			title = n.Page.Title
 		}
 

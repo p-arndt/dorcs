@@ -3,7 +3,10 @@ package site
 import (
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
+
+	"github.com/p-arndt/dorcs/internal/config"
 )
 
 func TestBuildNavTree(t *testing.T) {
@@ -260,5 +263,169 @@ func TestFilterNavDrafts(t *testing.T) {
 	}
 	if !foundDraftFolder {
 		t.Error("Draft folder with children should be kept")
+	}
+}
+
+func TestBuildIndexWithExplicitNav(t *testing.T) {
+	tmpDir := t.TempDir()
+
+	files := map[string]string{
+		"index.md": `---
+title: Home
+---
+# Home`,
+		"01_getting-started.md": `---
+title: Getting Started
+---
+# Getting Started`,
+		"usage/index.md": `---
+title: Usage Index
+---
+# Usage`,
+		"usage/writing-your-docs.md": `---
+title: Writing
+---
+# Writing`,
+		"usage/metadata.md": `---
+title: Metadata
+---
+# Metadata`,
+		"external-content/github.md": `---
+title: GitHub
+---
+# GitHub`,
+	}
+
+	for relPath, content := range files {
+		fullPath := filepath.Join(tmpDir, filepath.FromSlash(relPath))
+		dir := filepath.Dir(fullPath)
+		if err := os.MkdirAll(dir, 0755); err != nil {
+			t.Fatalf("failed to create dir %q: %v", dir, err)
+		}
+		if err := os.WriteFile(fullPath, []byte(content), 0644); err != nil {
+			t.Fatalf("failed to write %q: %v", fullPath, err)
+		}
+	}
+
+	s, err := New(tmpDir, "github", "", "")
+	if err != nil {
+		t.Fatalf("New() failed: %v", err)
+	}
+
+	s.SetExplicitNav(config.NavItems{
+		{Label: "Home", Page: "index.md"},
+		{Label: "Getting Started", Page: "01_getting-started.md"},
+		{
+			Label: "Usage",
+			Page:  "usage/index.md",
+			Items: []config.NavItemConfig{
+				{Label: "Writing Your Docs", Page: "usage/writing-your-docs.md"},
+				{Label: "Metadata", Page: "usage/metadata.md"},
+			},
+		},
+		{
+			Label: "External Content",
+			Items: []config.NavItemConfig{
+				{Label: "GitHub", Page: "external-content/github.md"},
+			},
+		},
+	})
+
+	if err := s.BuildIndex(); err != nil {
+		t.Fatalf("BuildIndex() failed: %v", err)
+	}
+
+	nav := s.NavTree(false)
+	if nav == nil {
+		t.Fatal("NavTree should not be nil")
+	}
+	if len(nav.Children) != 3 {
+		t.Fatalf("expected 3 root nav children (root index should not duplicate), got %d", len(nav.Children))
+	}
+
+	if nav.Children[0].Name != "Getting Started" || nav.Children[0].Key != "01_getting-started" {
+		t.Fatalf("unexpected first nav child: %+v", nav.Children[0])
+	}
+
+	usage := nav.Children[1]
+	if !usage.IsDir || usage.Page == nil || usage.Key != "usage" {
+		t.Fatalf("expected clickable Usage section, got %+v", usage)
+	}
+	if len(usage.Children) != 2 || usage.Children[0].Name != "Writing Your Docs" {
+		t.Fatalf("unexpected Usage children: %+v", usage.Children)
+	}
+
+	external := nav.Children[2]
+	if !external.IsDir || external.Page != nil {
+		t.Fatalf("expected non-clickable External Content group, got %+v", external)
+	}
+	if !strings.HasPrefix(external.Key, "__group__/") {
+		t.Fatalf("expected synthetic group key, got %q", external.Key)
+	}
+
+	indexHTML := string(BuildIndex(PlaceholderContext{Site: s}))
+	if !strings.Contains(indexHTML, "Getting Started") || !strings.Contains(indexHTML, "External Content") {
+		t.Fatalf("expected BuildIndex to use explicit nav tree, got %q", indexHTML)
+	}
+}
+
+func TestBuildIndexWithExplicitNavValidationErrors(t *testing.T) {
+	tmpDir := t.TempDir()
+	if err := os.WriteFile(filepath.Join(tmpDir, "index.md"), []byte("# Home"), 0644); err != nil {
+		t.Fatalf("failed to write index: %v", err)
+	}
+
+	s, err := New(tmpDir, "github", "", "")
+	if err != nil {
+		t.Fatalf("New() failed: %v", err)
+	}
+
+	s.SetExplicitNav(config.NavItems{
+		{Label: "Missing", Page: "missing.md"},
+	})
+
+	if err := s.BuildIndex(); err == nil {
+		t.Fatal("expected BuildIndex to fail for missing explicit nav doc")
+	}
+}
+
+func TestBuildIndexKeepsPreviousStateWhenExplicitNavFails(t *testing.T) {
+	tmpDir := t.TempDir()
+	files := map[string]string{
+		"index.md": "# Home",
+		"guide.md": "# Guide",
+	}
+	for relPath, content := range files {
+		fullPath := filepath.Join(tmpDir, filepath.FromSlash(relPath))
+		if err := os.WriteFile(fullPath, []byte(content), 0644); err != nil {
+			t.Fatalf("failed to write %q: %v", fullPath, err)
+		}
+	}
+
+	s, err := New(tmpDir, "github", "", "")
+	if err != nil {
+		t.Fatalf("New() failed: %v", err)
+	}
+
+	s.SetExplicitNav(config.NavItems{{Label: "Guide", Page: "guide.md"}})
+	if err := s.BuildIndex(); err != nil {
+		t.Fatalf("BuildIndex() failed: %v", err)
+	}
+
+	if err := os.Remove(filepath.Join(tmpDir, "guide.md")); err != nil {
+		t.Fatalf("failed to remove guide doc: %v", err)
+	}
+
+	if err := s.BuildIndex(); err == nil {
+		t.Fatal("expected BuildIndex to fail after removing an explicitly referenced doc")
+	}
+
+	if _, ok := s.GetDoc("guide"); !ok {
+		t.Fatal("expected previous index to remain available after failed rebuild")
+	}
+
+	nav := s.NavTree(false)
+	if nav == nil || len(nav.Children) != 1 || nav.Children[0].Key != "guide" {
+		t.Fatalf("expected previous nav tree to remain intact after failed rebuild, got %+v", nav)
 	}
 }

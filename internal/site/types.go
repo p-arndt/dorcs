@@ -5,6 +5,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/p-arndt/dorcs/internal/config"
 	"github.com/yuin/goldmark"
 )
 
@@ -35,6 +36,9 @@ type Site struct {
 
 	// nav is a cached navigation tree derived from index.
 	nav *NavNode
+
+	// explicitNav holds an optional user-defined navigation tree from config.
+	explicitNav config.NavItems
 
 	// syntaxCSS holds the generated Chroma CSS for syntax highlighting.
 	syntaxCSS string
@@ -101,6 +105,9 @@ type Doc struct {
 type NavNode struct {
 	// Name is the display name (e.g. "guide", "API").
 	Name string
+
+	// ExplicitTitle indicates Name came from explicit navigation config and should override Page.Title.
+	ExplicitTitle bool
 
 	// Key is the URL key for this folder/page.
 	// For folders, this is the folder key ("guide"); for pages, it is the doc key ("guide/getting-started").

@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/p-arndt/dorcs/internal/config"
 	"github.com/p-arndt/dorcs/internal/markdown"
 )
 
@@ -192,15 +193,31 @@ func (s *Site) BuildIndex() error {
 		}
 	}
 
-	// Atomic swap of index + nav tree.
-	s.mu.Lock()
 	newIndex := make(map[string]*Doc, len(docs))
 	for _, f := range docs {
 		// Important: allow empty key (root index) to be indexed.
 		newIndex[f.key] = f.doc
 	}
+
+	s.mu.RLock()
+	explicitNav := append([]config.NavItemConfig(nil), s.explicitNav...)
+	s.mu.RUnlock()
+
+	var newNav *NavNode
+	if len(explicitNav) > 0 {
+		configuredNav, err := buildConfiguredNavTree(newIndex, explicitNav)
+		if err != nil {
+			return err
+		}
+		newNav = configuredNav
+	} else {
+		newNav = buildNavTree(newIndex)
+	}
+
+	// Atomic swap of index + nav tree.
+	s.mu.Lock()
 	s.index = newIndex
-	s.nav = buildNavTree(newIndex)
+	s.nav = newNav
 	s.mu.Unlock()
 
 	// Check for broken links after building the index

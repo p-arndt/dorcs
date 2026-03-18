@@ -263,6 +263,7 @@ func RunServer(templatesFS, staticFS embed.FS, version string) {
 						verLangSite.SetGitHubConfig(ghClient, repoInfo.Owner, repoInfo.Repo, repoInfo.Branch, githubPath)
 					}
 
+					verLangSite.SetExplicitNav(cfg.Nav.Items)
 					verLangSite.SetDefaultVersion(defaultVersion)
 					if cfg.IsMultiLingual() {
 						verLangSite.SetDefaultLanguage(defaultLang)
@@ -312,6 +313,7 @@ func RunServer(templatesFS, staticFS embed.FS, version string) {
 					langSite.SetGitHubConfig(ghClient, repoInfo.Owner, repoInfo.Repo, repoInfo.Branch, githubPath)
 				}
 
+				langSite.SetExplicitNav(cfg.Nav.Items)
 				langSite.SetDefaultLanguage(defaultLang)
 
 				if err := langSite.BuildIndex(); err != nil {
@@ -365,6 +367,7 @@ func RunServer(templatesFS, staticFS embed.FS, version string) {
 				verSite.SetGitHubConfig(ghClient, repoInfo.Owner, repoInfo.Repo, repoInfo.Branch, githubPath)
 			}
 
+			verSite.SetExplicitNav(cfg.Nav.Items)
 			verSite.SetDefaultVersion(defaultVersion)
 
 			if err := verSite.BuildIndex(); err != nil {
@@ -386,6 +389,7 @@ func RunServer(templatesFS, staticFS embed.FS, version string) {
 			singleSite.SetGitHubConfig(ghClient, repoInfo.Owner, repoInfo.Repo, repoInfo.Branch, repoInfo.Path)
 		}
 
+		singleSite.SetExplicitNav(cfg.Nav.Items)
 		if err := singleSite.BuildIndex(); err != nil {
 			log.Fatalf("build index: %v", err)
 		}
@@ -493,6 +497,10 @@ func RunServer(templatesFS, staticFS embed.FS, version string) {
 					newCfg.Theme.Mode = *themeMode
 				}
 
+				if err := rebuildSitesWithExplicitNav(allSites(s, sites, versionSites), newCfg.Nav.Items); err != nil {
+					return err
+				}
+
 				// Update handler config
 				handler.UpdateConfig(newCfg)
 
@@ -515,6 +523,10 @@ func RunServer(templatesFS, staticFS embed.FS, version string) {
 				}
 				if *themeMode != "" {
 					newCfg.Theme.Mode = *themeMode
+				}
+
+				if err := rebuildSitesWithExplicitNav(allSites(s, sites, versionSites), newCfg.Nav.Items); err != nil {
+					return err
 				}
 
 				// Update handler config
@@ -716,6 +728,61 @@ func RunServer(templatesFS, staticFS embed.FS, version string) {
 	if err := srv.Serve(ln); err != nil && err != http.ErrServerClosed {
 		log.Fatalf("serve: %v", err)
 	}
+}
+
+func collectSites(siteMap map[string]*site.Site) []*site.Site {
+	out := make([]*site.Site, 0, len(siteMap))
+	for _, s := range siteMap {
+		out = append(out, s)
+	}
+	return out
+}
+
+func allSites(defaultSite *site.Site, sites map[string]*site.Site, versionSites map[string]*site.Site) []*site.Site {
+	out := make([]*site.Site, 0, 1+len(sites)+len(versionSites))
+	out = append(out, defaultSite)
+	out = append(out, collectSites(sites)...)
+	out = append(out, collectSites(versionSites)...)
+	return out
+}
+
+func rebuildSitesWithExplicitNav(targets []*site.Site, items config.NavItems) error {
+	seen := make(map[*site.Site]struct{}, len(targets))
+	previousNav := make(map[*site.Site]config.NavItems, len(targets))
+	updated := make([]*site.Site, 0, len(targets))
+
+	for _, currentSite := range targets {
+		if currentSite == nil {
+			continue
+		}
+		if _, ok := seen[currentSite]; ok {
+			continue
+		}
+		seen[currentSite] = struct{}{}
+
+		previousNav[currentSite] = currentSite.ExplicitNav()
+		currentSite.SetExplicitNav(items)
+		if err := currentSite.BuildIndex(); err != nil {
+			if rollbackErr := rollbackExplicitNav(updated, previousNav); rollbackErr != nil {
+				return fmt.Errorf("apply explicit nav: %w (rollback failed: %v)", err, rollbackErr)
+			}
+			return err
+		}
+		updated = append(updated, currentSite)
+	}
+
+	return nil
+}
+
+func rollbackExplicitNav(targets []*site.Site, snapshots map[*site.Site]config.NavItems) error {
+	for i := len(targets) - 1; i >= 0; i-- {
+		currentSite := targets[i]
+		currentSite.SetExplicitNav(snapshots[currentSite])
+		if err := currentSite.BuildIndex(); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // hasMarkdownFilesInDir checks if a directory contains any markdown files.

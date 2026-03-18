@@ -132,38 +132,25 @@ func (s *Site) BuildNavTOC(key string, basePath string) template.HTML {
 				continue
 			}
 
-			// Build URL path (matching RewriteExtensionlessDocLinks pattern)
-			var urlPath string
-			if node.Key == "" {
-				// Root index
-				urlPath = "/"
-				if basePath != "" {
-					urlPath = basePath + "/"
-				}
-			} else {
-				escapedKey := escapePathForTOC(node.Key)
-				urlPath = "/" + escapedKey
-				if basePath != "" {
-					urlPath = basePath + urlPath
-				}
-			}
-
-			// Get display name
-			name := node.Name
-			if node.Page != nil && strings.TrimSpace(node.Page.Title) != "" {
-				name = node.Page.Title
-			}
+			urlPath := navNodeURL(node, basePath, s)
+			name := navNodeDisplayName(node)
 			if name == "" {
 				name = node.Key
 			}
 
 			// Write list item
 			b.WriteString(`<li class="toc-item toc-nav-item">`)
-			b.WriteString(`<a href="`)
-			b.WriteString(html.EscapeString(urlPath))
-			b.WriteString(`">`)
-			b.WriteString(html.EscapeString(name))
-			b.WriteString(`</a>`)
+			if urlPath != "" {
+				b.WriteString(`<a href="`)
+				b.WriteString(html.EscapeString(urlPath))
+				b.WriteString(`">`)
+				b.WriteString(html.EscapeString(name))
+				b.WriteString(`</a>`)
+			} else {
+				b.WriteString(`<span>`)
+				b.WriteString(html.EscapeString(name))
+				b.WriteString(`</span>`)
+			}
 
 			// If it's a directory with children, nest them
 			if node.IsDir && len(node.Children) > 0 {
@@ -209,38 +196,25 @@ func (s *Site) BuildRootNavTOC(basePath string) template.HTML {
 				continue
 			}
 
-			// Build URL path (matching RewriteExtensionlessDocLinks pattern)
-			var urlPath string
-			if node.Key == "" {
-				// Root index
-				urlPath = "/"
-				if basePath != "" {
-					urlPath = basePath + "/"
-				}
-			} else {
-				escapedKey := escapePathForTOC(node.Key)
-				urlPath = "/" + escapedKey
-				if basePath != "" {
-					urlPath = basePath + urlPath
-				}
-			}
-
-			// Get display name
-			name := node.Name
-			if node.Page != nil && strings.TrimSpace(node.Page.Title) != "" {
-				name = node.Page.Title
-			}
+			urlPath := navNodeURL(node, basePath, s)
+			name := navNodeDisplayName(node)
 			if name == "" {
 				name = node.Key
 			}
 
 			// Write list item
 			b.WriteString(`<li class="toc-item toc-nav-item">`)
-			b.WriteString(`<a href="`)
-			b.WriteString(html.EscapeString(urlPath))
-			b.WriteString(`">`)
-			b.WriteString(html.EscapeString(name))
-			b.WriteString(`</a>`)
+			if urlPath != "" {
+				b.WriteString(`<a href="`)
+				b.WriteString(html.EscapeString(urlPath))
+				b.WriteString(`">`)
+				b.WriteString(html.EscapeString(name))
+				b.WriteString(`</a>`)
+			} else {
+				b.WriteString(`<span>`)
+				b.WriteString(html.EscapeString(name))
+				b.WriteString(`</span>`)
+			}
 
 			// If it's a directory with children, nest them
 			if node.IsDir && len(node.Children) > 0 {

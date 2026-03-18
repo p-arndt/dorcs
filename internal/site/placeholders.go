@@ -128,103 +128,17 @@ func BuildChildren(ctx PlaceholderContext) template.HTML {
 	b.WriteString(`<h3 class="children-title">Pages in this section</h3>`)
 	b.WriteString(`<ul class="children-list">`)
 
-	// Sort children using the same logic as sortNav: directories first, then by order, numeric prefix, or title
-	sortedChildren := make([]*NavNode, len(children))
-	copy(sortedChildren, children)
-	sort.Slice(sortedChildren, func(i, j int) bool {
-		a, b := sortedChildren[i], sortedChildren[j]
-		if a.IsDir != b.IsDir {
-			return a.IsDir // directories first
-		}
-
-		// Get order values (0 means no order specified)
-		aOrder := 0
-		bOrder := 0
-		if a.Page != nil {
-			aOrder = a.Page.Order
-		}
-		if b.Page != nil {
-			bOrder = b.Page.Order
-		}
-
-		// If both have order set (non-zero), sort by order
-		if aOrder != 0 && bOrder != 0 {
-			if aOrder != bOrder {
-				return aOrder < bOrder
-			}
-		} else if aOrder != 0 {
-			// a has order, b doesn't - a comes first
-			return true
-		} else if bOrder != 0 {
-			// b has order, a doesn't - b comes first
-			return false
-		}
-		// Both have no order (or both are 0), check filename prefixes
-
-		// Extract numeric prefixes from filenames
-		aPrefix := 0
-		bPrefix := 0
-		if a.Page != nil {
-			aPrefix = extractNumericPrefix(a.Page.RelPath)
-		}
-		if b.Page != nil {
-			bPrefix = extractNumericPrefix(b.Page.RelPath)
-		}
-
-		// If both have numeric prefixes, sort by prefix
-		if aPrefix != 0 && bPrefix != 0 {
-			if aPrefix != bPrefix {
-				return aPrefix < bPrefix
-			}
-		} else if aPrefix != 0 {
-			// a has prefix, b doesn't - a comes first
-			return true
-		} else if bPrefix != 0 {
-			// b has prefix, a doesn't - b comes first
-			return false
-		}
-		// Both have no prefix, fall back to title/key sorting
-
-		// Prefer page titles for dirs if present.
-		aName := a.Name
-		if a.IsDir && a.Page != nil && strings.TrimSpace(a.Page.Title) != "" {
-			aName = a.Page.Title
-		}
-		bName := b.Name
-		if b.IsDir && b.Page != nil && strings.TrimSpace(b.Page.Title) != "" {
-			bName = b.Page.Title
-		}
-
-		// For leaf pages prefer doc title.
-		if !a.IsDir && a.Page != nil && strings.TrimSpace(a.Page.Title) != "" {
-			aName = a.Page.Title
-		}
-		if !b.IsDir && b.Page != nil && strings.TrimSpace(b.Page.Title) != "" {
-			bName = b.Page.Title
-		}
-
-		aName = strings.ToLower(strings.TrimSpace(aName))
-		bName = strings.ToLower(strings.TrimSpace(bName))
-		if aName != bName {
-			return aName < bName
-		}
-		return a.Key < b.Key
-	})
-
-	for _, child := range sortedChildren {
+	for _, child := range children {
 		// Skip draft pages
 		if child.Page != nil && child.Page.Draft {
 			continue
 		}
 
 		// Build URL
-		childURL := buildDocURL(child.Key, ctx.BasePath, ctx.Site)
+		childURL := navNodeURL(child, ctx.BasePath, ctx.Site)
 
 		// Get display name
-		childName := child.Name
-		if child.Page != nil && child.Page.Title != "" {
-			childName = child.Page.Title
-		}
+		childName := navNodeDisplayName(child)
 		if childName == "" {
 			childName = child.Key
 		}
@@ -246,11 +160,17 @@ func BuildChildren(ctx PlaceholderContext) template.HTML {
 			b.WriteString(`<span class="children-icon" aria-hidden="true">📁</span>`)
 		}
 
-		b.WriteString(`<a href="`)
-		b.WriteString(html.EscapeString(childURL))
-		b.WriteString(`" class="children-link">`)
-		b.WriteString(html.EscapeString(childName))
-		b.WriteString(`</a>`)
+		if childURL != "" {
+			b.WriteString(`<a href="`)
+			b.WriteString(html.EscapeString(childURL))
+			b.WriteString(`" class="children-link">`)
+			b.WriteString(html.EscapeString(childName))
+			b.WriteString(`</a>`)
+		} else {
+			b.WriteString(`<span class="children-link">`)
+			b.WriteString(html.EscapeString(childName))
+			b.WriteString(`</span>`)
+		}
 
 		// Add description if available
 		if child.Page != nil && child.Page.Description != "" {
@@ -341,18 +261,21 @@ func BuildSiblings(ctx PlaceholderContext) template.HTML {
 			continue // Skip current page
 		}
 
-		siblingURL := buildDocURL(sibling.Key, ctx.BasePath, ctx.Site)
-		siblingTitle := sibling.Name
-		if sibling.Page != nil && sibling.Page.Title != "" {
-			siblingTitle = sibling.Page.Title
-		}
+		siblingURL := navNodeURL(sibling, ctx.BasePath, ctx.Site)
+		siblingTitle := navNodeDisplayName(sibling)
 
 		b.WriteString(`<li class="sibling-item">`)
-		b.WriteString(`<a href="`)
-		b.WriteString(html.EscapeString(siblingURL))
-		b.WriteString(`">`)
-		b.WriteString(html.EscapeString(siblingTitle))
-		b.WriteString(`</a>`)
+		if siblingURL != "" {
+			b.WriteString(`<a href="`)
+			b.WriteString(html.EscapeString(siblingURL))
+			b.WriteString(`">`)
+			b.WriteString(html.EscapeString(siblingTitle))
+			b.WriteString(`</a>`)
+		} else {
+			b.WriteString(`<span>`)
+			b.WriteString(html.EscapeString(siblingTitle))
+			b.WriteString(`</span>`)
+		}
 		b.WriteString(`</li>`)
 	}
 
@@ -536,8 +459,11 @@ func BuildTags(ctx PlaceholderContext) template.HTML {
 
 // BuildIndex generates full site index
 func BuildIndex(ctx PlaceholderContext) template.HTML {
-	allDocs := ctx.Site.ListDocs(false)
-	if len(allDocs) == 0 {
+	ctx.Site.mu.RLock()
+	nav := ctx.Site.nav
+	ctx.Site.mu.RUnlock()
+
+	if nav == nil || len(nav.Children) == 0 {
 		return ""
 	}
 
@@ -546,55 +472,42 @@ func BuildIndex(ctx PlaceholderContext) template.HTML {
 	b.WriteString(`<h2 class="index-title">Site Index</h2>`)
 	b.WriteString(`<ul class="index-list">`)
 
-	var buildIndexItems func(docs []*Doc, level int)
-	buildIndexItems = func(docs []*Doc, level int) {
-		// Group by directory
-		dirMap := make(map[string][]*Doc)
-		for _, doc := range docs {
-			dir := doc.DirKey
-			if dir == "" {
-				dir = "root"
+	var buildIndexItems func(nodes []*NavNode)
+	buildIndexItems = func(nodes []*NavNode) {
+		for _, node := range nodes {
+			if node.Page != nil && node.Page.Draft {
+				continue
 			}
-			dirMap[dir] = append(dirMap[dir], doc)
-		}
 
-		// Sort directories
-		dirs := make([]string, 0, len(dirMap))
-		for dir := range dirMap {
-			dirs = append(dirs, dir)
-		}
-		sort.Strings(dirs)
-
-		for _, dir := range dirs {
-			dirDocs := dirMap[dir]
-			sort.Slice(dirDocs, func(i, j int) bool {
-				return dirDocs[i].Title < dirDocs[j].Title
-			})
-
-			for _, doc := range dirDocs {
-				docURL := buildDocURL(doc.Key, ctx.BasePath, ctx.Site)
-				docTitle := doc.Title
-				if docTitle == "" {
-					docTitle = doc.Key
-				}
-
-				b.WriteString(`<li class="index-item">`)
+			b.WriteString(`<li class="index-item">`)
+			url := navNodeURL(node, ctx.BasePath, ctx.Site)
+			title := navNodeDisplayName(node)
+			if url != "" {
 				b.WriteString(`<a href="`)
-				b.WriteString(html.EscapeString(docURL))
+				b.WriteString(html.EscapeString(url))
 				b.WriteString(`">`)
-				b.WriteString(html.EscapeString(docTitle))
+				b.WriteString(html.EscapeString(title))
 				b.WriteString(`</a>`)
-				if doc.Description != "" {
-					b.WriteString(`<span class="index-description"> - `)
-					b.WriteString(html.EscapeString(doc.Description))
-					b.WriteString(`</span>`)
-				}
-				b.WriteString(`</li>`)
+			} else {
+				b.WriteString(`<span>`)
+				b.WriteString(html.EscapeString(title))
+				b.WriteString(`</span>`)
 			}
+			if node.Page != nil && node.Page.Description != "" {
+				b.WriteString(`<span class="index-description"> - `)
+				b.WriteString(html.EscapeString(node.Page.Description))
+				b.WriteString(`</span>`)
+			}
+			if len(node.Children) > 0 {
+				b.WriteString(`<ul class="index-list">`)
+				buildIndexItems(node.Children)
+				b.WriteString(`</ul>`)
+			}
+			b.WriteString(`</li>`)
 		}
 	}
 
-	buildIndexItems(allDocs, 0)
+	buildIndexItems(nav.Children)
 	b.WriteString(`</ul>`)
 	b.WriteString(`</nav>`)
 	return template.HTML(b.String())

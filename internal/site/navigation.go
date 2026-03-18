@@ -77,10 +77,13 @@ func buildNavTree(index map[string]*Doc) *NavNode {
 		}
 
 		leaf := &NavNode{
-			Name:  path.Base(key),
+			Name:  d.Title,
 			Key:   key,
 			IsDir: false,
 			Page:  d,
+		}
+		if strings.TrimSpace(leaf.Name) == "" {
+			leaf.Name = path.Base(key)
 		}
 		cur.Children = append(cur.Children, leaf)
 	}
@@ -390,11 +393,12 @@ func filterNavDrafts(n *NavNode) *NavNode {
 	}
 
 	cp := &NavNode{
-		Name:     n.Name,
-		Key:      n.Key,
-		IsDir:    n.IsDir,
-		Page:     n.Page,
-		Children: nil,
+		Name:          n.Name,
+		ExplicitTitle: n.ExplicitTitle,
+		Key:           n.Key,
+		IsDir:         n.IsDir,
+		Page:          n.Page,
+		Children:      nil,
 	}
 
 	// Drop draft landing pages
@@ -420,9 +424,6 @@ func filterNavDrafts(n *NavNode) *NavNode {
 		}
 		cp.Children = append(cp.Children, c)
 	}
-
-	// Re-sort the filtered tree to maintain correct order
-	sortNav(cp)
 
 	return cp
 }

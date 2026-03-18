@@ -308,6 +308,70 @@ nav:
 	}
 }
 
+func TestNavItemsLoad(t *testing.T) {
+	dir := t.TempDir()
+	yamlContent := `
+nav:
+  items:
+    - Home: index.md
+    - Getting Started: 01_getting-started.md
+    - Usage:
+        page: usage/index.md
+        items:
+          - Writing: usage/writing-your-docs.md
+          - Metadata: usage/metadata.md
+    - External:
+        items:
+          - GitHub: external-content/github.md
+`
+	err := os.WriteFile(filepath.Join(dir, "dorcs.yaml"), []byte(yamlContent), 0644)
+	if err != nil {
+		t.Fatalf("failed to write test config: %v", err)
+	}
+
+	cfg, err := Load(dir)
+	if err != nil {
+		t.Fatalf("Load failed: %v", err)
+	}
+
+	if len(cfg.Nav.Items) != 4 {
+		t.Fatalf("expected 4 nav items, got %d", len(cfg.Nav.Items))
+	}
+	if cfg.Nav.Items[0].Label != "Home" || cfg.Nav.Items[0].Page != "index.md" {
+		t.Fatalf("unexpected first nav item: %+v", cfg.Nav.Items[0])
+	}
+	if cfg.Nav.Items[2].Label != "Usage" || cfg.Nav.Items[2].Page != "usage/index.md" {
+		t.Fatalf("unexpected Usage item: %+v", cfg.Nav.Items[2])
+	}
+	if len(cfg.Nav.Items[2].Items) != 2 {
+		t.Fatalf("expected Usage to have 2 children, got %d", len(cfg.Nav.Items[2].Items))
+	}
+	if cfg.Nav.Items[3].Page != "" || len(cfg.Nav.Items[3].Items) != 1 {
+		t.Fatalf("unexpected External item: %+v", cfg.Nav.Items[3])
+	}
+}
+
+func TestNavItemsValidation(t *testing.T) {
+	dir := t.TempDir()
+	yamlContent := `
+nav:
+  items:
+    - Empty: {}
+`
+	err := os.WriteFile(filepath.Join(dir, "dorcs.yaml"), []byte(yamlContent), 0644)
+	if err != nil {
+		t.Fatalf("failed to write test config: %v", err)
+	}
+
+	_, err = Load(dir)
+	if err == nil {
+		t.Fatal("expected invalid nav.items config to fail")
+	}
+	if !contains(err.Error(), "must define page, items, or both") {
+		t.Fatalf("unexpected error: %v", err)
+	}
+}
+
 // Helper function
 func contains(s, substr string) bool {
 	return len(s) >= len(substr) && (s == substr || len(s) > 0 && containsHelper(s, substr))
