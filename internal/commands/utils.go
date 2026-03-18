@@ -3,11 +3,14 @@ package commands
 import (
 	"crypto/sha256"
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"io"
 	"io/fs"
 	"log"
 	"net/http"
+	"os"
+	"path/filepath"
 	"strings"
 )
 
@@ -116,4 +119,42 @@ func CachingFileServer(fsys fs.FS) http.Handler {
 			w.Write(data)
 		}
 	})
+}
+
+// ResolveDocsDir validates the configured docs directory.
+// When GitHub integration is enabled and the configured directory does not exist,
+// it creates an internal empty directory so GitHub-only setups can run without a local docs folder.
+// The returned cleanup function removes that temporary directory when needed.
+func ResolveDocsDir(dir string, githubEnabled bool) (string, func(), error) {
+	absDir, err := filepath.Abs(dir)
+	if err != nil {
+		return "", nil, fmt.Errorf("resolve dir: %w", err)
+	}
+
+	st, err := os.Stat(absDir)
+	if err == nil {
+		if !st.IsDir() {
+			return "", nil, fmt.Errorf("dir is not a directory: %s", absDir)
+		}
+		return absDir, func() {}, nil
+	}
+	if !errors.Is(err, os.ErrNotExist) {
+		return "", nil, fmt.Errorf("stat dir: %w", err)
+	}
+	if !githubEnabled {
+		return "", nil, fmt.Errorf("stat dir: %w", err)
+	}
+
+	tempDir, err := os.MkdirTemp("", "dorcs-github-docs-*")
+	if err != nil {
+		return "", nil, fmt.Errorf("create internal docs dir: %w", err)
+	}
+	cleanup := func() {
+		if err := os.RemoveAll(tempDir); err != nil {
+			log.Printf("dorcs: warning: failed to remove internal docs dir %s: %v", tempDir, err)
+		}
+	}
+
+	log.Printf("dorcs: docs directory %s not found; using internal empty docs dir for GitHub-only mode", absDir)
+	return tempDir, cleanup, nil
 }

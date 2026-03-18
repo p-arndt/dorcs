@@ -63,17 +63,11 @@ func RunServer(templatesFS, staticFS embed.FS, version string) {
 		log.Fatalf("resolve root dir: %v", err)
 	}
 
-	// Resolve and validate docs directory
-	absDir, err := filepath.Abs(*dir)
+	// Resolve docs directory path. Validation happens after config load so GitHub-only
+	// setups can run without a local docs directory.
+	configuredAbsDir, err := filepath.Abs(*dir)
 	if err != nil {
 		log.Fatalf("resolve dir: %v", err)
-	}
-	st, err := os.Stat(absDir)
-	if err != nil {
-		log.Fatalf("stat dir: %v", err)
-	}
-	if !st.IsDir() {
-		log.Fatalf("dir is not a directory: %s", absDir)
 	}
 
 	prefix := SanitizeBasePrefix(*baseURL)
@@ -87,11 +81,17 @@ func RunServer(templatesFS, staticFS embed.FS, version string) {
 		}
 		log.Printf("dorcs: loaded config from %s", *configFile)
 	} else {
-		cfg, err = config.Load(absDir)
+		cfg, err = config.Load(configuredAbsDir)
 		if err != nil {
 			log.Fatalf("load config: %v", err)
 		}
 	}
+
+	absDir, cleanupDocsDir, err := ResolveDocsDir(configuredAbsDir, cfg.GitHub.Enabled)
+	if err != nil {
+		log.Fatalf("%v", err)
+	}
+	defer cleanupDocsDir()
 
 	// Command-line flags override config file
 	if *title != "" {
