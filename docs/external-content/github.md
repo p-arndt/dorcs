@@ -10,6 +10,8 @@ draft: false
 
 Serve markdown files directly from a GitHub repository instead of local files. When enabled, local files in the docs directory are ignored and only GitHub files are served.
 
+Private repositories are supported when you provide a GitHub token. Markdown files and linked assets such as images, PDFs, fonts, JSON, and CSS are fetched through the GitHub API and served by dorcs, so browsers never need direct repository access.
+
 ## Configuration
 
 Add the following to your `dorcs.yaml`:
@@ -47,6 +49,7 @@ github:
 
 - When enabled, dorcs automatically discovers all `.md` files in the specified GitHub directory tree
 - Files are fetched from GitHub and cached locally in `.cache/github/` directory
+- Relative assets referenced from GitHub-hosted docs are served through dorcs, which allows private repository images and downloads to work
 - The URL structure mirrors the GitHub directory structure
 - Local files in the docs directory are completely ignored when GitHub mode is enabled
 
@@ -127,7 +130,7 @@ The cache is stored in `.cache/github/` in the working directory where dorcs is 
 - When GitHub is enabled, the local docs directory is completely ignored
 - File watcher is disabled when GitHub mode is enabled (no local files to watch)
 - The `__lang__` folder structure in GitHub is automatically handled for multi-lingual setups
-- Large files (>= 1MB) are automatically handled via GitHub's download URL API
+- GitHub-backed assets are proxied through dorcs, so private repository images and downloads work without exposing tokens to the browser
 - If GitHub fetch fails, the server will log errors but continue serving cached content if available
 
 ## Troubleshooting

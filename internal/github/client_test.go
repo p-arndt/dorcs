@@ -4,6 +4,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"regexp"
@@ -372,6 +373,90 @@ func TestClientGetDefaultBranch(t *testing.T) {
 
 	_ = server
 	_ = client
+}
+
+func TestClientUsesBearerAuthAndGitHubHeaders(t *testing.T) {
+	var authHeader string
+	var acceptHeader string
+	var userAgent string
+	var apiVersion string
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		authHeader = r.Header.Get("Authorization")
+		acceptHeader = r.Header.Get("Accept")
+		userAgent = r.Header.Get("User-Agent")
+		apiVersion = r.Header.Get("X-GitHub-Api-Version")
+		w.WriteHeader(http.StatusOK)
+		_, _ = io.WriteString(w, "# test")
+	}))
+	defer server.Close()
+
+	cache := NewCache("")
+	client := NewClient("test-token", cache, time.Hour)
+	client.apiBaseURL = server.URL
+
+	_, err := client.FetchMarkdown("owner", "repo", "main", "docs/test.md")
+	if err != nil {
+		t.Fatalf("FetchMarkdown() error = %v", err)
+	}
+
+	if authHeader != "Bearer test-token" {
+		t.Fatalf("Authorization header = %q, want %q", authHeader, "Bearer test-token")
+	}
+	if acceptHeader != "application/vnd.github.raw" {
+		t.Fatalf("Accept header = %q, want %q", acceptHeader, "application/vnd.github.raw")
+	}
+	if userAgent != "dorcs" {
+		t.Fatalf("User-Agent header = %q, want %q", userAgent, "dorcs")
+	}
+	if apiVersion != "2022-11-28" {
+		t.Fatalf("X-GitHub-Api-Version = %q, want %q", apiVersion, "2022-11-28")
+	}
+}
+
+func TestClientGetBranchSHADistinguishesMissingBranchFromMissingAccess(t *testing.T) {
+	t.Run("missing branch with repo access", func(t *testing.T) {
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			switch r.URL.Path {
+			case "/repos/owner/repo/git/ref/heads/main":
+				w.WriteHeader(http.StatusNotFound)
+				_, _ = io.WriteString(w, `{"message":"Not Found"}`)
+			case "/repos/owner/repo/git/ref/tags/main":
+				w.WriteHeader(http.StatusNotFound)
+				_, _ = io.WriteString(w, `{"message":"Not Found"}`)
+			case "/repos/owner/repo":
+				w.WriteHeader(http.StatusOK)
+				_, _ = io.WriteString(w, `{"default_branch":"master"}`)
+			default:
+				w.WriteHeader(http.StatusNotFound)
+			}
+		}))
+		defer server.Close()
+
+		client := NewClient("test-token", NewCache(""), time.Hour)
+		client.apiBaseURL = server.URL
+
+		_, err := client.getBranchSHA("owner", "repo", "main")
+		if err == nil || !strings.Contains(err.Error(), `branch or tag "main" not found in owner/repo`) {
+			t.Fatalf("getBranchSHA() error = %v, want branch-not-found diagnostic", err)
+		}
+	})
+
+	t.Run("missing repo access", func(t *testing.T) {
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.WriteHeader(http.StatusNotFound)
+			_, _ = io.WriteString(w, `{"message":"Not Found"}`)
+		}))
+		defer server.Close()
+
+		client := NewClient("test-token", NewCache(""), time.Hour)
+		client.apiBaseURL = server.URL
+
+		_, err := client.getBranchSHA("owner", "repo", "main")
+		if err == nil || !strings.Contains(err.Error(), "token cannot access it") {
+			t.Fatalf("getBranchSHA() error = %v, want repo-access diagnostic", err)
+		}
+	})
 }
 
 // TestDiscoverMarkdownFilesFiltering tests the filtering logic

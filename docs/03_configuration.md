@@ -278,6 +278,8 @@ auth:
 
 Serve markdown files directly from a GitHub repository instead of local files. When enabled, local files in the docs directory are ignored and only GitHub files are served.
 
+With a GitHub token, dorcs can also serve documentation from private repositories, including linked assets such as images and PDFs.
+
 ```yaml
 github:
   enabled: true                                    # Enable GitHub content source

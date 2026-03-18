@@ -572,8 +572,8 @@ func TestPreprocessMarkdownGitHubRelativePaths(t *testing.T) {
 			language:      "",
 			version:       "",
 			useGitHubAuth: true,
-			expected:      "![Logo](https://raw.githubusercontent.com/owner/repo/main/docs/logo.png)",
-			description:   "With GitHub client, relative image resolves to raw.githubusercontent.com",
+			expected:      "![Logo](/logo.png)",
+			description:   "With GitHub client, relative image resolves to a dorcs-served asset path",
 		},
 		{
 			name:          "GitHub root index with relative image path (no GitHub client)",
@@ -605,8 +605,8 @@ func TestPreprocessMarkdownGitHubRelativePaths(t *testing.T) {
 			language:      "",
 			version:       "",
 			useGitHubAuth: true,
-			expected:      "![Screenshot](https://raw.githubusercontent.com/owner/repo/main/docs/guide/screenshot.png)",
-			description:   "With GitHub client, same-dir image resolves to raw URL",
+			expected:      "![Screenshot](/guide/screenshot.png)",
+			description:   "With GitHub client, same-dir image resolves to a dorcs-served asset path",
 		},
 		{
 			name:          "GitHub document with parent directory reference (with GitHub client)",
@@ -616,8 +616,8 @@ func TestPreprocessMarkdownGitHubRelativePaths(t *testing.T) {
 			language:      "",
 			version:       "",
 			useGitHubAuth: true,
-			expected:      "![Parent](https://raw.githubusercontent.com/owner/repo/main/docs/assets/logo.png)",
-			description:   "Parent ref resolves correctly to raw URL",
+			expected:      "![Parent](/assets/logo.png)",
+			description:   "Parent ref resolves correctly to a dorcs-served asset path",
 		},
 		{
 			name:          "GitHub doc with basePath set (with GitHub client)",
@@ -627,8 +627,8 @@ func TestPreprocessMarkdownGitHubRelativePaths(t *testing.T) {
 			language:      "",
 			version:       "",
 			useGitHubAuth: true,
-			expected:      "![Logo](https://raw.githubusercontent.com/owner/repo/main/logo.png)",
-			description:   "With GitHub client, basePath does not apply to raw URLs",
+			expected:      "![Logo](/myapp/logo.png)",
+			description:   "With GitHub client, basePath applies to dorcs-served asset URLs",
 		},
 		{
 			name:          "GitHub doc with basePath set (no GitHub client)",

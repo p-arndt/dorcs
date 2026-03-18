@@ -1,7 +1,6 @@
 package github
 
 import (
-	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -45,6 +44,7 @@ type RepositoryInfo struct {
 // Client provides GitHub API access.
 type Client struct {
 	httpClient *http.Client
+	apiBaseURL string
 	token      string
 	cache      *Cache
 	cacheTTL   time.Duration
@@ -56,9 +56,19 @@ func NewClient(token string, cache *Cache, cacheTTL time.Duration) *Client {
 		httpClient: &http.Client{
 			Timeout: 30 * time.Second,
 		},
-		token:    token,
-		cache:    cache,
-		cacheTTL: cacheTTL,
+		apiBaseURL: "https://api.github.com",
+		token:      token,
+		cache:      cache,
+		cacheTTL:   cacheTTL,
+	}
+}
+
+func (c *Client) setAPIHeaders(req *http.Request) {
+	req.Header.Set("Accept", "application/vnd.github+json")
+	req.Header.Set("User-Agent", "dorcs")
+	req.Header.Set("X-GitHub-Api-Version", "2022-11-28")
+	if c.token != "" {
+		req.Header.Set("Authorization", "Bearer "+c.token)
 	}
 }
 
@@ -116,15 +126,12 @@ func ParseRepositoryURL(repoURL string) (*RepositoryInfo, error) {
 
 // GetDefaultBranch gets the default branch for a repository.
 func (c *Client) GetDefaultBranch(owner, repo string) (string, error) {
-	apiURL := fmt.Sprintf("https://api.github.com/repos/%s/%s", owner, repo)
+	apiURL := fmt.Sprintf("%s/repos/%s/%s", strings.TrimRight(c.apiBaseURL, "/"), owner, repo)
 	req, err := http.NewRequest("GET", apiURL, nil)
 	if err != nil {
 		return "", err
 	}
-
-	if c.token != "" {
-		req.Header.Set("Authorization", "token "+c.token)
-	}
+	c.setAPIHeaders(req)
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
@@ -155,15 +162,12 @@ func (c *Client) ListDirectory(owner, repo, branch, dirPath string) ([]TreeEntry
 	}
 
 	// Get the tree recursively
-	apiURL := fmt.Sprintf("https://api.github.com/repos/%s/%s/git/trees/%s?recursive=1", owner, repo, sha)
+	apiURL := fmt.Sprintf("%s/repos/%s/%s/git/trees/%s?recursive=1", strings.TrimRight(c.apiBaseURL, "/"), owner, repo, sha)
 	req, err := http.NewRequest("GET", apiURL, nil)
 	if err != nil {
 		return nil, err
 	}
-
-	if c.token != "" {
-		req.Header.Set("Authorization", "token "+c.token)
-	}
+	c.setAPIHeaders(req)
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
@@ -216,16 +220,14 @@ func (c *Client) FetchMarkdown(owner, repo, branch, filePath string) ([]byte, er
 		}
 	}
 
-	// Fetch from GitHub API
-	apiURL := fmt.Sprintf("https://api.github.com/repos/%s/%s/contents/%s?ref=%s", owner, repo, filePath, branch)
+	// Fetch raw content from GitHub API so binary assets from private repos work too.
+	apiURL := fmt.Sprintf("%s/repos/%s/%s/contents/%s?ref=%s", strings.TrimRight(c.apiBaseURL, "/"), owner, repo, filePath, url.QueryEscape(branch))
 	req, err := http.NewRequest("GET", apiURL, nil)
 	if err != nil {
 		return nil, err
 	}
-
-	if c.token != "" {
-		req.Header.Set("Authorization", "token "+c.token)
-	}
+	c.setAPIHeaders(req)
+	req.Header.Set("Accept", "application/vnd.github.raw")
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
@@ -259,52 +261,9 @@ func (c *Client) FetchMarkdown(owner, repo, branch, filePath string) ([]byte, er
 		return nil, fmt.Errorf("failed to fetch file %s: %s - %s", filePath, resp.Status, string(body))
 	}
 
-	var contentResp ContentResponse
-	if err := json.NewDecoder(resp.Body).Decode(&contentResp); err != nil {
-		return nil, err
-	}
-
-	if contentResp.Type != "file" {
-		return nil, fmt.Errorf("path is not a file: %s", filePath)
-	}
-
-	var content []byte
-
-	// Handle large files (>= 1MB) - GitHub provides download_url instead of content
-	if contentResp.DownloadURL != "" {
-		// Fetch content from download URL
-		downloadReq, err := http.NewRequest("GET", contentResp.DownloadURL, nil)
-		if err != nil {
-			return nil, fmt.Errorf("create download request: %w", err)
-		}
-
-		downloadResp, err := c.httpClient.Do(downloadReq)
-		if err != nil {
-			return nil, fmt.Errorf("download file: %w", err)
-		}
-		defer downloadResp.Body.Close()
-
-		if downloadResp.StatusCode != http.StatusOK {
-			body, _ := io.ReadAll(downloadResp.Body)
-			return nil, fmt.Errorf("failed to download file: %s - %s", downloadResp.Status, string(body))
-		}
-
-		content, err = io.ReadAll(downloadResp.Body)
-		if err != nil {
-			return nil, fmt.Errorf("read downloaded content: %w", err)
-		}
-	} else {
-		// Handle small files (< 1MB) - content is base64 encoded
-		if contentResp.Encoding != "base64" {
-			return nil, fmt.Errorf("unsupported encoding: %s", contentResp.Encoding)
-		}
-
-		// Decode base64 content
-		var err error
-		content, err = base64.StdEncoding.DecodeString(contentResp.Content)
-		if err != nil {
-			return nil, fmt.Errorf("decode base64: %w", err)
-		}
+	content, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("read file content: %w", err)
 	}
 
 	// Cache the content
@@ -357,15 +316,12 @@ func (c *Client) DiscoverMarkdownFiles(owner, repo, branch, rootPath string) ([]
 
 // getBranchSHA gets the SHA of a branch or tag.
 func (c *Client) getBranchSHA(owner, repo, ref string) (string, error) {
-	apiURL := fmt.Sprintf("https://api.github.com/repos/%s/%s/git/ref/heads/%s", owner, repo, ref)
+	apiURL := fmt.Sprintf("%s/repos/%s/%s/git/ref/heads/%s", strings.TrimRight(c.apiBaseURL, "/"), owner, repo, ref)
 	req, err := http.NewRequest("GET", apiURL, nil)
 	if err != nil {
 		return "", err
 	}
-
-	if c.token != "" {
-		req.Header.Set("Authorization", "token "+c.token)
-	}
+	c.setAPIHeaders(req)
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
@@ -375,15 +331,12 @@ func (c *Client) getBranchSHA(owner, repo, ref string) (string, error) {
 
 	if resp.StatusCode == http.StatusNotFound {
 		// Try as a tag
-		apiURL = fmt.Sprintf("https://api.github.com/repos/%s/%s/git/ref/tags/%s", owner, repo, ref)
+		apiURL = fmt.Sprintf("%s/repos/%s/%s/git/ref/tags/%s", strings.TrimRight(c.apiBaseURL, "/"), owner, repo, ref)
 		req, err = http.NewRequest("GET", apiURL, nil)
 		if err != nil {
 			return "", err
 		}
-
-		if c.token != "" {
-			req.Header.Set("Authorization", "token "+c.token)
-		}
+		c.setAPIHeaders(req)
 
 		resp, err = c.httpClient.Do(req)
 		if err != nil {
@@ -392,6 +345,12 @@ func (c *Client) getBranchSHA(owner, repo, ref string) (string, error) {
 		defer resp.Body.Close()
 	}
 
+	if resp.StatusCode == http.StatusNotFound {
+		if repoErr := c.checkRepositoryAccess(owner, repo); repoErr != nil {
+			return "", repoErr
+		}
+		return "", fmt.Errorf("branch or tag %q not found in %s/%s", ref, owner, repo)
+	}
 	if resp.StatusCode != http.StatusOK {
 		body, _ := io.ReadAll(resp.Body)
 		return "", fmt.Errorf("failed to get branch SHA: %s - %s", resp.Status, string(body))
@@ -407,4 +366,35 @@ func (c *Client) getBranchSHA(owner, repo, ref string) (string, error) {
 	}
 
 	return refResp.Object.SHA, nil
+}
+
+func (c *Client) checkRepositoryAccess(owner, repo string) error {
+	apiURL := fmt.Sprintf("%s/repos/%s/%s", strings.TrimRight(c.apiBaseURL, "/"), owner, repo)
+	req, err := http.NewRequest("GET", apiURL, nil)
+	if err != nil {
+		return err
+	}
+	c.setAPIHeaders(req)
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return fmt.Errorf("failed to verify repository access: %w", err)
+	}
+	defer resp.Body.Close()
+
+	switch resp.StatusCode {
+	case http.StatusOK:
+		return nil
+	case http.StatusUnauthorized, http.StatusForbidden:
+		body, _ := io.ReadAll(resp.Body)
+		return fmt.Errorf("authentication failed for %s/%s: %s - %s", owner, repo, resp.Status, string(body))
+	case http.StatusNotFound:
+		if c.token == "" {
+			return fmt.Errorf("repository %s/%s was not found or requires a GitHub token", owner, repo)
+		}
+		return fmt.Errorf("repository %s/%s was not found or the token cannot access it", owner, repo)
+	default:
+		body, _ := io.ReadAll(resp.Body)
+		return fmt.Errorf("failed to verify repository access for %s/%s: %s - %s", owner, repo, resp.Status, string(body))
+	}
 }

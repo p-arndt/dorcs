@@ -138,6 +138,23 @@ func (s *Site) SetGitHubConfig(client interface {
 	s.githubPath = repoPath
 }
 
+// FetchGitHubAsset fetches a non-markdown asset from the configured GitHub repository.
+func (s *Site) FetchGitHubAsset(relPath string) ([]byte, error) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	if s.githubClient == nil {
+		return nil, errors.New("GitHub client not configured")
+	}
+
+	fullPath := strings.Trim(relPath, "/")
+	if s.githubPath != "" {
+		fullPath = strings.Trim(s.githubPath+"/"+fullPath, "/")
+	}
+
+	return s.githubClient.FetchMarkdown(s.githubOwner, s.githubRepo, s.githubBranch, fullPath)
+}
+
 // SetLanguage sets the language code for this site.
 // This is useful when creating a site with GitHub integration where the local directory structure doesn't match.
 func (s *Site) SetLanguage(language string) {

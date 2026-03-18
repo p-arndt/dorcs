@@ -69,17 +69,17 @@ type Doc struct {
 	// DirKey is the Key of the directory (without trailing slash) for grouping, e.g. "getting-started".
 	DirKey string
 
-	Title       string
-	Description string
-	Date        time.Time
-	Tags        []string
-	Draft       bool
-	Order        int    // Order for sorting (lower numbers appear first)
-	Author       string // Author name
-	After        string // Key of item this should appear after (use "index" for index.md)
-	Presentation        bool   // If true, render as Marp-style slide deck
-	PresentationHeader  string // Header text on each slide
-	PresentationFooter  string // Footer text on each slide
+	Title              string
+	Description        string
+	Date               time.Time
+	Tags               []string
+	Draft              bool
+	Order              int    // Order for sorting (lower numbers appear first)
+	Author             string // Author name
+	After              string // Key of item this should appear after (use "index" for index.md)
+	Presentation       bool   // If true, render as Marp-style slide deck
+	PresentationHeader string // Header text on each slide
+	PresentationFooter string // Footer text on each slide
 
 	// UpdatedAt is the file modtime.
 	UpdatedAt time.Time

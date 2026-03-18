@@ -1,6 +1,7 @@
 package server
 
 import (
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -10,6 +11,29 @@ import (
 
 	"github.com/p-arndt/dorcs/internal/site"
 )
+
+type mockGitHubAssetClient struct {
+	fetchContent map[string][]byte
+}
+
+func newMockGitHubAssetClient() *mockGitHubAssetClient {
+	return &mockGitHubAssetClient{
+		fetchContent: make(map[string][]byte),
+	}
+}
+
+func (m *mockGitHubAssetClient) DiscoverMarkdownFiles(owner, repo, branch, rootPath string) ([]string, error) {
+	return nil, nil
+}
+
+func (m *mockGitHubAssetClient) FetchMarkdown(owner, repo, branch, filePath string) ([]byte, error) {
+	key := fmt.Sprintf("%s/%s/%s/%s", owner, repo, branch, filePath)
+	content, ok := m.fetchContent[key]
+	if !ok {
+		return nil, fmt.Errorf("file not found: %s", filePath)
+	}
+	return content, nil
+}
 
 func TestIsStaticAsset(t *testing.T) {
 	tests := []struct {
@@ -69,31 +93,47 @@ func TestTryServeStaticAsset(t *testing.T) {
 		RootDir: "",
 	})
 
-	// Create a mock site for testing
-	mockSite, err := site.New(docsDir, "github", "", "")
-	if err != nil {
-		t.Fatalf("failed to create mock site: %v", err)
-	}
-
 	tests := []struct {
 		name       string
 		relPath    string
+		setup      func(t *testing.T, s *site.Site)
 		wantServed bool
 		wantStatus int
+		wantBody   string
 	}{
-		{"serve from docs dir", "test.png", true, http.StatusOK},
-		{"non-existent file", "missing.png", false, http.StatusNotFound},
-		{"not a static asset", "readme.md", false, http.StatusNotFound},
-		{"path traversal attempt", "../etc/passwd", false, http.StatusNotFound},
-		{"absolute path attempt", "/etc/passwd", false, http.StatusNotFound},
+		{"serve from docs dir", "test.png", nil, true, http.StatusOK, "test content"},
+		{"non-existent file", "missing.png", nil, false, http.StatusNotFound, ""},
+		{"not a static asset", "readme.md", nil, false, http.StatusNotFound, ""},
+		{"path traversal attempt", "../etc/passwd", nil, false, http.StatusNotFound, ""},
+		{"absolute path attempt", "/etc/passwd", nil, false, http.StatusNotFound, ""},
+		{
+			name:    "serve from GitHub when local asset is missing",
+			relPath: "guide/test.png",
+			setup: func(t *testing.T, s *site.Site) {
+				mockClient := newMockGitHubAssetClient()
+				mockClient.fetchContent["owner/repo/main/docs/guide/test.png"] = []byte("github asset")
+				s.SetGitHubConfig(mockClient, "owner", "repo", "main", "docs")
+			},
+			wantServed: true,
+			wantStatus: http.StatusOK,
+			wantBody:   "github asset",
+		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			testSite, err := site.New(docsDir, "github", "", "")
+			if err != nil {
+				t.Fatalf("failed to create mock site: %v", err)
+			}
+			if tt.setup != nil {
+				tt.setup(t, testSite)
+			}
+
 			req := httptest.NewRequest("GET", "/"+tt.relPath, nil)
 			w := httptest.NewRecorder()
 
-			served := handler.tryServeStaticAsset(w, req, tt.relPath, mockSite)
+			served := handler.tryServeStaticAsset(w, req, tt.relPath, testSite)
 
 			if served != tt.wantServed {
 				t.Errorf("tryServeStaticAsset() served = %v, want %v", served, tt.wantServed)
@@ -117,6 +157,9 @@ func TestTryServeStaticAsset(t *testing.T) {
 				contentLength := w.Header().Get("Content-Length")
 				if contentLength == "" {
 					t.Error("tryServeStaticAsset() missing Content-Length header")
+				}
+				if body := w.Body.String(); body != tt.wantBody {
+					t.Errorf("tryServeStaticAsset() body = %q, want %q", body, tt.wantBody)
 				}
 			}
 		})

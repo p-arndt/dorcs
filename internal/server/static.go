@@ -2,6 +2,7 @@
 package server
 
 import (
+	"bytes"
 	"io"
 	"mime"
 	"net/http"
@@ -85,7 +86,11 @@ func (h *Handler) tryServeStaticAsset(w http.ResponseWriter, _ *http.Request, re
 		h.mu.RUnlock()
 		_, resolved, err = resolveExistingPathWithin(docsDir, cleanRelPath)
 		if err != nil {
-			return false
+			content, fetchErr := targetSite.FetchGitHubAsset(relPath)
+			if fetchErr != nil {
+				return false
+			}
+			return h.serveStaticBytes(w, content, cleanRelPath)
 		}
 	}
 
@@ -109,6 +114,24 @@ func (h *Handler) tryServeStaticAsset(w http.ResponseWriter, _ *http.Request, re
 
 // serveStaticFile serves a static file with appropriate headers.
 func (h *Handler) serveStaticFile(w http.ResponseWriter, file *os.File, stat os.FileInfo, relPath string) bool {
+	h.setStaticHeaders(w, relPath, stat.Size())
+
+	// Reset file pointer to beginning (in case it was already read)
+	file.Seek(0, 0)
+
+	// Copy file content to response
+	_, err := io.Copy(w, file)
+	return err == nil
+}
+
+func (h *Handler) serveStaticBytes(w http.ResponseWriter, content []byte, relPath string) bool {
+	h.setStaticHeaders(w, relPath, int64(len(content)))
+
+	_, err := io.Copy(w, bytes.NewReader(content))
+	return err == nil
+}
+
+func (h *Handler) setStaticHeaders(w http.ResponseWriter, relPath string, contentLength int64) {
 	// Set content type based on extension
 	ext := strings.ToLower(filepath.Ext(relPath))
 	contentType := ""
@@ -132,12 +155,5 @@ func (h *Handler) serveStaticFile(w http.ResponseWriter, file *os.File, stat os.
 	w.Header().Set("Cache-Control", "public, max-age=31536000, immutable")
 
 	// Set content length (use strconv for better performance than fmt.Sprintf)
-	w.Header().Set("Content-Length", strconv.FormatInt(stat.Size(), 10))
-
-	// Reset file pointer to beginning (in case it was already read)
-	file.Seek(0, 0)
-
-	// Copy file content to response
-	_, err := io.Copy(w, file)
-	return err == nil
+	w.Header().Set("Content-Length", strconv.FormatInt(contentLength, 10))
 }
