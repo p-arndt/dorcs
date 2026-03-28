@@ -199,6 +199,13 @@ func (s *Site) SetExplicitNav(items config.NavItems) {
 	s.explicitNav = append(config.NavItems(nil), items...)
 }
 
+// SetSectionsConfigured marks whether nav.sections is active.
+func (s *Site) SetSectionsConfigured(v bool) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.sectionsConfigured = v
+}
+
 // ExplicitNav returns a snapshot of the current explicit navigation config.
 func (s *Site) ExplicitNav() config.NavItems {
 	s.mu.RLock()

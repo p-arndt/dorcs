@@ -108,6 +108,7 @@ func RunBuild(templatesFS, staticFS embed.FS) {
 		log.Printf("dorcs: note: local docs directory will be ignored when GitHub integration is enabled")
 	}
 	s.SetExplicitNav(cfg.Nav.Items)
+	s.SetSectionsConfigured(len(cfg.Nav.Sections) > 0)
 	if err := s.BuildIndex(); err != nil {
 		log.Fatalf("build index: %v", err)
 	}
