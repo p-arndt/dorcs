@@ -134,5 +134,8 @@ func (s *Site) convertMarkdownToHTML(raw string, doc *Doc) (string, error) {
 	// Convert tabs blocks in the HTML output
 	htmlOutput = markdownext.ConvertTabBlocksInHTML(htmlOutput)
 
+	// Convert {badge:TYPE} inline badges
+	htmlOutput = markdownext.ConvertBadgesInHTML(htmlOutput)
+
 	return htmlOutput, nil
 }
