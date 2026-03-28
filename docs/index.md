@@ -18,7 +18,12 @@ Dorcs turns a folder of Markdown files into a documentation site and can also ex
 
 - Single binary, no runtime stack
 - Clean extensionless URLs
-- Generated navigation, table of contents, and live search in server mode
+- Generated sidebar navigation, table of contents, and live search
+- [Section tabs](./03_configuration.md) for organizing large doc sites into top-level categories
+- Breadcrumbs, previous/next links, and back-to-top button on every page
+- Code copy buttons and heading anchor links for easy sharing
+- [Tabs](./06_markdown/03_extensions.md) and [badges](./06_markdown/03_extensions.md) as markdown extensions
+- [Announcement banners](./03_configuration.md) and Open Graph meta tags for social sharing
 - Live reload in development
 - Static builds for deployment
 - Optional themes, GitHub-backed docs, versions, languages, presentations, and edit mode

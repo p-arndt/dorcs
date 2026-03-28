@@ -129,18 +129,55 @@ nav:
       icon: "github"
 ```
 
-Current implementation note:
-
-- `nav.items` and `nav.links` are active
-- `show_search` is accepted in config, but the current templates always render the search trigger
-- `expand_all` is accepted in config, but the current UI does not use it yet
-
 Supported `nav.items` forms:
 
 - `Label: path.md`
 - `Label: { page: path.md }`
 - `Label: { items: [...] }`
 - `Label: { page: path.md, items: [...] }`
+
+#### Section tabs
+
+For larger documentation sites, use `nav.sections` to add a second header row with section tabs. Each section groups its own sidebar navigation. Clicking a tab shows only that section's pages in the sidebar.
+
+```yaml
+nav:
+  sections:
+    - title: "Getting Started"
+      items:
+        - Overview: index.md
+        - Installation: installation.md
+    - title: "Configuration"
+      items:
+        - Options: configuration.md
+        - Themes: themes.md
+    - title: "Reference"
+      items:
+        - CLI: commands.md
+        - API: api.md
+```
+
+When `nav.sections` is configured:
+
+- The header displays a second row of clickable section tabs
+- The sidebar shows only the active section's items
+- The active section is detected automatically from the current page
+- `nav.items` is ignored (sections contain their own items)
+
+Each section's `items` follows the same syntax as `nav.items`.
+
+### `announcement`
+
+Show a banner at the top of every page:
+
+```yaml
+announcement:
+  text: 'Version 2.0 is here! <a href="/changelog">See what changed</a>'
+  dismissible: true
+```
+
+- `text` supports basic HTML (links, bold, etc.)
+- `dismissible` (default: `true`) shows a close button; dismissed state is saved in localStorage
 
 ### `footer`
 
@@ -217,6 +254,38 @@ dorcs --repo https://github.com/owner/repo/tree/main/docs
 ```
 
 In repo mode, Dorcs loads both docs and config from that repository. The fetched config does not need to repeat `github.enabled` or `github.repository`.
+
+## Built-in page features
+
+Dorcs automatically adds several UI features to every page. These require no configuration and work out of the box.
+
+### Breadcrumbs
+
+A navigation trail is shown above the page content (e.g., "Docs / Guide / Intro"). Breadcrumbs are derived from the sidebar navigation structure. When `nav.sections` is configured, breadcrumbs reflect the active section's hierarchy.
+
+### Previous / Next navigation
+
+Sequential page links appear at the bottom of every page. The order follows the sidebar navigation — either the configured `nav.items` / `nav.sections` order or the auto-detected file order. This lets readers move through docs linearly without returning to the sidebar.
+
+### Code copy button
+
+Every fenced code block gets a copy button in the top-right corner. It appears on hover (always visible on mobile), copies the code content to the clipboard, and shows a checkmark for 2 seconds to confirm.
+
+### Heading anchor links
+
+Hovering over any heading (h1–h6) reveals a `#` link on the right. Clicking it copies the full permalink URL to the clipboard and updates the browser address bar. This makes it easy to share deep links to specific sections.
+
+### Back to top button
+
+A floating button appears in the bottom-right corner after scrolling down 400 pixels. Clicking it smoothly scrolls back to the top of the page.
+
+### Last updated date
+
+The file modification time of each Markdown file is shown at the bottom of the content area as "Last updated: January 2, 2026". This updates automatically when the source file changes.
+
+### Open Graph meta tags
+
+Dorcs generates `og:title`, `og:description`, `og:site_name`, and `twitter:card` meta tags on every page. These are populated from front matter (`title`, `description`) and the site title from config. When you share a doc URL on Slack, Twitter, or other platforms, the link preview will show the page title and description.
 
 ## Example config
 
