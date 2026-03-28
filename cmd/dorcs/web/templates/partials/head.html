@@ -25,6 +25,21 @@
     <meta name="description" content="{{ . }}" />
   {{- end }}
 
+  {{- /* Open Graph / Social meta tags */ -}}
+  {{- $ogTitle := .Meta.Title }}
+  {{- if not $ogTitle }}{{ $ogTitle = .SiteTitle }}{{ end }}
+  <meta property="og:title" content="{{ $ogTitle }}" />
+  <meta property="og:type" content="article" />
+  {{- with .Meta.Description }}
+  <meta property="og:description" content="{{ . }}" />
+  {{- end }}
+  <meta property="og:site_name" content="{{ .SiteTitle }}" />
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:title" content="{{ $ogTitle }}" />
+  {{- with .Meta.Description }}
+  <meta name="twitter:description" content="{{ . }}" />
+  {{- end }}
+
   {{- if and .Config .Config.Site.Favicon }}
   {{- $favicon := .Config.Site.Favicon }}
   {{- if and (not (hasPrefix $favicon "http://")) (not (hasPrefix $favicon "https://")) }}
