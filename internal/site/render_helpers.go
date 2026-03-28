@@ -66,6 +66,9 @@ func (s *Site) preprocessMarkdown(raw string, doc *Doc) string {
 	// Convert ::: col blocks in markdown (pre-process for goldmark)
 	raw = markdownext.ConvertColBlocksInMarkdown(raw)
 
+	// Convert :::tabs blocks in markdown (pre-process for goldmark)
+	raw = markdownext.ConvertTabBlocksInMarkdown(raw)
+
 	return raw
 }
 
@@ -127,6 +130,9 @@ func (s *Site) convertMarkdownToHTML(raw string, doc *Doc) (string, error) {
 
 	// Convert ::: col blocks in the HTML output
 	htmlOutput = markdownext.ConvertColBlocksInHTML(htmlOutput)
+
+	// Convert tabs blocks in the HTML output
+	htmlOutput = markdownext.ConvertTabBlocksInHTML(htmlOutput)
 
 	return htmlOutput, nil
 }
