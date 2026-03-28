@@ -1,6 +1,6 @@
 ---
 title: "Commands"
-description: "CLI reference for server, init, and build commands."
+description: "CLI reference for all Dorcs commands."
 tags: [commands, cli]
 date: 2026-03-18
 draft: false
@@ -8,105 +8,90 @@ draft: false
 
 # Commands
 
-Dorcs has three main entry points:
+Dorcs has three commands: the default **server**, **init** to scaffold a new site, and **build** to export static HTML.
 
-- default server mode
-- `init`
-- `build`
-
-## `dorcs`
-
-Starts the docs server.
+## `dorcs` — Start the server {badge:DEFAULT}
 
 ```bash
 dorcs [flags]
 ```
 
-Flags:
+Starts a local documentation server.
 
-| Flag | Default | Purpose |
+| Flag | Default | What it does |
 | --- | --- | --- |
-| `--dir` | `./docs` | Docs directory |
-| `--addr` | `:8080` | Listen address |
-| `--base-url` | `""` | URL prefix such as `/docs` |
-| `--title` | `""` | Override site title |
-| `--cache` | `true` | Currently accepted by the CLI, but not behaviorally significant in the current server implementation |
-| `--no-drafts` | `true` | Hide draft pages |
-| `--config` | `""` | Explicit config file |
-| `--repo` | `""` | GitHub repository to bootstrap docs and config from |
+| `--dir` | `./docs` | Where your Markdown files are |
+| `--addr` | `:8080` | Address to listen on |
+| `--base-url` | `""` | URL prefix (e.g., `/docs`) |
+| `--title` | `""` | Override the site title |
+| `--config` | `""` | Path to a specific config file |
+| `--repo` | `""` | Bootstrap docs from a GitHub repo |
 | `--theme` | `""` | Override theme preset |
 | `--theme-mode` | `""` | Override theme mode |
-| `--watch` | `false` | Enable file watching and live reload |
+| `--watch` | `false` | Live reload on file changes |
+| `--no-drafts` | `true` | Hide draft pages |
+| `--cache` | `true` | Accepted by CLI (no current effect) |
 
-Example:
-
-```bash
-dorcs --dir ./docs --watch --addr 127.0.0.1:8080
-```
+**Examples:**
 
 ```bash
+# Start with live reload
+dorcs --dir ./docs --watch
+
+# Serve from a GitHub repo
 dorcs --repo https://github.com/owner/repo/tree/main/docs
 ```
 
-## `dorcs init`
-
-Creates a starter docs site.
+## `dorcs init` — Create a new site
 
 ```bash
 dorcs init [flags]
 ```
 
-Flags:
+Scaffolds a starter docs site with an `index.md` and a `dorcs.yaml`.
 
-| Flag | Default | Purpose |
+| Flag | Default | What it does |
 | --- | --- | --- |
-| `--dir` | `./docs` | Directory to initialize |
+| `--dir` | `./docs` | Where to create the docs folder |
 | `--title` | `Documentation` | Starter site title |
-| `--config` | `true` | Create a basic config file |
+| `--config` | `true` | Also create a config file |
 
-Example:
+**Example:**
 
 ```bash
 dorcs init --dir ./handbook --title "Team Handbook"
 ```
 
-## `dorcs build`
-
-Builds a static site.
+## `dorcs build` — Export static HTML
 
 ```bash
 dorcs build [flags]
 ```
 
-Flags:
+Builds a deployable static site.
 
-| Flag | Default | Purpose |
+| Flag | Default | What it does |
 | --- | --- | --- |
-| `--dir` | `./docs` | Docs directory |
-| `--output` | `./dist` | Output directory |
+| `--dir` | `./docs` | Where your Markdown files are |
+| `--output` | `./dist` | Where to write the built site |
 | `--base-url` | `""` | URL prefix for deployment |
-| `--title` | `""` | Override site title |
-| `--no-drafts` | `true` | Hide draft pages |
-| `--config` | `""` | Explicit config file |
-| `--repo` | `""` | GitHub repository to bootstrap docs and config from |
+| `--title` | `""` | Override the site title |
+| `--config` | `""` | Path to a specific config file |
+| `--repo` | `""` | Bootstrap docs from a GitHub repo |
 | `--theme` | `""` | Override theme preset |
 | `--theme-mode` | `""` | Override theme mode |
+| `--no-drafts` | `true` | Hide draft pages |
 
-Example:
+**Example:**
 
 ```bash
 dorcs build --output ./dist --base-url /docs
 ```
 
-```bash
-dorcs build --repo owner/repo/tree/main/docs --output ./dist
-```
+## Good to know
 
-## Notes
-
-- The default server mode also exposes search and sitemap endpoints
-- `--watch` is skipped for GitHub-backed docs
-- `--config` takes precedence over `--repo`
-- `--repo` looks for `dorcs.yaml`, `dorcs.yml`, or `dorcs.json` at the repo root first, then at the repo path
-- `--base-url` is sanitized to avoid invalid path segments
-- static builds generate `sitemap.xml`, but not a live search API
+> [!NOTE]
+> - The server mode includes live search (`/api/search`) and sitemap generation — static builds only get the sitemap
+> - `--watch` is automatically skipped when serving from GitHub
+> - `--config` takes priority over `--repo`, which takes priority over auto-discovery
+> - `--base-url` is sanitized to prevent invalid path segments

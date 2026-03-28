@@ -1,6 +1,6 @@
 ---
 title: "Getting Started"
-description: "Create your first Dorcs site in a few minutes."
+description: "Build a real documentation site from scratch in 5 minutes."
 tags: [getting-started, quickstart]
 date: 2026-03-18
 draft: false
@@ -8,68 +8,129 @@ draft: false
 
 # Getting Started
 
-This guide gets a local docs site running with the fewest steps.
+By the end of this page, you'll have a working documentation site with multiple pages, a custom theme, and organized navigation. Let's go.
 
-## 1. Create a docs site
+## Step 1: Create your site
 
 ```bash
 dorcs init
-```
-
-This creates:
-
-- `docs/index.md`
-- a starter `dorcs.yaml` in your working directory if one does not already exist
-
-## 2. Start the server
-
-```bash
 dorcs --watch
 ```
 
-Open `http://localhost:8080`.
+Open [http://localhost:8080](http://localhost:8080). You've got a docs site. It has one page (`docs/index.md`) and uses the default theme.
 
-`--watch` rebuilds navigation and reloads the browser when Markdown or config files change.
+> [!TIP]
+> The `--watch` flag gives you live reload — every time you save a file, the browser updates automatically. Keep it running while you work.
 
-## 3. Edit content
+## Step 2: Add some pages
 
-Start with `docs/index.md`:
-
-```markdown
-# Welcome
-
-Your docs live in plain Markdown files.
-```
-
-Add a second page:
+Your site needs more than a homepage. Create a few Markdown files:
 
 ```text
 docs/
 ├── index.md
-└── guide.md
+├── 01_getting-started.md
+├── 02_features.md
+└── guides/
+    ├── index.md
+    └── first-steps.md
 ```
 
-`docs/guide.md` becomes `/guide`.
+Each file becomes a page with a clean URL:
 
-## 4. Build static output
+| File | URL |
+| --- | --- |
+| `docs/index.md` | `/` |
+| `docs/01_getting-started.md` | `/getting-started` |
+| `docs/02_features.md` | `/features` |
+| `docs/guides/index.md` | `/guides` |
+| `docs/guides/first-steps.md` | `/guides/first-steps` |
+
+The sidebar navigation updates automatically — every page you add shows up. The `01_`, `02_` prefixes control the order but don't appear in URLs.
+
+## Step 3: Write real content
+
+Open any page and write Markdown. Here's a taste of what you can do — beyond the basics:
+
+```markdown
+> [!TIP]
+> Use callouts to highlight important information.
+
+:::tabs
+::tab macOS
+\`\`\`bash
+brew install my-tool
+\`\`\`
+::tab Linux
+\`\`\`bash
+apt install my-tool
+\`\`\`
+:::
+
+This feature is {badge:NEW} in version 2.0.
+```
+
+That gives you styled callouts, tabbed content, and inline badges — all from plain Markdown. See [Extensions](./usage/extensions.md) for everything available.
+
+## Step 4: Pick a theme
+
+Open `dorcs.yaml` and change the theme:
+
+```yaml
+site:
+  title: "My Project Docs"
+
+theme:
+  preset: ocean
+  mode: auto
+```
+
+Try `ocean`, `forest`, `sunset`, `midnight`, `lavender`, `rose`, or any of the other presets. Your site updates instantly thanks to `--watch`. Browse them all on the [Themes](./05_themes.md) page.
+
+## Step 5: Organize your navigation
+
+For a small site, the automatic sidebar is fine. But once you have more pages, take control with `nav.items` in your config:
+
+```yaml
+nav:
+  items:
+    - Home: index.md
+    - Getting Started: 01_getting-started.md
+    - Features: 02_features.md
+    - Guides:
+        page: guides/index.md
+        items:
+          - First Steps: guides/first-steps.md
+```
+
+This gives you custom labels and exact ordering. For even bigger sites, you can use **section tabs** — see [Navigation](./config/navigation.md).
+
+## Step 6: Ship it
+
+Build static HTML and deploy anywhere:
 
 ```bash
 dorcs build
 ```
 
-This writes a deployable site to `dist/` by default.
+Upload the `dist/` folder to GitHub Pages, Netlify, Vercel, or any web server. See [Deployment](./04_deployment.md) for platform-specific guides.
 
-## 5. Know the routing model
+## What you've built
 
-| File | URL |
-| --- | --- |
-| `docs/index.md` | `/` |
-| `docs/getting-started.md` | `/getting-started` |
-| `docs/guide/index.md` | `/guide` |
-| `docs/guide/install.md` | `/guide/install` |
+In just a few minutes, you now have:
 
-## Next steps
+- A multi-page docs site with automatic navigation
+- A custom theme with light/dark mode
+- Clean URLs, search, code copy buttons, and a table of contents
+- A static build ready for any host
 
-- Use [Installation](./02_installation.md) if you still need the binary
-- Use [Configuration](./03_configuration.md) to set title, theme, and navigation
-- Use [Writing Your Docs](./usage/writing-your-docs.md) for structure and linking guidance
+## Keep going
+
+:::tabs
+::tab I want to customize more
+Learn how to add your logo, announcement banners, and custom colors in [Customize Your Site](./config/index.md).
+::tab I want to learn all the Markdown features
+See [Writing Docs](./usage/index.md) for tabs, badges, diagrams, math, video embeds, and more.
+::tab I need the full CLI reference
+Check [Commands](./07_commands.md) for every flag and option.
+:::

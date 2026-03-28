@@ -1,6 +1,6 @@
 ---
 title: "Dorcs"
-description: "Single-binary documentation server and static site builder for Markdown."
+description: "Turn your Markdown files into a beautiful documentation site with a single binary."
 tags: [docs, overview]
 date: 2026-03-18
 draft: false
@@ -12,24 +12,7 @@ draft: false
 <img src="./logo.png" alt="Dorcs Logo" width="200" height="200" style="border: none;" />
 </div>
 
-Dorcs turns a folder of Markdown files into a documentation site and can also export it as static HTML.
-
-## Why dorcs
-
-- Single binary, no runtime stack
-- Clean extensionless URLs
-- Generated sidebar navigation, table of contents, and live search
-- [Section tabs](./03_configuration.md) for organizing large doc sites into top-level categories
-- Breadcrumbs, previous/next links, and back-to-top button on every page
-- Code copy buttons and heading anchor links for easy sharing
-- [Tabs](./06_markdown/03_extensions.md) and [badges](./06_markdown/03_extensions.md) as markdown extensions
-- [Announcement banners](./03_configuration.md) and Open Graph meta tags for social sharing
-- Live reload in development
-- Static builds for deployment
-- Optional themes, GitHub-backed docs, versions, languages, presentations, and edit mode
-
-## Start here
-
+**Dorcs** turns a folder of Markdown files into a beautiful documentation website. One binary, zero dependencies — just write and ship.
 
 <div style="display: flex; flex-wrap: wrap; justify-content: center; gap: 1.5em; margin: 2em 0;">
   <a href="https://github.com/p-arndt/dorcs/releases/latest/download/dorcs-windows-amd64.exe"
@@ -90,26 +73,56 @@ Dorcs turns a folder of Markdown files into a documentation site and can also ex
   </a>
 </div>
 
-1. Read [Getting Started](./01_getting-started.md) for the fastest path to a running site.
-2. Use [Configuration](./03_configuration.md) to customize branding, navigation, and behavior.
-3. See [Writing Your Docs](./usage/writing-your-docs.md) for content structure and authoring patterns.
-4. Use [Deployment](./04_deployment.md) when you are ready to ship a static build.
-
-## Core workflow
+## Three commands. That's it.
 
 ```bash
-dorcs init
-dorcs --watch
-dorcs build
+dorcs init        # scaffold a docs site
+dorcs --watch     # start writing with live reload
+dorcs build       # export static HTML
 ```
 
-## What the docs cover
+## What you get out of the box
 
-- [Installation](./02_installation.md): binaries and building from source
-- [Configuration](./03_configuration.md): `dorcs.yaml` and override rules
-- [Usage](./usage/index.md): file layout, metadata, ordering, watch mode
-- [Markdown](./06_markdown/index.md): supported syntax and extensions
-- [Presentations](./07_presentations/index.md): slide decks from Markdown
-- [Commands](./07_commands.md): CLI reference
-- [External Content](./external-content/index.md): GitHub as a docs source
-- [Edit Mode](./08_edit.md): browser-based editing with authentication
+Dorcs isn't just a Markdown renderer — it's a complete documentation platform:
+
+:::tabs
+::tab Look & Feel
+- **Beautiful themes** with light and dark mode — [see them all](./05_themes.md)
+- Automatically generated **sidebar navigation** from your folder structure
+- **Section tabs** to organize large sites into top-level categories
+- **Breadcrumbs**, **previous/next links**, and a **back-to-top** button
+- **Custom 404 page** that matches your theme
+::tab Writing Features
+- **Tabs** for platform-specific content (like this one!)
+- **Callouts** for tips, warnings, and important notes
+- **Badges** like {badge:NEW} and {badge:BETA} to label features
+- **Accordions** for collapsible content
+- **Video embeds** from YouTube and Vimeo
+- **Mermaid diagrams** and **KaTeX math**
+::tab Developer Experience
+- **Live reload** — edit a file, browser updates instantly
+- **Clean URLs** — `docs/guide/install.md` becomes `/guide/install`
+- **Built-in search** with instant results
+- **Code copy buttons** on every code block
+- **Heading anchor links** for easy sharing
+- **Sitemap** and **Open Graph tags** for SEO
+::tab Advanced
+- **Multiple languages** with automatic language switcher
+- **Doc versioning** — maintain v1, v2, latest side by side
+- **GitHub integration** — serve docs directly from a repo
+- **Browser-based editing** with authentication
+- **Slide decks** — turn any Markdown page into a presentation
+- **Static export** — deploy anywhere as plain HTML
+:::
+
+## Where to start
+
+> [!TIP]
+> New to Dorcs? Start with [Getting Started](./01_getting-started.md) — you'll have a working site in under a minute.
+
+Already set up? Jump to what you need:
+
+- **[Writing Docs](./usage/index.md)** — how to structure your content and use all the Markdown features
+- **[Customize Your Site](./config/index.md)** — themes, branding, navigation, and more
+- **[Deploy](./04_deployment.md)** — ship your site to GitHub Pages, Netlify, or any host
+- **[Commands](./07_commands.md)** — full CLI reference

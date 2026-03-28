@@ -1,6 +1,6 @@
 ---
 title: "Installation"
-description: "Install Dorcs from a release or build it from source."
+description: "Download Dorcs or build it from source."
 tags: [installation]
 date: 2026-03-18
 draft: false
@@ -8,63 +8,63 @@ draft: false
 
 # Installation
 
-Dorcs is a Go application distributed as a single executable.
+Dorcs is a single file — download it, and you're ready to go. No runtime, no package manager, no dependencies.
 
-## Use a release binary
+## Download a release {badge:RECOMMENDED}
 
-Download a release from the GitHub releases page and run it directly.
+Grab the latest release for your platform:
 
-Linux:
+:::tabs
+::tab Windows
+Download `dorcs-windows-amd64.exe` from the [releases page](https://github.com/p-arndt/dorcs/releases) and run it:
+
+```powershell
+.\dorcs.exe
+```
+::tab Linux
+Download `dorcs-linux-amd64` from the [releases page](https://github.com/p-arndt/dorcs/releases), make it executable, and run:
 
 ```bash
 chmod +x dorcs
 ./dorcs
 ```
-
-Windows:
-
-```powershell
-.\dorcs.exe
-```
-
-macOS is currently a build-from-source path in this repository.
+::tab macOS
+macOS builds aren't pre-built yet — see the "Build from source" section below.
+:::
 
 ## Build from source
 
-Requirements:
-
-- Go 1.25+
-
-Build:
+If you prefer to build it yourself, you'll need **Go 1.25 or newer**.
 
 ```bash
 go build -o dorcs ./cmd/dorcs
 ```
 
-Run from source:
+Or run it directly without building:
 
 ```bash
 go run ./cmd/dorcs
 ```
 
-## Cross-platform builds
-
-Linux:
+:::accordion Cross-platform build commands
+Building for a different OS? Use Go's cross-compilation:
 
 ```bash
+# Build for Linux
 CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o dorcs ./cmd/dorcs
-```
 
-Windows:
-
-```bash
+# Build for Windows
 GOOS=windows GOARCH=amd64 go build -o dorcs.exe ./cmd/dorcs
 ```
+:::
 
-## Verify the install
+## Verify it works
 
 ```bash
 dorcs --help
 ```
 
-Then continue with [Getting Started](./01_getting-started.md).
+If you see the help text, you're all set.
+
+> [!TIP]
+> Next step: follow the [Getting Started](./01_getting-started.md) guide to create your first site.

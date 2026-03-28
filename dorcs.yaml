@@ -80,34 +80,31 @@ nav:
 
     - title: "Writing Docs"
       items:
-        - Usage:
-            page: usage/index.md
-            items:
-              - Writing Your Docs: usage/writing-your-docs.md
-              - File Structure & Organization: usage/file-structure.md
-              - Metadata: usage/metadata.md
-              - Order of Docs: usage/order-of-docs.md
-              - Watch Mode: usage/watch-mode.md
-        - Markdown:
-            page: 06_markdown/index.md
-            items:
-              - Markdown Basics: 06_markdown/01_basics.md
-              - Special Markdown: 06_markdown/02_special.md
-              - Markdown Extensions: 06_markdown/03_extensions.md
+        - Overview: usage/index.md
+        - Organizing Pages: usage/organizing-pages.md
+        - Front Matter: usage/front-matter.md
+        - Markdown Basics: usage/markdown-basics.md
+        - Callouts: usage/callouts.md
+        - Extensions: usage/extensions.md
 
-    - title: "Configuration"
+    - title: "Customize"
       items:
-        - Configuration: 03_configuration.md
+        - Customize Your Site:
+            page: config/index.md
+            items:
+              - Branding: config/branding.md
+              - Navigation: config/navigation.md
+              - Languages & Versions: config/languages-versions.md
         - Themes: 05_themes.md
         - External Content:
             page: external-content/index.md
             items:
-              - GitHub: external-content/github.md
+              - GitHub Integration: external-content/github.md
         - Edit Mode: 08_edit.md
+        - Config Reference: 03_configuration.md
 
     - title: "Presentations"
       items:
-        - Overview: 06_markdown/04_presentations.md
         - Presentations:
             page: 07_presentations/index.md
             items:
