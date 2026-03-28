@@ -40,6 +40,10 @@ type Site struct {
 	// explicitNav holds an optional user-defined navigation tree from config.
 	explicitNav config.NavItems
 
+	// sectionsConfigured is true when nav.sections is set in config.
+	// Used to decide whether the root index should appear in configured nav.
+	sectionsConfigured bool
+
 	// syntaxCSS holds the generated Chroma CSS for syntax highlighting.
 	syntaxCSS string
 

@@ -192,6 +192,7 @@ func RunServer(templatesFS, staticFS embed.FS, version string) {
 					}
 
 					verLangSite.SetExplicitNav(cfg.Nav.Items)
+					verLangSite.SetSectionsConfigured(len(cfg.Nav.Sections) > 0)
 					verLangSite.SetDefaultVersion(defaultVersion)
 					if cfg.IsMultiLingual() {
 						verLangSite.SetDefaultLanguage(defaultLang)
@@ -231,6 +232,7 @@ func RunServer(templatesFS, staticFS embed.FS, version string) {
 				}
 
 				langSite.SetExplicitNav(cfg.Nav.Items)
+				langSite.SetSectionsConfigured(len(cfg.Nav.Sections) > 0)
 				langSite.SetDefaultLanguage(defaultLang)
 
 				if err := langSite.BuildIndex(); err != nil {
@@ -278,6 +280,7 @@ func RunServer(templatesFS, staticFS embed.FS, version string) {
 			}
 
 			verSite.SetExplicitNav(cfg.Nav.Items)
+			verSite.SetSectionsConfigured(len(cfg.Nav.Sections) > 0)
 			verSite.SetDefaultVersion(defaultVersion)
 
 			if err := verSite.BuildIndex(); err != nil {
@@ -300,6 +303,7 @@ func RunServer(templatesFS, staticFS embed.FS, version string) {
 		}
 
 		singleSite.SetExplicitNav(cfg.Nav.Items)
+		singleSite.SetSectionsConfigured(len(cfg.Nav.Sections) > 0)
 		if err := singleSite.BuildIndex(); err != nil {
 			log.Fatalf("build index: %v", err)
 		}

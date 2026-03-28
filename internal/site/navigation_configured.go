@@ -72,8 +72,9 @@ func buildConfiguredNavNode(site *Site, index map[string]*Doc, item config.NavIt
 		return nil, false, err
 	}
 
-	if page != nil && page.Key == "" && len(childNodes) == 0 {
+	if page != nil && page.Key == "" && len(childNodes) == 0 && !site.hasSections() {
 		// Root index is already rendered as the dedicated home link in the sidebar.
+		// When sections are configured, the home link is hidden, so include it.
 		return nil, false, nil
 	}
 
@@ -147,6 +148,14 @@ func (s *Site) NavTreeFromItems(items config.NavItems, includeDraft bool) []*Nav
 	}
 
 	return nodes
+}
+
+// hasSections returns true when nav.sections is configured.
+func (s *Site) hasSections() bool {
+	if s == nil {
+		return false
+	}
+	return s.sectionsConfigured
 }
 
 func navNodeDisplayName(node *NavNode) string {
