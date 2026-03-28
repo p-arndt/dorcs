@@ -6,7 +6,6 @@ import (
 	"html/template"
 	"net/http"
 	"strings"
-	"time"
 
 	"github.com/p-arndt/dorcs/internal/config"
 	"github.com/p-arndt/dorcs/internal/github"
@@ -81,7 +80,9 @@ func (h *Handler) handleDocByKeyWithSite(w http.ResponseWriter, r *http.Request,
 	m.Slides = rendered.Slides
 	m.PresentationHeader = rendered.Doc.PresentationHeader
 	m.PresentationFooter = rendered.Doc.PresentationFooter
-	m.LastModified = rendered.Doc.UpdatedAt.UTC().Format(time.RFC3339)
+	if !rendered.Doc.UpdatedAt.IsZero() {
+		m.LastModified = rendered.Doc.UpdatedAt.UTC().Format("January 2, 2006")
+	}
 	m.Nav.Nodes = nav
 	m.RootTitle = rootTitle
 	// Set current path - use the actual request path for consistency
@@ -128,6 +129,10 @@ func (h *Handler) handleDocByKeyWithSite(w http.ResponseWriter, r *http.Request,
 			m.Nav.Nodes = sections[activeIdx].Items
 		}
 	}
+
+	// Build prev/next navigation and breadcrumbs from the current nav items
+	m.PrevPage, m.NextPage = findPrevNext(m.Nav.Nodes, m.CurrentPath)
+	m.Breadcrumbs = buildBreadcrumbs(m.Nav.Nodes, m.CurrentPath, m.SiteTitle, basePath)
 
 	// Enable live reload if broadcaster is configured
 	m.LiveReload = reloadBroadcaster != nil

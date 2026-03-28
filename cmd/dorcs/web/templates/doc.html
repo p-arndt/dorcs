@@ -5,6 +5,18 @@
 {{end}}
 
 {{define "content"}}
+{{- if and .Breadcrumbs (gt (len .Breadcrumbs) 1) }}
+<nav class="breadcrumbs" aria-label="Breadcrumb">
+  {{- range $i, $crumb := .Breadcrumbs }}
+    {{- if $i }}<span class="breadcrumb-sep">/</span>{{ end }}
+    {{- if eq $i (sub (len $.Breadcrumbs) 1) }}
+    <span class="breadcrumb-current">{{ $crumb.Title }}</span>
+    {{- else }}
+    <a href="{{ $crumb.Path }}" class="breadcrumb-link">{{ $crumb.Title }}</a>
+    {{- end }}
+  {{- end }}
+</nav>
+{{- end }}
 <div class="content-wrapper">
   {{- if .EditOnGitHubURL }}
   <a href="{{ .EditOnGitHubURL }}" class="edit-on-github" target="_blank" rel="noopener noreferrer">
@@ -15,5 +27,30 @@
   <article class="markdown">
     {{.HTML}}
   </article>
+  {{- if .LastModified }}
+  <div class="page-meta">
+    <span class="page-last-updated">Last updated: {{ .LastModified }}</span>
+  </div>
+  {{- end }}
 </div>
+{{- if or .PrevPage .NextPage }}
+<nav class="page-nav" aria-label="Page navigation">
+  {{- if .PrevPage }}
+  <a href="{{ .PrevPage.Path }}" class="page-nav-link page-nav-prev">
+    <span class="page-nav-direction">Previous</span>
+    <span class="page-nav-title">{{ .PrevPage.Title }}</span>
+  </a>
+  {{- else }}
+  <span class="page-nav-link page-nav-placeholder"></span>
+  {{- end }}
+  {{- if .NextPage }}
+  <a href="{{ .NextPage.Path }}" class="page-nav-link page-nav-next">
+    <span class="page-nav-direction">Next</span>
+    <span class="page-nav-title">{{ .NextPage.Title }}</span>
+  </a>
+  {{- else }}
+  <span class="page-nav-link page-nav-placeholder"></span>
+  {{- end }}
+</nav>
+{{- end }}
 {{end}}

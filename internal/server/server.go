@@ -83,6 +83,12 @@ type SectionTab struct {
 	Items    []NavItem // Navigation items for this section's sidebar
 }
 
+// PageLink represents a link to a page (used for prev/next and breadcrumbs).
+type PageLink struct {
+	Title string
+	Path  string
+}
+
 // DocPageModel is the view model for document pages.
 type DocPageModel struct {
 	SiteTitle        string
@@ -155,6 +161,13 @@ type DocPageModel struct {
 
 	// ActiveSection is the index of the currently active section (-1 if none).
 	ActiveSection int
+
+	// PrevPage and NextPage for sequential navigation at the bottom of pages.
+	PrevPage *PageLink
+	NextPage *PageLink
+
+	// Breadcrumbs for the current page.
+	Breadcrumbs []PageLink
 }
 
 // ServeHTTP routes requests:
