@@ -95,14 +95,19 @@ func ConvertTabBlocksInMarkdown(md string) string {
 				continue
 			}
 
-			// Convert to blockquote format with markers
+			// Convert to blockquote format with markers.
+			// Each marker needs a blank blockquote line before/after to force
+			// goldmark to put them in separate <p> tags.
 			result = append(result, "> **DORCS_TABS_START**")
+			result = append(result, ">")
 			for idx, title := range tabTitles {
 				result = append(result, fmt.Sprintf("> **DORCS_TAB:%s**", title))
+				result = append(result, ">")
 				if idx < len(tabBodies) {
 					for _, bodyLine := range tabBodies[idx] {
 						result = append(result, "> "+bodyLine)
 					}
+					result = append(result, ">")
 				}
 			}
 			result = append(result, "> **DORCS_TABS_END**")
