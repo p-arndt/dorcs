@@ -52,3 +52,45 @@ $$
 ## Syntax highlighting
 
 Code fences are highlighted automatically. The active code theme is chosen from the selected Dorcs theme preset.
+
+## Tabs
+
+Use tabs to show alternative content (e.g., install instructions per OS):
+
+```markdown
+:::tabs
+::tab macOS
+Install with Homebrew:
+\`\`\`bash
+brew install dorcs
+\`\`\`
+::tab Linux
+Download the binary:
+\`\`\`bash
+curl -fsSL https://example.com/install.sh | bash
+\`\`\`
+::tab Windows
+Use the installer:
+\`\`\`powershell
+winget install dorcs
+\`\`\`
+:::
+```
+
+Each `::tab Title` starts a new tab panel. The first tab is active by default.
+
+## Badges
+
+Inline badges mark features, pages, or sections with status labels:
+
+```markdown
+## New Feature {badge:NEW}
+
+This API is {badge:BETA} and may change.
+
+The old method is {badge:DEPRECATED}.
+```
+
+Built-in badge types: `NEW`, `BETA`, `DEPRECATED`, `EXPERIMENTAL`, `REQUIRED`.
+
+You can also use custom labels — any text works: `{badge:PREVIEW}`, `{badge:v2.0}`.
