@@ -349,6 +349,7 @@ func RunServer(templatesFS, staticFS embed.FS, version string) {
 	tmplDoc, err := templates.ParseFS(templatesFS, "doc",
 		"web/templates/layout.html",
 		"web/templates/doc.html",
+		"web/templates/404.html",
 		"web/templates/presentation.html",
 		"web/templates/partials/*.html",
 	)

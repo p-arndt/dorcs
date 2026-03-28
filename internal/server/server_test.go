@@ -334,6 +334,42 @@ func TestServeHTTPNotFound(t *testing.T) {
 	}
 }
 
+func TestServeNotFoundRendersStyledPage(t *testing.T) {
+	tmpDir := t.TempDir()
+
+	testSite, _ := site.New(tmpDir, "github", "", "")
+	testSite.BuildIndex()
+
+	// Template with notfound defined
+	tmpl := template.Must(template.New("doc").Funcs(template.FuncMap{
+		"lower": strings.ToLower, "upper": strings.ToUpper,
+		"hasSuffix": strings.HasSuffix, "hasPrefix": strings.HasPrefix,
+		"trimSpace": strings.TrimSpace, "deref": func(b *bool) bool { return b != nil && *b },
+		"dict": func(values ...any) (map[string]any, error) { return map[string]any{}, nil },
+		"sub": func(a, b int) int { return a - b },
+	}).Parse(`{{define "layout"}}{{block "content" .}}{{end}}{{end}}{{define "notfound"}}{{template "layout" .}}{{end}}{{define "content"}}<div class="not-found">404</div>{{end}}`))
+
+	handler := New(Config{
+		DocsDir:      tmpDir,
+		RootDir:      tmpDir,
+		Site:         testSite,
+		DocumentTmpl: tmpl,
+	})
+
+	req := httptest.NewRequest("GET", "/nonexistent", nil)
+	w := httptest.NewRecorder()
+
+	handler.ServeHTTP(w, req)
+
+	if w.Code != http.StatusNotFound {
+		t.Errorf("status = %d, want %d", w.Code, http.StatusNotFound)
+	}
+	body := w.Body.String()
+	if !strings.Contains(body, "not-found") {
+		t.Errorf("expected styled 404 page with 'not-found' class, got: %s", body)
+	}
+}
+
 func TestServeHTTPHideDraftDocs(t *testing.T) {
 	tmpDir := t.TempDir()
 

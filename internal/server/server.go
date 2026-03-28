@@ -188,7 +188,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	h.mu.RUnlock()
 	if basePath != "" {
 		if !strings.HasPrefix(reqPath, basePath) {
-			http.NotFound(w, r)
+			h.serveNotFound(w, r)
 			return
 		}
 		reqPath = strings.TrimPrefix(reqPath, basePath)
@@ -311,7 +311,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	rel := strings.TrimPrefix(docPath, "/")
 	rel = strings.Trim(rel, "/")
 	if rel == "" {
-		http.NotFound(w, r)
+		h.serveNotFound(w, r)
 		return
 	}
 
@@ -335,5 +335,5 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	http.NotFound(w, r)
+	h.serveNotFound(w, r)
 }

@@ -50,7 +50,7 @@ func (h *Handler) handleDocByKeyWithSite(w http.ResponseWriter, r *http.Request,
 	key = cleanKey(key)
 	doc, ok := targetSite.GetDoc(key)
 	if !ok || (hideDraft && doc.Draft) {
-		http.NotFound(w, r)
+		h.serveNotFound(w, r)
 		return
 	}
 
@@ -63,7 +63,7 @@ func (h *Handler) handleDocByKeyWithSite(w http.ResponseWriter, r *http.Request,
 	// Use site renderer
 	rendered, err := targetSite.RenderDoc(key)
 	if err != nil {
-		http.NotFound(w, r)
+		h.serveNotFound(w, r)
 		return
 	}
 
@@ -195,6 +195,47 @@ func computeEditOnGitHubURL(doc *site.Doc, cfg *config.Config, currentLang, curr
 			repoInfo.Owner, repoInfo.Repo, repoInfo.Branch, filePath)
 	}
 	return ""
+}
+
+// serveNotFound renders the styled 404 page using the site's theme and layout.
+func (h *Handler) serveNotFound(w http.ResponseWriter, r *http.Request) {
+	h.mu.RLock()
+	documentTmpl := h.cfg.DocumentTmpl
+	basePath := h.cfg.BasePath
+	siteConfig := h.cfg.SiteConfig
+	siteTitle := h.cfg.SiteTitle
+	reloadBroadcaster := h.cfg.ReloadBroadcaster
+	version := h.cfg.Version
+	h.mu.RUnlock()
+
+	if documentTmpl == nil {
+		http.NotFound(w, r)
+		return
+	}
+
+	var m DocPageModel
+	m.ActiveSection = -1
+	m.SiteTitle = siteTitle
+	m.BasePath = basePath
+	m.CurrentPath = r.URL.Path
+	m.LiveReload = reloadBroadcaster != nil
+	m.Version = version
+	m.Meta.Title = "Page not found"
+
+	if siteConfig != nil {
+		m.Config = siteConfig
+		m.ThemeCSS = template.CSS(siteConfig.GenerateThemeCSS())
+		if siteConfig.Site.Title != "" {
+			m.SiteTitle = siteConfig.Site.Title
+		}
+	}
+
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	w.WriteHeader(http.StatusNotFound)
+	if err := documentTmpl.ExecuteTemplate(w, "notfound", m); err != nil {
+		// Fallback to plain 404
+		http.Error(w, "404 page not found", http.StatusNotFound)
+	}
 }
 
 func setCommonSecurityHeaders(w http.ResponseWriter) {

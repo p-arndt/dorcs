@@ -163,6 +163,11 @@ func (b *Builder) Build(includeDrafts bool) error {
 		return fmt.Errorf("copy docs static assets: %w", err)
 	}
 
+	// Generate sitemap.xml
+	if err := b.writeSitemap(includeDrafts); err != nil {
+		return fmt.Errorf("write sitemap: %w", err)
+	}
+
 	return nil
 }
 
@@ -900,6 +905,62 @@ func isStaticAsset(filePath string) bool {
 		".ttf": true, ".eot": true,
 	}
 	return staticExts[ext]
+}
+
+// writeSitemap generates a sitemap.xml file in the output directory.
+func (b *Builder) writeSitemap(includeDrafts bool) error {
+	if b.site == nil {
+		return nil
+	}
+
+	docs := b.site.ListDocs(includeDrafts)
+	if len(docs) == 0 {
+		return nil
+	}
+
+	baseURL := b.basePath
+	if baseURL == "" {
+		baseURL = ""
+	}
+
+	var sb strings.Builder
+	sb.WriteString(`<?xml version="1.0" encoding="UTF-8"?>` + "\n")
+	sb.WriteString(`<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">` + "\n")
+
+	for _, doc := range docs {
+		urlPath := baseURL
+		if doc.Key == "" {
+			urlPath += "/"
+		} else {
+			urlPath += "/" + doc.Key
+		}
+
+		lastmod := doc.UpdatedAt.UTC().Format("2006-01-02T15:04:05Z")
+
+		priority := "0.7"
+		if doc.Key == "" {
+			priority = "1.0"
+		} else if !strings.Contains(doc.Key, "/") {
+			priority = "0.9"
+		}
+
+		changefreq := "monthly"
+		if doc.Key == "" {
+			changefreq = "weekly"
+		}
+
+		sb.WriteString("  <url>\n")
+		fmt.Fprintf(&sb, "    <loc>%s</loc>\n", escapeXML(urlPath))
+		fmt.Fprintf(&sb, "    <lastmod>%s</lastmod>\n", lastmod)
+		fmt.Fprintf(&sb, "    <changefreq>%s</changefreq>\n", changefreq)
+		fmt.Fprintf(&sb, "    <priority>%s</priority>\n", priority)
+		sb.WriteString("  </url>\n")
+	}
+
+	sb.WriteString("</urlset>\n")
+
+	outPath := filepath.Join(b.outputDir, "sitemap.xml")
+	return os.WriteFile(outPath, []byte(sb.String()), 0644)
 }
 
 // escapeXML escapes special XML characters.
