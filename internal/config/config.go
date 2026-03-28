@@ -26,6 +26,9 @@ type Config struct {
 	// Navigation settings
 	Nav NavConfig `json:"nav" yaml:"nav"`
 
+	// Announcement banner (optional, shown at top of page)
+	Announcement *AnnouncementConfig `json:"announcement,omitempty" yaml:"announcement,omitempty"`
+
 	// Footer settings
 	Footer FooterConfig `json:"footer" yaml:"footer"`
 
@@ -162,6 +165,15 @@ type NavLink struct {
 
 	// Icon name (optional): "github", "twitter", "discord", "external"
 	Icon string `json:"icon" yaml:"icon"`
+}
+
+// AnnouncementConfig holds announcement banner configuration.
+type AnnouncementConfig struct {
+	// Text is the announcement message (supports basic HTML)
+	Text string `json:"text" yaml:"text"`
+
+	// Dismissible allows users to close the banner (default: true)
+	Dismissible *bool `json:"dismissible,omitempty" yaml:"dismissible,omitempty"`
 }
 
 // FooterConfig holds footer configuration.

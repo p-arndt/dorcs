@@ -858,6 +858,20 @@ updateActiveSection();
     }
   })();
 
+  // === Announcement banner dismissal ===
+  (function() {
+    var banner = document.getElementById('announcement-banner');
+    if (banner) {
+      try {
+        var dismissed = localStorage.getItem('dorcs-announcement-dismissed');
+        if (dismissed && dismissed === banner.querySelector('span').textContent.trim()) {
+          banner.remove();
+          document.body.classList.remove('has-announcement');
+        }
+      } catch (e) {}
+    }
+  })();
+
   // === Code block copy button ===
   (function() {
     document.querySelectorAll('.markdown pre').forEach(function(pre) {
