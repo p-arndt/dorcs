@@ -123,6 +123,90 @@ func convertNavNodesWithVersionAndLang(nodes []*site.NavNode, basePath string, c
 	return items
 }
 
+// buildSectionTabs builds SectionTab data from config sections using the given site.
+// It returns the tabs and the index of the active section based on currentPath.
+func (h *Handler) buildSectionTabs(targetSite *site.Site, currentPath string) ([]SectionTab, int) {
+	h.mu.RLock()
+	siteConfig := h.cfg.SiteConfig
+	basePath := h.cfg.BasePath
+	hideDraft := h.cfg.HideDraft
+	h.mu.RUnlock()
+
+	if siteConfig == nil || len(siteConfig.Nav.Sections) == 0 {
+		return nil, -1
+	}
+
+	currentLang := ""
+	if targetSite != nil && targetSite.Language != "" {
+		currentLang = targetSite.Language
+	}
+	currentVersion := ""
+	if targetSite != nil && targetSite.Version != "" {
+		currentVersion = targetSite.Version
+	} else if siteConfig.IsMultiVersion() {
+		currentVersion = siteConfig.GetDefaultVersion()
+	}
+
+	tabs := make([]SectionTab, 0, len(siteConfig.Nav.Sections))
+	activeIdx := -1
+
+	for i, section := range siteConfig.Nav.Sections {
+		// Build a nav tree from this section's items using the site's index
+		navNodes := targetSite.NavTreeFromItems(section.Items, !hideDraft)
+		items := convertNavNodesWithVersionAndLang(navNodes, basePath, currentVersion, currentLang, siteConfig)
+
+		// Determine the first linkable path for this section tab
+		tabPath := firstNavItemPath(items)
+
+		// Check if current path belongs to this section
+		isActive := navItemsContainPath(items, currentPath)
+		if isActive && activeIdx == -1 {
+			activeIdx = i
+		}
+
+		tabs = append(tabs, SectionTab{
+			Title:    section.Title,
+			Path:     tabPath,
+			IsActive: isActive,
+			Items:    items,
+		})
+	}
+
+	// If no section matched, default to first section
+	if activeIdx == -1 && len(tabs) > 0 {
+		activeIdx = 0
+		tabs[0].IsActive = true
+	}
+
+	return tabs, activeIdx
+}
+
+// firstNavItemPath returns the Path of the first linkable item in the nav tree.
+func firstNavItemPath(items []NavItem) string {
+	for _, item := range items {
+		if item.Path != "" {
+			return item.Path
+		}
+		if p := firstNavItemPath(item.Children); p != "" {
+			return p
+		}
+	}
+	return ""
+}
+
+// navItemsContainPath checks if any nav item (recursively) matches the given path.
+func navItemsContainPath(items []NavItem, path string) bool {
+	for _, item := range items {
+		if item.Path != "" && item.Path == path {
+			return true
+		}
+		if navItemsContainPath(item.Children, path) {
+			return true
+		}
+	}
+	return false
+}
+
 // convertNavNodesWithLang is a helper function for backward compatibility in tests.
 // It wraps convertNavNodesWithVersionAndLang with empty version.
 // If siteConfig is nil, language prefixes won't be added (assumes single-language mode).

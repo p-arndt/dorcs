@@ -140,6 +140,20 @@ func (c *Config) Validate() error {
 			return err
 		}
 	}
+	for i, section := range c.Nav.Sections {
+		if strings.TrimSpace(section.Title) == "" {
+			return fmt.Errorf("nav.sections[%d].title cannot be empty", i)
+		}
+		if len(section.Items) == 0 {
+			return fmt.Errorf("nav.sections[%d] (%s) must have at least one item", i, section.Title)
+		}
+		for _, item := range section.Items {
+			path := fmt.Sprintf("nav.sections[%d](%s)", i, section.Title)
+			if err := validateNavItem(item, path); err != nil {
+				return err
+			}
+		}
+	}
 	return nil
 }
 

@@ -366,3 +366,115 @@ func TestComputeEditOnGitHubURLForLanguageAndVersion(t *testing.T) {
 		t.Fatalf("language/version edit URL = %q, want %q", got, want)
 	}
 }
+
+func TestFirstNavItemPath(t *testing.T) {
+	tests := []struct {
+		name  string
+		items []NavItem
+		want  string
+	}{
+		{
+			name:  "empty items",
+			items: nil,
+			want:  "",
+		},
+		{
+			name: "direct path",
+			items: []NavItem{
+				{Title: "Home", Path: "/getting-started"},
+			},
+			want: "/getting-started",
+		},
+		{
+			name: "first item has no path, child does",
+			items: []NavItem{
+				{Title: "Folder", IsDir: true, Children: []NavItem{
+					{Title: "Child", Path: "/folder/child"},
+				}},
+			},
+			want: "/folder/child",
+		},
+		{
+			name: "skips empty paths",
+			items: []NavItem{
+				{Title: "No Path"},
+				{Title: "Has Path", Path: "/second"},
+			},
+			want: "/second",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := firstNavItemPath(tt.items)
+			if got != tt.want {
+				t.Errorf("firstNavItemPath() = %q, want %q", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestNavItemsContainPath(t *testing.T) {
+	items := []NavItem{
+		{Title: "Home", Path: "/"},
+		{Title: "Guide", Path: "/guide", Children: []NavItem{
+			{Title: "Intro", Path: "/guide/intro"},
+			{Title: "Advanced", Path: "/guide/advanced"},
+		}},
+		{Title: "API", Path: "/api"},
+	}
+
+	tests := []struct {
+		path string
+		want bool
+	}{
+		{"/", true},
+		{"/guide", true},
+		{"/guide/intro", true},
+		{"/guide/advanced", true},
+		{"/api", true},
+		{"/unknown", false},
+		{"/guide/unknown", false},
+		{"", false},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.path, func(t *testing.T) {
+			got := navItemsContainPath(items, tt.path)
+			if got != tt.want {
+				t.Errorf("navItemsContainPath(%q) = %v, want %v", tt.path, got, tt.want)
+			}
+		})
+	}
+}
+
+func TestBuildSectionTabsNilConfig(t *testing.T) {
+	handler := New(Config{
+		BasePath:   "",
+		SiteConfig: nil,
+	})
+
+	tabs, activeIdx := handler.buildSectionTabs(nil, "/")
+	if tabs != nil {
+		t.Errorf("expected nil tabs for nil config, got %v", tabs)
+	}
+	if activeIdx != -1 {
+		t.Errorf("expected activeIdx -1, got %d", activeIdx)
+	}
+}
+
+func TestBuildSectionTabsNoSections(t *testing.T) {
+	cfg := config.Default()
+	handler := New(Config{
+		BasePath:   "",
+		SiteConfig: cfg,
+	})
+
+	tabs, activeIdx := handler.buildSectionTabs(nil, "/")
+	if tabs != nil {
+		t.Errorf("expected nil tabs when no sections configured, got %v", tabs)
+	}
+	if activeIdx != -1 {
+		t.Errorf("expected activeIdx -1, got %d", activeIdx)
+	}
+}

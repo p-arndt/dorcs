@@ -1,10 +1,11 @@
 {{/* Sidebar navigation partial */}}
 {{ define "sidebar" }}
 <aside class="sidebar" id="sidebar">
-  <div class="sidebar-header">Navigation</div>
+  <div class="sidebar-header">{{ if and .Sections (gt .ActiveSection -1) }}{{ (index .Sections .ActiveSection).Title }}{{ else }}Navigation{{ end }}</div>
 
   <div class="sidebar-body">
     <ul class="nav-tree" id="nav-tree" data-expand-all="{{ if and .Config .Config.Nav.ExpandAll }}true{{ else }}false{{ end }}">
+      {{- if not (and .Sections (gt (len .Sections) 0)) }}
       <li>
         {{- $rootPath := "/" }}
         {{- if and .Config .Config.IsMultiVersion .CurrentVersion }}
@@ -28,6 +29,7 @@
           <span class="label">{{ if .RootTitle }}{{ .RootTitle }}{{ else }}Home{{ end }}</span>
         </a>
       </li>
+      {{- end }}
       {{- if .Nav }}
         {{- template "nav_tree_collapsible" (dict "Nodes" .Nav.Nodes "CurrentPath" .CurrentPath "BasePath" .BasePath "CurrentVersion" .CurrentVersion "CurrentLanguage" .CurrentLanguage "Config" .Config) -}}
       {{- end }}

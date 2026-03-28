@@ -386,6 +386,113 @@ func containsHelper(s, substr string) bool {
 	return false
 }
 
+func TestNavSectionsLoad(t *testing.T) {
+	dir := t.TempDir()
+	yamlContent := `
+nav:
+  sections:
+    - title: "Getting Started"
+      items:
+        - Overview: index.md
+        - Quickstart: getting-started.md
+    - title: "Reference"
+      items:
+        - API: api.md
+        - CLI:
+            page: cli/index.md
+            items:
+              - Commands: cli/commands.md
+`
+	err := os.WriteFile(filepath.Join(dir, "dorcs.yaml"), []byte(yamlContent), 0644)
+	if err != nil {
+		t.Fatalf("failed to write test config: %v", err)
+	}
+
+	cfg, err := Load(dir)
+	if err != nil {
+		t.Fatalf("Load failed: %v", err)
+	}
+
+	if len(cfg.Nav.Sections) != 2 {
+		t.Fatalf("expected 2 sections, got %d", len(cfg.Nav.Sections))
+	}
+	if cfg.Nav.Sections[0].Title != "Getting Started" {
+		t.Fatalf("unexpected first section title: %q", cfg.Nav.Sections[0].Title)
+	}
+	if len(cfg.Nav.Sections[0].Items) != 2 {
+		t.Fatalf("expected first section to have 2 items, got %d", len(cfg.Nav.Sections[0].Items))
+	}
+	if cfg.Nav.Sections[1].Title != "Reference" {
+		t.Fatalf("unexpected second section title: %q", cfg.Nav.Sections[1].Title)
+	}
+	if len(cfg.Nav.Sections[1].Items) != 2 {
+		t.Fatalf("expected second section to have 2 items, got %d", len(cfg.Nav.Sections[1].Items))
+	}
+	// Check nested items in second section
+	refCLI := cfg.Nav.Sections[1].Items[1]
+	if refCLI.Label != "CLI" || refCLI.Page != "cli/index.md" || len(refCLI.Items) != 1 {
+		t.Fatalf("unexpected CLI item: %+v", refCLI)
+	}
+}
+
+func TestNavSectionsValidation(t *testing.T) {
+	tests := []struct {
+		name    string
+		yaml    string
+		wantErr string
+	}{
+		{
+			name: "empty section title",
+			yaml: `
+nav:
+  sections:
+    - title: ""
+      items:
+        - Page: index.md
+`,
+			wantErr: "title cannot be empty",
+		},
+		{
+			name: "section with no items",
+			yaml: `
+nav:
+  sections:
+    - title: "Empty"
+      items: []
+`,
+			wantErr: "must have at least one item",
+		},
+		{
+			name: "section with invalid item",
+			yaml: `
+nav:
+  sections:
+    - title: "Bad"
+      items:
+        - Empty: {}
+`,
+			wantErr: "must define page, items, or both",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			dir := t.TempDir()
+			err := os.WriteFile(filepath.Join(dir, "dorcs.yaml"), []byte(tt.yaml), 0644)
+			if err != nil {
+				t.Fatalf("failed to write test config: %v", err)
+			}
+			_, err = Load(dir)
+			if err == nil {
+				t.Fatal("expected validation error")
+			}
+			if !contains(err.Error(), tt.wantErr) {
+				t.Fatalf("expected error containing %q, got: %v", tt.wantErr, err)
+			}
+		})
+	}
+}
+
 func TestLoadEnvFile(t *testing.T) {
 	tmpDir := t.TempDir()
 	originalWd, _ := os.Getwd()

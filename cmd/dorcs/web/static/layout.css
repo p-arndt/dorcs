@@ -205,6 +205,69 @@ nav.nav a:hover {
   border-color: var(--border);
 }
 
+/* Section tabs in header */
+.header-sections {
+  display: flex;
+  align-items: center;
+  border-top: 1px solid var(--border);
+  margin-top: 10px;
+  padding-top: 2px;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+.header-sections::-webkit-scrollbar {
+  display: none;
+}
+
+.section-tabs {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+}
+
+.section-tab {
+  display: inline-flex;
+  align-items: center;
+  padding: 8px 14px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--muted);
+  text-decoration: none;
+  border-bottom: 2px solid transparent;
+  border-radius: 0;
+  transition: color 0.15s, border-color 0.15s;
+  white-space: nowrap;
+}
+
+.section-tab:hover {
+  color: var(--fg);
+}
+
+.section-tab.active {
+  color: var(--fg);
+  font-weight: 600;
+  border-bottom-color: var(--link);
+}
+
+/* Adjust header height when sections are present */
+body.has-sections {
+  --header-h: 108px;
+}
+
+body.has-sections header.site-header {
+  height: var(--header-h);
+  flex-direction: column;
+  justify-content: center;
+}
+
+body.has-sections header.site-header > .shell {
+  display: flex;
+  flex-direction: column;
+}
+
 /* Mobile menu button */
 .menu-toggle {
   display: none;
@@ -885,6 +948,20 @@ aside.toc {
 @media (max-width: 768px) {
   :root {
     --header-h: 56px;
+  }
+
+  body.has-sections {
+    --header-h: 96px;
+  }
+
+  .section-tab {
+    padding: 6px 12px;
+    font-size: 0.85rem;
+  }
+
+  .header-sections {
+    margin-top: 6px;
+    padding-top: 0;
   }
 
   .shell {

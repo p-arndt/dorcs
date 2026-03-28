@@ -116,6 +116,15 @@
         {{- end }}
       </div>
     </div>
+    {{- if and .Sections (gt (len .Sections) 0) }}
+    <div class="header-sections">
+      <nav class="section-tabs">
+        {{- range .Sections }}
+        <a class="section-tab{{ if .IsActive }} active{{ end }}" href="{{ .Path }}">{{ .Title }}</a>
+        {{- end }}
+      </nav>
+    </div>
+    {{- end }}
   </div>
 </header>
 {{ end }}

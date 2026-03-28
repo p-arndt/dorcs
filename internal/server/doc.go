@@ -69,6 +69,7 @@ func (h *Handler) handleDocByKeyWithSite(w http.ResponseWriter, r *http.Request,
 	}
 
 	var m DocPageModel
+	m.ActiveSection = -1
 	m.SiteTitle = siteTitle
 	m.DocTitleFallback = key
 	if key == "" {
@@ -114,6 +115,17 @@ func (h *Handler) handleDocByKeyWithSite(w http.ResponseWriter, r *http.Request,
 		// Override site title from config if set
 		if siteConfig.Site.Title != "" {
 			m.SiteTitle = siteConfig.Site.Title
+		}
+	}
+
+	// Build section tabs if configured
+	if siteConfig != nil && len(siteConfig.Nav.Sections) > 0 {
+		sections, activeIdx := h.buildSectionTabs(targetSite, m.CurrentPath)
+		m.Sections = sections
+		m.ActiveSection = activeIdx
+		// Override nav items with the active section's items
+		if activeIdx >= 0 && activeIdx < len(sections) {
+			m.Nav.Nodes = sections[activeIdx].Items
 		}
 	}
 

@@ -75,6 +75,14 @@ type NavItem struct {
 	Children []NavItem
 }
 
+// SectionTab represents a section tab rendered in the header.
+type SectionTab struct {
+	Title    string
+	Path     string // URL path of the first item (used as tab link)
+	IsActive bool
+	Items    []NavItem // Navigation items for this section's sidebar
+}
+
 // DocPageModel is the view model for document pages.
 type DocPageModel struct {
 	SiteTitle        string
@@ -141,6 +149,12 @@ type DocPageModel struct {
 	// EditOnGitHubURL is the GitHub "edit this page" URL when docs are hosted on GitHub.
 	// Shown as an "Edit on GitHub" link in the content area.
 	EditOnGitHubURL string
+
+	// Sections holds section tabs for the header when nav.sections is configured.
+	Sections []SectionTab
+
+	// ActiveSection is the index of the currently active section (-1 if none).
+	ActiveSection int
 }
 
 // ServeHTTP routes requests:

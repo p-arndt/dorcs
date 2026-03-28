@@ -117,6 +117,38 @@ func configuredGroupKey(labelPath string) string {
 	return "__group__/" + slug
 }
 
+// NavTreeFromItems builds navigation nodes from a set of config NavItems using
+// the site's document index. Used by section tabs to build per-section navigation.
+// Returns the children nodes (not the root).
+func (s *Site) NavTreeFromItems(items config.NavItems, includeDraft bool) []*NavNode {
+	s.mu.RLock()
+	index := s.index
+	s.mu.RUnlock()
+
+	if len(items) == 0 || len(index) == 0 {
+		return nil
+	}
+
+	seenPages := make(map[string]string)
+	nodes, err := buildConfiguredNavNodes(s, index, items, seenPages, "")
+	if err != nil {
+		return nil
+	}
+
+	if !includeDraft {
+		filtered := make([]*NavNode, 0, len(nodes))
+		for _, n := range nodes {
+			fn := filterNavDrafts(n)
+			if fn != nil && (fn.Page != nil || len(fn.Children) > 0) {
+				filtered = append(filtered, fn)
+			}
+		}
+		return filtered
+	}
+
+	return nodes
+}
+
 func navNodeDisplayName(node *NavNode) string {
 	if node == nil {
 		return ""

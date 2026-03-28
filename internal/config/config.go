@@ -118,6 +118,17 @@ type ColorScheme struct {
 	SidebarBackground string `json:"sidebar_background" yaml:"sidebar_background"`
 }
 
+// NavSection defines a top-level section tab with its own navigation items.
+// When sections are configured, the header shows a second row of tabs and the
+// sidebar displays only the active section's items.
+type NavSection struct {
+	// Title shown on the section tab
+	Title string `json:"title" yaml:"title"`
+
+	// Items defines the sidebar navigation for this section
+	Items NavItems `json:"items" yaml:"items"`
+}
+
 // NavConfig holds navigation configuration.
 type NavConfig struct {
 	// ShowSearch enables/disables the search box (default: true)
@@ -128,6 +139,11 @@ type NavConfig struct {
 
 	// Items defines the sidebar navigation order explicitly.
 	Items NavItems `json:"items" yaml:"items"`
+
+	// Sections defines top-level section tabs with grouped navigation.
+	// When set, the header shows a second row of section tabs and the sidebar
+	// displays only the active section's items. Mutually exclusive with Items.
+	Sections []NavSection `json:"sections" yaml:"sections"`
 
 	// Links are additional navigation links shown in the header
 	Links []NavLink `json:"links" yaml:"links"`
