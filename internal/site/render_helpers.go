@@ -137,5 +137,8 @@ func (s *Site) convertMarkdownToHTML(raw string, doc *Doc) (string, error) {
 	// Convert {badge:TYPE} inline badges
 	htmlOutput = markdownext.ConvertBadgesInHTML(htmlOutput)
 
+	// Convert {video:URL} embeds
+	htmlOutput = markdownext.ConvertVideoEmbedsInHTML(htmlOutput)
+
 	return htmlOutput, nil
 }

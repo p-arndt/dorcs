@@ -260,6 +260,7 @@ func setCSPHeaders(w http.ResponseWriter, r *http.Request) {
 		"base-uri 'self'; " +
 		"object-src 'none'; " +
 		"frame-ancestors 'none'; " +
+		"frame-src https://www.youtube.com https://player.vimeo.com; " +
 		"img-src 'self' data: https:; " +
 		"font-src 'self' data:; " +
 		"connect-src 'self'; " +

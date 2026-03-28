@@ -283,6 +283,14 @@ A floating button appears in the bottom-right corner after scrolling down 400 pi
 
 The file modification time of each Markdown file is shown at the bottom of the content area as "Last updated: January 2, 2026". This updates automatically when the source file changes.
 
+### Custom 404 page
+
+When a page is not found, Dorcs renders a styled 404 page that matches your site's theme. It includes a link to the homepage and a button to open the search overlay, so users can quickly find what they were looking for.
+
+### Sitemap
+
+Dorcs automatically serves a `sitemap.xml` at `/sitemap.xml` in server mode. In static build mode (`dorcs build`), it generates a `sitemap.xml` file in the output directory. The sitemap includes all non-draft pages with last-modified dates, priority, and change frequency.
+
 ### Open Graph meta tags
 
 Dorcs generates `og:title`, `og:description`, `og:site_name`, and `twitter:card` meta tags on every page. These are populated from front matter (`title`, `description`) and the site title from config. When you share a doc URL on Slack, Twitter, or other platforms, the link preview will show the page title and description.

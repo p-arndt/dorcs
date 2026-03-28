@@ -94,3 +94,22 @@ The old method is {badge:DEPRECATED}.
 Built-in badge types: `NEW`, `BETA`, `DEPRECATED`, `EXPERIMENTAL`, `REQUIRED`.
 
 You can also use custom labels — any text works: `{badge:PREVIEW}`, `{badge:v2.0}`.
+
+## Video embeds
+
+Embed YouTube or Vimeo videos inline with the `{video:URL}` syntax:
+
+```markdown
+{video:https://www.youtube.com/watch?v=dQw4w9WgXcQ}
+
+{video:https://vimeo.com/123456789}
+```
+
+Supported URL formats:
+
+- `https://www.youtube.com/watch?v=ID`
+- `https://youtu.be/ID`
+- `https://www.youtube.com/embed/ID`
+- `https://vimeo.com/ID`
+
+Videos render as responsive 16:9 iframes that adapt to the content width.
