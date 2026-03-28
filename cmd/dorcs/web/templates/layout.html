@@ -5,7 +5,18 @@
 <html lang="en">
   {{ template "head" . }}
 
-  <body class="{{ if and .Sections (gt (len .Sections) 0) }}has-sections{{ end }}" data-base-path="{{ .BasePath }}"{{ if .LiveReload }} data-live-reload="true"{{ end }}{{ if .CurrentLanguage }} data-current-language="{{ .CurrentLanguage }}"{{ end }}{{ if .CurrentVersion }} data-current-version="{{ .CurrentVersion }}"{{ end }}{{ if .DocPath }} data-doc-path="{{ .DocPath }}"{{ end }}>
+  <body class="{{ if and .Sections (gt (len .Sections) 0) }}has-sections{{ end }}{{ if and .Config .Config.Announcement .Config.Announcement.Text }} has-announcement{{ end }}" data-base-path="{{ .BasePath }}"{{ if .LiveReload }} data-live-reload="true"{{ end }}{{ if .CurrentLanguage }} data-current-language="{{ .CurrentLanguage }}"{{ end }}{{ if .CurrentVersion }} data-current-version="{{ .CurrentVersion }}"{{ end }}{{ if .DocPath }} data-doc-path="{{ .DocPath }}"{{ end }}>
+    {{- if and .Config .Config.Announcement .Config.Announcement.Text }}
+    <div class="announcement-banner" id="announcement-banner">
+      <span>{{ .Config.Announcement.Text }}</span>
+      {{- if or (not .Config.Announcement.Dismissible) (deref .Config.Announcement.Dismissible) }}
+      <button class="announcement-dismiss" onclick="this.parentElement.remove();document.body.classList.remove('has-announcement');try{localStorage.setItem('dorcs-announcement-dismissed','{{ .Config.Announcement.Text }}')}catch(e){}" aria-label="Dismiss">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+      {{- end }}
+    </div>
+    {{- end }}
+
     <!-- Sidebar overlay for mobile -->
     <div class="sidebar-overlay" id="sidebar-overlay"></div>
 

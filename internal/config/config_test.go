@@ -493,6 +493,34 @@ nav:
 	}
 }
 
+func TestAnnouncementConfig(t *testing.T) {
+	dir := t.TempDir()
+	yamlContent := `
+announcement:
+  text: "New release v2.0!"
+  dismissible: true
+`
+	err := os.WriteFile(filepath.Join(dir, "dorcs.yaml"), []byte(yamlContent), 0644)
+	if err != nil {
+		t.Fatalf("failed to write test config: %v", err)
+	}
+
+	cfg, err := Load(dir)
+	if err != nil {
+		t.Fatalf("Load failed: %v", err)
+	}
+
+	if cfg.Announcement == nil {
+		t.Fatal("expected announcement to be set")
+	}
+	if cfg.Announcement.Text != "New release v2.0!" {
+		t.Fatalf("unexpected announcement text: %q", cfg.Announcement.Text)
+	}
+	if cfg.Announcement.Dismissible == nil || !*cfg.Announcement.Dismissible {
+		t.Fatal("expected dismissible to be true")
+	}
+}
+
 func TestLoadEnvFile(t *testing.T) {
 	tmpDir := t.TempDir()
 	originalWd, _ := os.Getwd()
