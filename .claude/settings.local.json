@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(go build:*)",
+      "Bash(go test:*)",
+      "Bash(grep -E \"\\\\.\\(go|yaml|html|css|md\\)$\")",
+      "Bash(timeout 5 ./dorcs.exe --dir docs)",
+      "Bash(taskkill //F //IM dorcs.exe)",
+      "Bash(netstat -ano)",
+      "Bash(taskkill //F //PID 29156)"
+    ]
+  }
+}

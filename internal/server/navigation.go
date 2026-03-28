@@ -207,6 +207,66 @@ func navItemsContainPath(items []NavItem, path string) bool {
 	return false
 }
 
+// flattenNavItems returns a flat list of all linkable nav items in order.
+func flattenNavItems(items []NavItem) []NavItem {
+	var flat []NavItem
+	for _, item := range items {
+		if item.Path != "" {
+			flat = append(flat, item)
+		}
+		flat = append(flat, flattenNavItems(item.Children)...)
+	}
+	return flat
+}
+
+// findPrevNext finds the previous and next pages relative to currentPath in the nav items.
+func findPrevNext(items []NavItem, currentPath string) (*PageLink, *PageLink) {
+	flat := flattenNavItems(items)
+	for i, item := range flat {
+		if item.Path == currentPath {
+			var prev, next *PageLink
+			if i > 0 {
+				prev = &PageLink{Title: flat[i-1].Title, Path: flat[i-1].Path}
+			}
+			if i < len(flat)-1 {
+				next = &PageLink{Title: flat[i+1].Title, Path: flat[i+1].Path}
+			}
+			return prev, next
+		}
+	}
+	return nil, nil
+}
+
+// buildBreadcrumbs builds breadcrumb links for the current page path from the nav items.
+func buildBreadcrumbs(items []NavItem, currentPath string, siteTitle string, basePath string) []PageLink {
+	var crumbs []PageLink
+	if findBreadcrumbPath(items, currentPath, &crumbs) {
+		// Prepend home
+		home := PageLink{Title: siteTitle, Path: basePath + "/"}
+		return append([]PageLink{home}, crumbs...)
+	}
+	return nil
+}
+
+// findBreadcrumbPath recursively searches for currentPath and builds the breadcrumb trail.
+func findBreadcrumbPath(items []NavItem, currentPath string, crumbs *[]PageLink) bool {
+	for _, item := range items {
+		if item.Path == currentPath {
+			*crumbs = append(*crumbs, PageLink{Title: item.Title, Path: item.Path})
+			return true
+		}
+		if len(item.Children) > 0 {
+			before := len(*crumbs)
+			*crumbs = append(*crumbs, PageLink{Title: item.Title, Path: item.Path})
+			if findBreadcrumbPath(item.Children, currentPath, crumbs) {
+				return true
+			}
+			*crumbs = (*crumbs)[:before] // backtrack
+		}
+	}
+	return false
+}
+
 // convertNavNodesWithLang is a helper function for backward compatibility in tests.
 // It wraps convertNavNodesWithVersionAndLang with empty version.
 // If siteConfig is nil, language prefixes won't be added (assumes single-language mode).

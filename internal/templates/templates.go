@@ -18,6 +18,7 @@ func FuncMap() template.FuncMap {
 		"trimSpace": strings.TrimSpace,
 		"dict":      dictFunc,
 		"deref":     derefBool,
+		"sub":       func(a, b int) int { return a - b },
 	}
 }
 

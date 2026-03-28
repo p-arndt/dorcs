@@ -463,6 +463,107 @@ func TestBuildSectionTabsNilConfig(t *testing.T) {
 	}
 }
 
+func TestFlattenNavItems(t *testing.T) {
+	items := []NavItem{
+		{Title: "Home", Path: "/"},
+		{Title: "Guide", Path: "/guide", Children: []NavItem{
+			{Title: "Intro", Path: "/guide/intro"},
+			{Title: "Advanced", Path: "/guide/advanced"},
+		}},
+		{Title: "Folder", IsDir: true, Children: []NavItem{
+			{Title: "Child", Path: "/folder/child"},
+		}},
+	}
+
+	flat := flattenNavItems(items)
+	want := []string{"/", "/guide", "/guide/intro", "/guide/advanced", "/folder/child"}
+	if len(flat) != len(want) {
+		t.Fatalf("flattenNavItems: got %d items, want %d", len(flat), len(want))
+	}
+	for i, item := range flat {
+		if item.Path != want[i] {
+			t.Errorf("flattenNavItems[%d].Path = %q, want %q", i, item.Path, want[i])
+		}
+	}
+}
+
+func TestFindPrevNext(t *testing.T) {
+	items := []NavItem{
+		{Title: "Home", Path: "/"},
+		{Title: "Getting Started", Path: "/getting-started"},
+		{Title: "Config", Path: "/config"},
+	}
+
+	tests := []struct {
+		path     string
+		wantPrev string
+		wantNext string
+	}{
+		{"/", "", "Getting Started"},
+		{"/getting-started", "Home", "Config"},
+		{"/config", "Getting Started", ""},
+		{"/unknown", "", ""},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.path, func(t *testing.T) {
+			prev, next := findPrevNext(items, tt.path)
+			prevTitle := ""
+			if prev != nil {
+				prevTitle = prev.Title
+			}
+			nextTitle := ""
+			if next != nil {
+				nextTitle = next.Title
+			}
+			if prevTitle != tt.wantPrev {
+				t.Errorf("prev = %q, want %q", prevTitle, tt.wantPrev)
+			}
+			if nextTitle != tt.wantNext {
+				t.Errorf("next = %q, want %q", nextTitle, tt.wantNext)
+			}
+		})
+	}
+}
+
+func TestBuildBreadcrumbs(t *testing.T) {
+	items := []NavItem{
+		{Title: "Getting Started", Path: "/getting-started"},
+		{Title: "Guide", Path: "/guide", Children: []NavItem{
+			{Title: "Intro", Path: "/guide/intro"},
+			{Title: "Advanced", Path: "/guide/advanced"},
+		}},
+	}
+
+	tests := []struct {
+		path      string
+		wantLen   int
+		wantLast  string
+	}{
+		{"/getting-started", 2, "Getting Started"},
+		{"/guide/intro", 3, "Intro"},
+		{"/guide/advanced", 3, "Advanced"},
+		{"/unknown", 0, ""},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.path, func(t *testing.T) {
+			crumbs := buildBreadcrumbs(items, tt.path, "Docs", "")
+			if len(crumbs) != tt.wantLen {
+				t.Fatalf("got %d breadcrumbs, want %d (crumbs: %v)", len(crumbs), tt.wantLen, crumbs)
+			}
+			if tt.wantLen > 0 {
+				if crumbs[0].Title != "Docs" {
+					t.Errorf("first crumb = %q, want 'Docs'", crumbs[0].Title)
+				}
+				if crumbs[len(crumbs)-1].Title != tt.wantLast {
+					t.Errorf("last crumb = %q, want %q", crumbs[len(crumbs)-1].Title, tt.wantLast)
+				}
+			}
+		})
+	}
+}
+
 func TestBuildSectionTabsNoSections(t *testing.T) {
 	cfg := config.Default()
 	handler := New(Config{
