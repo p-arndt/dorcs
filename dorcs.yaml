@@ -70,44 +70,58 @@ nav:
   # Expand-all configuration key (currently accepted, but not used by the UI)
   expand_all: false
 
-  # Explicit sidebar order (MkDocs-style).
-  items:
-    - Home: index.md
-    - Getting Started: 01_getting-started.md
-    - Installation: 02_installation.md
-    - External Content:
-        page: external-content/index.md
-        items:
-          - GitHub: external-content/github.md
-    - Configuration: 03_configuration.md
-    - Usage:
-        page: usage/index.md
-        items:
-          - Writing Your Docs: usage/writing-your-docs.md
-          - File Structure & Organization: usage/file-structure.md
-          - Metadata: usage/metadata.md
-          - Order of Docs: usage/order-of-docs.md
-          - Watch Mode: usage/watch-mode.md
-    - Deployment: 04_deployment.md
-    - Themes: 05_themes.md
-    - Markdown:
-        page: 06_markdown/index.md
-        items:
-          - Markdown Basics: 06_markdown/01_basics.md
-          - Special Markdown: 06_markdown/02_special.md
-          - Markdown Extensions: 06_markdown/03_extensions.md
-          - Presentations: 06_markdown/04_presentations.md
-    - Presentations:
-        page: 07_presentations/index.md
-        items:
-          - Slide Directives: 07_presentations/01_directives.md
-          - Layout: 07_presentations/02_layout.md
-          - Typography: 07_presentations/03_typography.md
-          - Timeline Block: 07_presentations/04_timeline_block.md
-          - Presentation Code Example: 07_presentations/05_sample_presentation_code.md
-          - Example Presentation: 07_presentations/06_example_presentation.md
-    - Commands: 07_commands.md
-    - Edit: 08_edit.md
+  # Section tabs with grouped navigation (renders a second header row with tabs).
+  sections:
+    - title: "Getting Started"
+      items:
+        - Overview: index.md
+        - Getting Started: 01_getting-started.md
+        - Installation: 02_installation.md
+
+    - title: "Writing Docs"
+      items:
+        - Usage:
+            page: usage/index.md
+            items:
+              - Writing Your Docs: usage/writing-your-docs.md
+              - File Structure & Organization: usage/file-structure.md
+              - Metadata: usage/metadata.md
+              - Order of Docs: usage/order-of-docs.md
+              - Watch Mode: usage/watch-mode.md
+        - Markdown:
+            page: 06_markdown/index.md
+            items:
+              - Markdown Basics: 06_markdown/01_basics.md
+              - Special Markdown: 06_markdown/02_special.md
+              - Markdown Extensions: 06_markdown/03_extensions.md
+
+    - title: "Configuration"
+      items:
+        - Configuration: 03_configuration.md
+        - Themes: 05_themes.md
+        - External Content:
+            page: external-content/index.md
+            items:
+              - GitHub: external-content/github.md
+        - Edit Mode: 08_edit.md
+
+    - title: "Presentations"
+      items:
+        - Overview: 06_markdown/04_presentations.md
+        - Presentations:
+            page: 07_presentations/index.md
+            items:
+              - Slide Directives: 07_presentations/01_directives.md
+              - Layout: 07_presentations/02_layout.md
+              - Typography: 07_presentations/03_typography.md
+              - Timeline Block: 07_presentations/04_timeline_block.md
+              - Presentation Code Example: 07_presentations/05_sample_presentation_code.md
+              - Example Presentation: 07_presentations/06_example_presentation.md
+
+    - title: "Reference"
+      items:
+        - Commands: 07_commands.md
+        - Deployment: 04_deployment.md
 
   # Additional navigation links shown in the header
   links:
