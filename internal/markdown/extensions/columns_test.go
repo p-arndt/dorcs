@@ -51,6 +51,20 @@ Right
 			},
 		},
 		{
+			name: "col block with no blank line after ::: col keeps marker separate",
+			input: `::: col
+**Title**
+Body
+:::`,
+			check: func(t *testing.T, got string) {
+				// The marker must be in its own paragraph (followed by a blank ">"
+				// line) so goldmark does not merge it with the first content line.
+				if !strings.Contains(got, "> **COLBLOCK**\n>\n") {
+					t.Errorf("expected marker on its own line, got:\n%s", got)
+				}
+			},
+		},
+		{
 			name: "three col blocks",
 			input: `::: col
 A
@@ -150,6 +164,29 @@ func TestConvertColBlocksInHTML(t *testing.T) {
 				}
 				if strings.Contains(got, "COLBLOCK") {
 					t.Errorf("no COLBLOCK markers should remain, got:\n%s", got)
+				}
+			},
+		},
+		{
+			name: "col block containing a nested blockquote is not truncated",
+			input: `<blockquote>
+<p><strong>COLBLOCK</strong></p>
+<p>Intro</p>
+<blockquote>
+<p>A quote inside the column</p>
+</blockquote>
+</blockquote>`,
+			check: func(t *testing.T, got string) {
+				if strings.Count(got, `<div class="col">`) != 1 {
+					t.Errorf("expected exactly 1 col div, got:\n%s", got)
+				}
+				// The inner blockquote must survive inside the div, and the div must
+				// close after it (not before, which would misnest the markup).
+				if !strings.Contains(got, "<blockquote>\n<p>A quote inside the column</p>\n</blockquote></div>") {
+					t.Errorf("nested blockquote should be preserved inside the col div, got:\n%s", got)
+				}
+				if strings.Contains(got, "COLBLOCK") {
+					t.Errorf("COLBLOCK marker should be removed, got:\n%s", got)
 				}
 			},
 		},
