@@ -111,9 +111,24 @@
 .presentation-slide .slide-content ul,
 .presentation-slide .slide-content ol {
   text-align: left;
-  display: inline-block;
+  /* Block (not inline-block) so the list keeps its own line. The slide title
+     h1 is inline-block in a text-align:center container; an inline-block list
+     would flow onto the same line as the heading on a plain slide (heading
+     left, list right). */
+  display: block;
   margin: 1.5rem 0;
   padding-left: 1.75rem;
+}
+
+/* Top-level lists on a centered (default) slide: shrink to content and center
+   as a block on their own line. Lists inside a .col keep the left-aligned,
+   full-width flow above so column content stays left. */
+.presentation-slide .slide-content > ul,
+.presentation-slide .slide-content > ol {
+  width: fit-content;
+  max-width: 100%;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 .presentation-slide .slide-content ul li::marker {
