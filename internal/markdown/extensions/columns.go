@@ -64,6 +64,13 @@ func ConvertColBlocksInMarkdown(md string) string {
 					}
 				}
 				result = append(result, strings.TrimSuffix(out.String(), "\n"))
+				// Emit a blank line after the block so that consecutive col blocks
+				// (e.g. a closing ::: immediately followed by ::: col) are not merged
+				// into a single blockquote by goldmark. Without this separation the
+				// HTML post-processor sees one blockquote containing two COLBLOCK
+				// markers, leaks the literal "COLBLOCK" text, and collapses the
+				// columns into one div.
+				result = append(result, "")
 				i = endIdx + 1
 				continue
 			}

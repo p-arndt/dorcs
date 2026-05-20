@@ -354,6 +354,10 @@
 .presentation-slide.columns-3 .slide-content h2,
 .presentation-slide[data-layout="columns-3"] .slide-content h1,
 .presentation-slide[data-layout="columns-3"] .slide-content h2 {
+  /* Must be block-level: column-span is ignored on inline-block (the base h1
+     style uses inline-block to keep the underline tight to the text), which
+     would otherwise pin the heading inside the first column. */
+  display: block;
   column-span: all;
 }
 

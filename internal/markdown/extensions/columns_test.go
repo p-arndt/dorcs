@@ -32,6 +32,25 @@ Content B
 			},
 		},
 		{
+			name: "adjacent col blocks (no blank line) stay separate blockquotes",
+			input: `::: col
+Left
+:::
+::: col
+Right
+:::`,
+			check: func(t *testing.T, got string) {
+				if strings.Count(got, "**COLBLOCK**") != 2 {
+					t.Errorf("expected 2 COLBLOCK markers, got:\n%s", got)
+				}
+				// A blank line between the two generated blockquotes prevents
+				// goldmark from merging them into a single blockquote.
+				if !strings.Contains(got, "> Left\n\n> **COLBLOCK**") {
+					t.Errorf("expected blank line separating adjacent col blocks, got:\n%s", got)
+				}
+			},
+		},
+		{
 			name: "three col blocks",
 			input: `::: col
 A

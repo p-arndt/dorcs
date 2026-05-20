@@ -97,6 +97,12 @@ Content flows into the left column automatically.
 CSS multi-column balances the remaining content.
 ```
 
+> **Don't mix auto columns with `::: col`.** `columns-2`/`columns-3` flow content
+> automatically — they don't use `::: col` blocks. If you want explicit
+> side-by-side panels you control, use `cols` (or `split`) instead. The slide
+> title (`#`/`##`) always spans full width above the columns; use `###` and below
+> for sub-headings inside a column.
+
 ## Combining layout and class
 
 Pass space-separated values to `_layout` to combine a layout with extra classes:
